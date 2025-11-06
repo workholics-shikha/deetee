@@ -1,0 +1,112 @@
+1,Blanking,RMR,Outsourced,Not Available,Outsourced,,2,Blanking-1,RMR,ERP,Available,"Length
+Width",,3,Blanking-10,RMR,ERP,Available,"Elliptical Hole size
+Blade Thickness",,4,Blanking-11,RMR,ERP,Available,"Elliptical Counter size
+Counter Depth",,5,Blanking-12,RMR,ERP,Available,"Elliptical Counter size
+Counter Depth",,6,Blanking-13,RMR,ERP,Available,"Keyway size
+Blade Thickness",,7,Blanking-14,RMR,ERP,Available,"Keyway size
+Blade Thickness",,8,Blanking-15,RMR,ERP,Available,"Blade Radius
+Blade Thickness",,9,Blanking-16,RMR,ERP,Available,"Blade Thickness & Center Radius
+Blade Length",,10,Blanking-17,RMR,ERP,Available,"Hole Size
+Blade Thickness",,11,Blanking-2,RMR,ERP,Available,"Length
+Thickness",,12,Blanking-3,RMR,ERP,Available,"Thickness
+Width",,13,Blanking-4,RMR,ERP,Available,"Length
+Slot Depth",,14,Blanking-5,RMR,ERP,Available,"Length
+Slot Depth",,15,Blanking-6,RMR,ERP,Available,"Thickness
+Hole Size",,16,Blanking-7,RMR,ERP,Available,"Thickness
+Tap Size",,17,Blanking-8,RMR,ERP,Available,"Counter Size
+Counter Depth",,18,Blanking-9,RMR,ERP,Available,"Counter Size
+Counter Depth",,19,Drill+ Tap,RMR,ERP,Available,Outsourced,,20,Fitter work,RMR,ERP,Available,Manual,,21,Grinding,RMR,ERP,Available,"Job OD
+Job Length",,22,Grinding-1,RMR,ERP,Available,"Job OD
+Job Length
+For K GROUP -
+Blade Width
+Blade Length",,23,Grinding-2,RMR,ERP,Available,"Job OD
+Job Length
+For K GROUP -
+Blade Thickness
+Blade Length",,24,Grinding-3,RMR,ERP,Available,"Job OD
+Job Length
+For K GROUP -
+Blade Width
+Blade Thickness",,25,Grinding-4,RMR,ERP,Available,"Job OD
+Job Length
+For K GROUP -
+Blade Thickness
+Blade Length",,26,Grinding-5,RMR,ERP,Available,"Blade Thickness
+Blade Length",,27,Grinding-6,RMR,ERP,Available,"Blade Width
+Blade Length",,28,Grinding-7,RMR,ERP,Available,"Blade Thickness
+Blade Length",,29,Hard Turning,RMR,ERP,Available,"Job OD
+Job Length",,30,Hard Turning-1,RMR,ERP,Available,"Job OD
+Job Length",,31,Hard Turning-2,RMR,ERP,Available,"Job OD
+Job Length",,32,Manual lathe,RMR,ERP,Available,"Job OD
+Job Length",,33,Manual lathe-1,RMR,ERP,Available,"Job OD
+Job Length",,34,Manual lathe-2,RMR,ERP,Available,"Job OD
+Job Length",,35,Manual Lathe-3,RMR,ERP,Available,"Job OD
+Job Length",,36,Manual Lathe-4,RMR,ERP,Available,"Job OD
+Job Length",,37,Milling,RMR,ERP,Available,"Job OD
+Job Length",,38,Milling-1,RMR,ERP,Available,"Job OD
+Job Length
+For K GROUP -
+Blade Thickness
+Blade Length",,39,Milling-2,RMR,ERP,Available,"Job OD
+Job Length
+For K GROUP -
+Blade Thickness
+Blade Length",,40,Milling-3,RMR,ERP,Not Available,Manual,,41,Raw Material,RMR,ERP,Available,OD,,42,Raw Material-1,RMR,ERP,Available,OD,,43,Raw Material-2,RMR,ERP,Available,OD,,44,Stress Relieve,RMR,ERP,Available,"Job OD
+Job Length",,45,Cutting,TMR,ERP,Available,"Material
+Diameter",,46,U Drilling,TMR,ERP,Available,Thickness,,47,CNC Blanking - 1,TMR,ERP,Available,"Bore
+Thickness",,48,CNC Blanking - 2,TMR,"ERP
+Formula",Available,"OD, Bore
+Ww = (OD-Bore)/2",Need to use the formula for calculating 'RANGE' for CT calculations,Parameter naming method to be decided49,CNC Blanking - 3,TMR,Formula,Available,Ww = (OD-Bore)/2,,50,CNC Blanking - 4,TMR,ERP,Available,Outer Diameter,,51,Profile Digging,TMR,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",Vishal to provide the UI for this52,Profile Finishing,TMR,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",Vishal to provide the UI for this53,Drilling,TMR,Manual,Available,"Length
+Diameter",Supervisor to Input 'Length' and 'Diameter',Vishal to provide the UI for this54,Taping,TMR,Manual,Available,"Tap Size
+Tap Length",Supervisor to Input 'Tap Size' and 'Tap Length',Vishal to provide the UI for this55,Counter,TMR,Manual,Available,"Counter Size
+Counter Depth",Supervisor to Input 'Counter Size' and 'Counter Depth',Vishal to provide the UI for this56,Thread Milling,TMR,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",Vishal to provide the UI for this57,Hard Milling,TMR,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",Vishal to provide the UI for this58,Keyway Slotting,TMR,"ERP
+Manual","Available
+Parameter not consistent","Keyway Width
+Stack Length",,59,Round Keyway Milling,TMR,ERP,Available,"Thickness
+Keyway",,60,Keyway Chamfering,TMR,NA,Not Available,NA,,61,Thickness Grinding Single Side Only,TMR,ERP,Available,OD,,62,Thickness Grinding Both Side,TMR,"ERP
+Formula",Available,"OD, ID
+Lw = (OD - ID)/2",,63,Bore Turning With Under Cut - Single Side,TMR,ERP,Available,"Width
+Thickness",,64,Bore Turning Both Side,TMR,ERP,Available,"Width
+Thickness",,65,Bore Grinding with Under Cut - Single Side,TMR,ERP,Available,"Width
+Thickness",,66,Bore Grinding Both Side,TMR,ERP,Available,"Width
+Thickness",,67,Keyway Wirecut,TMR,"ERP
+Formula",Available,"Thickness
+Area","Kw, Kd, T",68,Bearing Seat - Single Side,TMR,ERP,Available,"Bearing Seat Size
+Bearing Seat Depth",,69,Plain Bore Turning Both Side,TMR,ERP,Available,"Bore
+Thickness",,70,Plain Bore Turning with Under Cut - Single Side,TMR,ERP,Available,"Bore
+Thickness",,71,Bore Turning with Keyway - Both Side,TMR,ERP,Available,"Bore
+Thickness",,72,Bore Turning with Keyway & Under Cut - Single Side,TMR,ERP,Available,"Bore
+Thickness",,73,Thickness Turning - Single Side,TMR,Formula,Available,Lw = (OD - ID)/2,,74,Hard Turning Profile,TMR,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",75,Hard Turning Profile Matching on CNC,TMR,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",76,Rib Thickness/Boss OD - Both Side,TMR,ERP,Available,Thickness,,77,Template Matching,TMR,Manual,Available,Corners,Supervisor to Input 'Corners',78,"Final OD, Final Angle",TMR,ERP,Available,Thickness,,79,Bevel Grinding,TMR,ERP,Available,Thickness,,80,Cutting,Tooling,ERP,Available,"Material
+Diameter",,81,Radial Parting,Tooling,Formula,Available,Ww = (OD-Bore)/2,,82,Axial Parting,Tooling,ERP,Available,Thickness,,83,Ring Parting,Tooling,Formula,Available,Ww = (OD-Bore)/2,,84,U Drilling,Tooling,ERP,Available,Thickness,,85,CNC Blanking Disc Form - 1,Tooling,"ERP
+Formula",Available,"Bore
+Thickness
+Ww = (OD-Bore)/2",,86,CNC Blanking Disc Form - 2,Tooling,"ERP
+Formula",Available,"OD
+Ww = (OD-Bore)/2",,87,CNC Blanking Ring Form - 1,Tooling,"ERP
+Formula",Available,"Bore
+Thickness
+Ww = (OD-Bore)/2",,88,CNC Blanking Ring Form - 2,Tooling,"ERP
+Formula",Available,"OD
+Ww = (OD-Bore)/2",,89,Milling Work,Tooling,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",90,Keyway Slotting,Tooling,"ERP
+Manual","Available
+Parameter not consistent","Keyway Width
+Stack Length",,91,Round Keyway Milling,Tooling,ERP,Available,"Thickness
+Keyway",,92,Keyway Chamfering,Tooling,NA,Not Available,NA,,93,Rough Surface Grinding,Tooling,Formula,Available,Lw = (OD - ID)/2,,94,Semi Final Thickness Grinding CNC,Tooling,Formula,Available,Lw = (OD - ID)/2,,95,Fine Grinding,Tooling,Formula,Available,Lw = (OD - ID)/2,,96,Bore Grinding,Tooling,Manual,"Available
+Parameter not consistent",Stack Length,,97,Dirt Groove Machining,Tooling,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",98,Dirt Groove Cleaning,Tooling,Fixed,Available,Fixed,,99,Final Thickness Grinding - CNC,Tooling,Formula,Available,Lw = (OD - ID)/2,,100,Metal OD Grinding,Tooling,Manual,"Available
+Parameter not consistent",Stack Length,,101,Lapping - 1,Tooling,Fixed,Available,Fixed,,102,Lapping - 2,Tooling,Fixed,Available,Fixed,,103,Lapping - 3,Tooling,Fixed,Available,Fixed,,104,Lapping - 4,Tooling,Fixed,Available,Fixed,,105,CNC Blanking - Deep Undercut,Tooling,"ERP
+Formula",Available,"Thickness
+Ww = (OD-Bore)/2",,106,CNC Blanking - Shallow Undercut,Tooling,"ERP
+Formula",Available,"Thickness
+Ww = (OD-Bore)/2",,107,Fine Grinding - 1,Tooling,ERP,Available,OD,,108,Fine Grinding - 2,Tooling,ERP,Available,OD,,109,Final Thickness Grinding,Tooling,Formula,Available,Lw = (OD - ID)/2,,110,CNC Blanking - OD Grooving,Tooling,ERP,Available,Thickness,,111,Final Thickness Grinding on CNC - 1,Tooling,Formula,Available,Lw = (OD - ID)/2,,112,Rubber Vulcanization,Tooling,ERP,Available,"OD
+Thickness",,113,Final Thickness Grinding on CNC - 2,Tooling,Formula,Available,Lw = (OD - ID)/2,,114,Rubber OD Grinding,Tooling,Manual,"Available
+Parameter not consistent",Stack Length,,115,Final Thickness Grinding on CNC,Tooling,Formula,Available,Lw = (OD - ID)/2,,116,Junction Grinding,Tooling,Fixed,Available,Fixed,,117,Bevel Grinding,Tooling,ERP,Available,Thickness,,118,Hard Turning,Tooling,Manual,Not Available,Manual,"If Matrix = Not Available
+Manual Parameter to be input is Ideal Cycle Time",

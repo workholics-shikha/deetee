@@ -1,0 +1,752 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\{PassSheet, Role, SalesOrderProduct, SalesOrderTracking, User};
+use Illuminate\Http\Request;
+use Endroid\QrCode\Builder\Builder;
+use Illuminate\Support\Facades\{Hash, Storage, DB, Http, Validator};
+use Carbon\{Carbon, CarbonPeriod};
+
+class UserController extends Controller
+{
+
+    public function index()
+    {
+        // ======= 'operator','admin','supervisor','HOD','unit_head','CEO' =======
+        $data['operator'] = User::operator()->with('roleName')->paginate(PAGE_NO);
+        $data['supervisor'] = User::supervisor()->with('roleName')->paginate(PAGE_NO);
+        $data['unit_head'] = User::UnitHead()->with('roleName')->paginate(PAGE_NO);
+        $data['admin'] = User::admin()->with('roleName')->paginate(PAGE_NO);
+        $data['hod'] = User::HOD()->with('roleName')->paginate(PAGE_NO);
+        $data['ceo'] = User::CEO()->with('roleName')->paginate(PAGE_NO);
+
+        return view('users.index', compact('data'));
+    }
+
+    public function operators()
+    {
+        $data = User::operator()->with('roleName')->paginate(PAGE_NO);
+        return view('operator.index', compact('data'));
+    }
+
+    public function search(Request $request)
+    {
+        $search = $request->input('search'); // Get the search term from the request
+
+        // Fetch machines based on the search term with pagination
+        $data = User::operator()->with('roleName')
+            ->when($search, function ($query, $search) {
+                $query->where('name', 'LIKE', "%{$search}%");
+            })
+            ->paginate(PAGE_NO);
+
+        // Return HTML for table rows and pagination links
+        return response()->json([
+            'html'       => view('operator.search-table', compact('data'))->render(),
+            'pagination' => (string) $data->links(),
+        ]);
+    }
+
+    public function userSearch(Request $request)
+    {
+        $search = $request->input('search');
+        $activeTab = $request->input('activeTab');
+        $query = User::with('roleName');
+
+        if ($activeTab == 'administrators') {
+            $query->admin();
+        } else if ($activeTab == 'executive') {
+            $query->HOD();
+        } else if ($activeTab == 'unitHead') {
+            $query->UnitHead();
+        } else if ($activeTab == 'planning') {
+            $query->CEO();
+        } else if ($activeTab == 'supervisors') {
+            $query->supervisor();
+        } else if ($activeTab == 'operator') {
+            $query->operator();
+        }
+
+        $query->when($search, function ($query, $search) {
+            $query->where('name', 'LIKE', "%{$search}%");
+            $query->orWhere('email', 'LIKE', "%{$search}%");
+            $query->orWhere('phone', 'LIKE', "%{$search}%");
+        });
+
+        $data = $query->paginate(PAGE_NO);
+        return response()->json([
+            'html'       => view('users.search-table', compact('data'))->render(),
+            'pagination' => (string) $data->links(),
+        ]);
+    }
+
+    public function add()
+    {
+        $role = Role::all();
+        $department = User::select('department')->whereNotNull('department')->groupBy('department')->get();
+        $designation = User::select('designation')->whereNotNull('designation')->groupBy('designation')->get();
+        $employee_group = User::select('employee_group')->whereNotNull('employee_group')->groupBy('employee_group')->get();
+        return view('users.add', compact('role', 'department', 'designation', 'employee_group'));
+    }
+
+    public function save(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'unit' => 'required',
+            'role' => 'required',
+            'designation' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator->errors()->first())->withInput();
+        }
+
+        $name = $request->name;
+
+        $userData['role'] = $request->role;
+        $userData['name'] = $name;
+        $userData['email'] = $request->email;
+        $userData['phone'] = $request->phone;
+        // $userData['password'] = Hash::make($request->password);
+        $userData['unit'] = $unit = $request->unit;
+        $userData['designation'] = $request->designation;
+        $userData['department'] = $request->department;
+        $userData['employee_group'] = $request->employee_group;
+
+        $unit_map = [1 => 'Tooling', 2 => 'RMR', 4 => 'TMR'];
+
+        $userData['unit_name'] = $unit_map[$unit] ?? '';
+        $userData['username'] = $username = generateCustomUsername($name);
+
+        if ($request->hasFile('image')) {
+            $attachment = fileUpload($request->file('image'), 'profile_images'); // image upload ===
+            $userData['profile_image']  =  $attachment;
+        }
+
+        $user = User::create($userData);
+
+        // Generate the QR code
+        $result = Builder::create()
+            ->data($username)
+            ->size(300) // Set size in pixels
+            ->margin(10) // Set margin in pixels
+            ->build();
+
+        $name = $user->id . '-' . time() . '.png';
+        $path = 'user-qrcodes/' . $name; // Path      
+        Storage::disk('public')->put($path, $result->getString());  // Save the QR code image to storage (public disk)
+
+        // Update the machine record with the QR code path
+        DB::table('users')
+            ->where('id', $user->id)
+            ->update(['user_qr_code' => $name]);
+
+        // =================
+        if ($user)
+            return redirect()->route('admin.user.add')->with('success', 'User added successfully!');
+        else
+            return back()->withErrors(['admin.user.add' => 'Invalid credentials or not authorized.'])->withInput();
+    }
+
+    public function edit($id)
+    {
+        $role = Role::all();
+        $user = User::find($id);
+        $department = User::select('department')->whereNotNull('department')->groupBy('department')->get();
+        $designation = User::select('designation')->whereNotNull('designation')->groupBy('designation')->get();
+        $employee_group = User::select('employee_group')->whereNotNull('employee_group')->groupBy('employee_group')->get();
+        return view('users.edit', compact('user', 'role', 'department', 'designation', 'employee_group'));
+    }
+
+    public function update(Request $request)
+    {
+        $id = $request->id;
+
+        // Fetch the user by ID
+        $user = User::findOrFail($id);
+
+        // Validate the request
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'nullable',
+            'phone' => 'nullable',
+            'role' => 'required',
+            'shift' => 'nullable',
+            'unit' => 'required',
+            'department' => 'required',
+            'employee_group' => 'required',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // ✅ add validation for image
+        ]);
+
+        // Handle image upload if present
+        if ($request->hasFile('image')) {
+            $attachment = fileUpload($request->file('image'), 'profile_images'); // Custom image upload function
+            $validated['profile_image'] = $attachment;
+        }
+        $validated['designation'] = Role::where('id',$request->role)->value('name');
+        // Update user details
+        $user->update($validated);
+
+        // Redirect with success message
+        return redirect()
+            ->route('admin.user.edit', $user->id)
+            ->with('success', 'User updated successfully!');
+    }
+
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+        return redirect()->route('admin.users')->with('success', 'User deleted successfully!');
+    }
+
+    function callErpApi($url)
+    {
+        return $response = Http::withBasicAuth(ERP_USERNAME, ERP_PASSWORD)
+            ->withHeaders([
+                'Accept'       => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->get($url);
+
+        echo "HTTP Status Code: " . $response->status() . "\n";
+        echo "Response: " . $response;
+    }
+
+    public function generateQR()
+    {
+        $passSheet = PassSheet::whereBetween('id', ['122', '135'])->get();
+
+        foreach ($passSheet as $sheet) {
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($sheet->id . ';PassScan')
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $sheet->id . '-' . time() . '.png';
+            // Path where you want to save the QR code image
+            $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+            // Update the machine record with the QR code path
+            PassSheet::where('id', $sheet->id)->update(['pass_sheet_qr_code' => $name]);
+        }
+
+        exit;
+
+        $operations = DB::table('operation_masters')->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($operations as $operation) {
+            // Insert the machine record and get its IDph
+            $jsonData = ['id' => $operation->id, 'type' => 'operation', 'operation_name' => $operation->operation_name];
+
+            $jsonString = json_encode($jsonData);
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($operation->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $operation->id . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path = 'operation-qr-codes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('operation_masters')->where('id', $operation->id)->update(['operation_qr_code' => $name]);
+        }
+        exit;
+
+        $passSheet = PassSheet::all();
+
+        foreach ($passSheet as $sheet) {
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($sheet->id . ';PassScan')
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $sheet->id . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            PassSheet::where('id', $sheet->id)->update(['pass_sheet_qr_code' => $name]);
+        }
+
+        exit;
+        /*
+        $salesOrderProduct = PassSheet::all();
+            
+          foreach ($salesOrderProduct as $so_products) {
+
+            // Generate the QR code
+             $result = Builder::create()
+                ->data($so_products->id.';PassScan')
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $so_products->id . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            PassSheet::where('id', $so_products->id)->update(['pass_sheet_qr_code' => $name]);  
+            
+          }
+            exit; */
+
+        $salesOrderProduct = SalesOrderProduct::select('cpoitemid')->where(['scr_status' => 'Scrutinized', 'measureunit' => 'SET'])->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($salesOrderProduct as $so_products) {
+
+            $product_response = $this->callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $so_products->cpoitemid);
+
+            // $itemjson = json_decode($product_response, true);
+            $itemjson = $product_response->json();
+
+            if (!empty($itemjson)) {
+
+                foreach ($itemjson as $item) {
+
+                    DB::table('pass_sheets')->insert([
+                        'cpoitemid'     => $item['cpoitemid'],
+                        'sr_no'         => $item['sr_no'],
+                        'pass_no'       => $item['pass_no'],
+                        'mrk_pass_no'   => $item['mrk_pass_no'],
+                        'drawing_no'    => $item['drawing_no'],
+                        'size1'         => $item['size1'],
+                        'size2'         => $item['size2'],
+                        'size3'         => $item['size3'],
+                        'qty'           => $item['qty'],
+                        'material'      => $item['material'],
+                        'hardness'      => $item['hardness'],
+                        'fin_wt'        => $item['fin_wt'],
+                        'bs1_dia'       => $item['bs1_dia'],
+                        'bs1_depth'     => $item['bs1_depth'],
+                        'bs1_bore'      => $item['bs1_bore'],
+                        'bs2_dia'       => $item['bs2_dia'],
+                        'bs2_depth'     => $item['bs2_depth'],
+                        'remarks'       => $item['remarks'],
+                        'revisioncount' => $item['revisioncount'],
+                        'created_at'    => now(),
+                        'updated_at'    => now(),
+                    ]);
+                }
+            }
+
+            // $salesOrderProduct = SalesOrderProduct::all();
+            // Generate the QR code
+            /* $result = Builder::create()
+                ->data($so_products->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $so_products->id . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path = 'so-product-qrcodes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            SalesOrderProduct::where('id', $so_products->id)->update(['pass_sheet_qr_code' => $name]); */
+        }
+
+        exit;
+        // productsss ====
+
+        /* $products = DB::table('product_masters')->where('id', '>', '43')->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($products as $product) {
+            // == Insert the machine record and get its ID
+            $jsonData   =  ['id' => $product->id, 'product' => $product->erp_product];
+
+            $jsonString =  json_encode($jsonData);
+
+            // == Generate the QR code 
+            $result = Builder::create()
+                ->data($product->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = 'qr_' . $product->unit . uniqid() . '.png';
+
+            // Path where you want to save the QR code image
+            $path2 = 'product-qrcodes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path2, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('product_masters')
+                ->where('id', $product->id)
+                ->update(['product_qr_code' => $name]);
+        } */
+
+        /* $users = DB::table('users')->where('role','!=',1)->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($users as $user) {
+            // Insert the machine record and get its IDph
+            $jsonData = ['id'=> $user->id, 'type'=> 'user', 'role'=> $user->role, 'name'=> $user->name, 'phone'=> $user->phone, 'email'=> $user->email, 'username'=>$user->username];
+
+            $jsonString = json_encode($jsonData);
+ 
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($user->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            // $name = $user->id.'-' . time() . '.png';
+            $name = 'qr_'.$user->id . uniqid() . '.png';
+ 
+            // Path where you want to save the QR code image
+            $path = 'user-qrcodes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('users')->where('id', $user->id)->update(['user_qr_code' => $name]);
+
+        }
+
+        // machine ===
+
+         $machines = DB::table('machine_master')->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($machines as $machine) {
+            // Insert the machine record and get its IDph
+            $jsonData = ['id' => $machine->id, 'machine' => $machine->machine];
+
+            $jsonString = json_encode($jsonData);
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($machine->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = 'qr_'.$machine->machine . '-' . uniqid() . '.png';
+
+            // Path where you want to save the QR code image
+            $path1 = 'machine-qrcodes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path1, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('machine_master')
+                ->where('id', $machine->id)
+                ->update(['machine_qr_code' => $name]);
+        }  
+ 
+        // SO ====
+
+        $erpSalesOrders = ErpSalesOrder::all();
+        
+        foreach ($erpSalesOrders as $salesOrder) {
+   
+            // == Generate the QR code 
+            $result = Builder::create()
+                ->data($salesOrder->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $nameSO  = 'qr_'.$salesOrder->id. uniqid() . '.png';
+
+            // Path where you want to save the QR code image
+            $path2 = 'so-qrcodes/' . $nameSO; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path2, $result->getString());
+
+            // Update the machine record with the QR code path
+            ErpSalesOrder::where('id', $salesOrder->id)->update(['so_qr_code' => $nameSO]);
+
+        } 
+
+      */
+    }
+
+    public function generateQRForPass()
+    {
+
+        $salesOrderProduct = SalesOrderProduct::select('cpoitemid')->where(['scr_status' => 'Scrutinized', 'measureunit' => 'SET'])->limit(15)->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($salesOrderProduct as $so_products) {
+
+            $product_response = $this->callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $so_products->cpoitemid);
+
+            // $itemjson = json_decode($product_response, true);
+            $itemjson = $product_response->json();
+
+            if (!empty($itemjson)) {
+
+                foreach ($itemjson as $item) {
+
+                    // $passNos = $this->splitPassNo($item['pass_no']);
+
+                    $passNos = $this->splitPassNo($item['pass_no']);
+
+                    foreach ($passNos as $passNo) {
+
+                        DB::table('pass_sheets')->insert([
+                            'cpoitemid'     => $item['cpoitemid'],
+                            'sr_no'         => $item['sr_no'],
+                            'pass_no'       => $passNo,
+                            'mrk_pass_no'   => $item['mrk_pass_no'],
+                            'drawing_no'    => $item['drawing_no'],
+                            'size1'         => $item['size1'],
+                            'size2'         => $item['size2'],
+                            'size3'         => $item['size3'],
+                            'qty'           => $item['qty'],
+                            'material'      => $item['material'],
+                            'hardness'      => $item['hardness'],
+                            'fin_wt'        => $item['fin_wt'],
+                            'bs1_dia'       => $item['bs1_dia'],
+                            'bs1_depth'     => $item['bs1_depth'],
+                            'bs1_bore'      => $item['bs1_bore'],
+                            'bs2_dia'       => $item['bs2_dia'],
+                            'bs2_depth'     => $item['bs2_depth'],
+                            'remarks'       => $item['remarks'],
+                            'revisioncount' => $item['revisioncount'],
+                            'created_at'    => now(),
+                            'updated_at'    => now(),
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    public function details_old(Request $request, $id)
+    {
+        // === Date Filters ===
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+
+        if ($startDate && $endDate) {
+            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
+            $toDate   = Carbon::parse($endDate)->endOfDay();
+        } elseif ($startDate) {
+            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
+            $toDate   = Carbon::parse($startDate)->endOfDay();
+        } else {
+            // default last 7 days
+            $startOfDay = now()->subDays(6)->startOfDay();
+
+            // default → today
+            $fromDate = today()->startOfDay();
+            $toDate = today()->endOfDay();
+        }
+        // Days count
+        $dayCount = $fromDate->diffInDays($toDate) + 1;
+
+        $plannedRuntime = 1350 * $dayCount; // in minutes
+        $idealRuntime   = 1440 * $dayCount; // in minutes
+        // === Base Query ===
+        $baseQuery = SalesOrderTracking::query()
+            ->where('operator_id', $id)
+            ->whereNotNull('end_date_time')
+            ->where('roll_status', 'completed');
+
+        // === SO History (detail view) ===
+        $soHistory = (clone $baseQuery)
+            ->select(
+                'so_id',
+                'operation_id',
+                // DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as end_date'),
+                DB::raw('SUM(time_taken) as time_taken_minutes'),
+                DB::raw('SUM(quantity_processed) as total_quantity_processed')
+            )
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->with(['operation:id,operation_name', 'soProduct:so_id,so_no'])
+            ->groupBy('so_id', 'operation_id')
+            ->get();
+
+        // === Production Graph ===
+        // Step 1: build date range
+        $period = CarbonPeriod::create($startOfDay, $toDate);
+        $labels = [];
+        $dates = [];
+        foreach ($period as $date) {
+            $key = $date->format('d M'); // same format for both
+            $labels[] = $key;
+            $dates[$key] = 0;
+        }
+
+        // Step 2: fetch data
+        $data = (clone $baseQuery)
+            ->selectRaw('DATE(end_date_time) as raw_date, SUM(quantity_processed) as total')
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$startOfDay->toDateString(), $toDate->toDateString()])
+            ->groupBy(DB::raw('DATE(end_date_time)'))
+            ->pluck('total', 'raw_date')
+            ->toArray();
+
+        // Step 3: re-map into same format
+        $mappedData = [];
+        foreach ($data as $rawDate => $total) {
+            $key = Carbon::parse($rawDate)->format('d M');
+            $mappedData[$key] = (int) $total;
+        }
+
+        // Step 4: merge
+        $count7Days = array_replace($dates, $mappedData);
+        $count7Days = array_values($count7Days);
+        $user_data = User::find($id);
+
+        return view('operator.details', compact(
+            'user_data',
+            'soHistory',
+            'count7Days',
+            'dayCount',
+            'labels'
+        ));
+    }
+
+    public function details(Request $request, $id)
+    {
+        // === Date Filters ===
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+
+        if ($startDate && $endDate) {
+            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
+            $toDate   = Carbon::parse($endDate)->endOfDay();
+        } elseif ($startDate) {
+            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
+            $toDate   = Carbon::parse($startDate)->endOfDay();
+        } else {
+            // default last 7 days
+            $startOfDay = now()->subDays(6)->startOfDay();
+
+            // default → today
+            $fromDate = today()->startOfDay();
+            $toDate = today()->endOfDay();
+        }
+
+        // Days count
+        $dayCount = $fromDate->diffInDays($toDate) + 1;
+        $plannedRuntime = 1350 * $dayCount; // in minutes
+        $idealRuntime = 1440 * $dayCount; // in minutes
+
+        // === Base Query ===
+        $baseQuery = SalesOrderTracking::query()
+            ->where('operator_id', $id)
+            ->whereNotNull('end_date_time')
+            ->where('roll_status', 'completed');
+
+        // === SO History (detail view) ===
+        // === SO History (detail view) ===
+        $soHistory = (clone $baseQuery)
+            ->select(
+                'so_id',
+                'operation_id',
+                'machine_id',
+                'so_product_id',
+                'sub_product_id',
+                DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as end_date'),
+                DB::raw('SUM(time_taken) as time_taken_minutes'),
+                DB::raw('COUNT(quantity_processed) as total_quantity_processed')
+            )
+            ->with([
+                'operation:id,operation_name',
+                'soProduct:so_id,so_no',
+                'machine:id,machine',
+                'product:id,product_modified_name',
+                'subProduct:id,sub_product_name'
+            ])
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id') // ✅ added missing groupBys
+            ->get();
+
+        // === Production Graph (last 7 days) ===
+        // Step 1: build date range
+        $period = CarbonPeriod::create($startOfDay, $toDate);
+        $labels = [];
+        $dates = [];
+        foreach ($period as $date) {
+            $key = $date->format('d M');
+            $labels[] = $key;
+            $dates[$key] = 0;
+        }
+
+        // Step 2: fetch data
+        // $data = (clone $baseQuery)
+        //     ->selectRaw('DATE(end_date_time) as raw_date, SUM(quantity_processed) as total')
+        //     ->whereBetween(DB::raw('DATE(end_date_time)'), [$startOfDay->toDateString(), $toDate->toDateString()])
+        //     ->groupBy(DB::raw('DATE(end_date_time)'))
+        //     ->pluck('total', 'raw_date')
+        //     ->toArray();
+        $data = (clone $baseQuery)
+            ->select(
+                'so_id',
+                'operation_id',
+                DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as raw_date'),
+                DB::raw('SUM(time_taken) as time_taken_minutes'),
+                DB::raw('COUNT(quantity_processed) as total')
+            )
+            ->with(['operation:id,operation_name', 'soProduct:so_id,so_no'])
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->groupBy('so_id', 'operation_id')
+            ->pluck('total', 'raw_date')
+            ->toArray();
+
+        // Step 3: re-map
+        $mappedData = [];
+        foreach ($data as $rawDate => $total) {
+            $key = Carbon::parse($rawDate)->format('d M');
+            $mappedData[$key] = (int) $total;
+        }
+
+        // Step 4: merge
+        $count7Days = array_replace($dates, $mappedData);
+        $count7Days = array_values($count7Days);
+
+        $user_data = User::find($id);
+
+        return view('operator.details', compact(
+            'user_data',
+            'soHistory',
+            'count7Days',
+            'dayCount',
+            'labels'
+        ));
+    }
+}

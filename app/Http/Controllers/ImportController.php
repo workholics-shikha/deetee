@@ -1,0 +1,416 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\{IctMaterial, MachineMaster, ProductMasters, SubProduct, OperationMaster, Role, User};
+use Endroid\QrCode\Builder\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\{DB, Storage};
+use App\Exports\SalesOrderTrackingExport;
+use Maatwebsite\Excel\Facades\Excel;
+
+class ImportController extends Controller
+{
+
+    public function importMachineCSV(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|mimes:csv,txt',
+        ]);
+
+        $file = $request->file('csv_file');
+        $data = array_map('str_getcsv', file($file->getRealPath()));
+
+        // Optional: skip header if needed
+        foreach (array_slice($data, 1) as $row) {
+            MachineMaster::create([
+                'unit_number'   => $row[0] ?? null,
+                'unit_name'     => $row[1] ?? null,
+                'machine'       => $row[2] ?? null,
+                'machine_type'  => $row[3] ?? null,
+                'section'       => $row[4] ?? null,
+                'sub_section'   => $row[5] ?? null,
+            ]);
+        }
+        return back()->with('success', 'Machines imported successfully!');
+    }
+
+    public function importProductCSV(Request $request)
+    {
+        $request->validate([
+            'product_csv_file' => 'required|mimes:csv,txt',
+        ]);
+
+        $file = $request->file('product_csv_file');
+        $data = array_map('str_getcsv', file($file->getRealPath()));
+
+        // Optional: skip header if needed
+        foreach (array_slice($data, 1) as $row) {
+            ProductMasters::create([
+                'unit_number'           => $row[0] ?? null,
+                'unit'                  => $row[1] ?? null,
+                'group'                 => $row[2] ?? null,
+                'erp_product'           => $row[3] ?? null,
+                'erp_nomenclature'      => $row[4] ?? null,
+                'product_modified_name' => $row[5] ?? null,
+            ]);
+        }
+        return back()->with('success', 'Products imported successfully!');
+    }
+
+    public function importSubProductCSV(Request $request)
+    {
+        $request->validate([
+            'sub_product_csv_file' => 'required|mimes:csv,txt',
+        ]);
+
+        $file = $request->file('sub_product_csv_file');
+        $data = array_map('str_getcsv', file($file->getRealPath()));
+
+        // Optional: skip header if needed
+        foreach (array_slice($data, 1) as $row) {
+
+            $product_master_id  = ProductMasters::where('erp_product', 'like', "%$row[0]%")->first();
+            $product_name       = $product_master_id->id;
+
+            SubProduct::create([
+                'product_master_id' => $product_name ?? null,
+                'sub_product_name'  => $row[1] ?? null,
+            ]);
+        }
+        return back()->with('success', 'Products imported successfully!');
+    }
+
+    public function importOperationCSV(Request $request)
+    {
+        $request->validate([
+            'operation_csv_file' => 'required|mimes:csv,txt',
+        ]);
+
+        $file  = $request->file('operation_csv_file');
+        $data  = array_map('str_getcsv', file($file->getRealPath()));
+
+        //== Optional: skip header if needed ==//
+        foreach (array_slice($data, 1) as $row) {
+
+            $operationName = $row[0];
+
+            $operationName = str_replace(' - ', '-', $operationName);
+            $operationName = str_replace('- ', '-', $operationName);
+            $operationName = str_replace(' -', '-', $operationName);
+            $operationName = str_replace(' + ', '+', $operationName);
+            $operationName = str_replace('+ ', '+', $operationName);
+            $operationName = str_replace(' +', '+', $operationName);
+
+            OperationMaster::create([
+
+                'operation_name'  => $operationName ?? null,
+                'unit'            => $row[1] ?? null,
+                'parameter_input' => $row[2] ?? null,
+                'matrix'          => $row[3] ?? null,
+
+                'parameter1'      => $row[4] ?? null,
+                'parameter2'      => $row[5] ?? null,
+                'parameter3'      => $row[6] ?? null,
+                'parameter4'      => $row[7] ?? null,
+                // 'operation_comment' => $row[8] ?? null 
+            ]);
+        }
+        return back()->with('success', 'Operations imported successfully!');
+    }
+
+    function generateEmail($name, $domain = "example.com")
+    {
+        // Convert name to lowercase and remove special characters
+        $cleanName = strtolower(preg_replace('/[^a-z0-9]/i', '', str_replace(' ', '.', $name)));
+        return $cleanName . '@' . $domain;
+    }
+
+    function generatePhoneNumber()
+    {
+        return '9' . str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+    }
+
+    public function importUsersCSV(Request $request)
+    {
+        $request->validate(['user_csv_file' => 'required|mimes:csv,txt']);
+
+        $file  = $request->file('user_csv_file');
+        $data  = array_map('str_getcsv', file($file->getRealPath()));
+
+        //== Optional: skip header if needed ==//
+        foreach (array_slice($data, 1) as $row) {
+
+            $getRoleId = Role::where('name', 'like', "%$row[2]%")->value('id');
+
+            User::create([
+                'name'          => $row[0] ?? null,
+                'username'      => $row[1] ?? null,
+                'designation'   => $row[2] ?? null,
+                'department'    => $row[3] ?? null,
+                'unit'          => $row[4] ?? null,
+                'unit_name'     => $row[5] ?? null,
+                'employee_group' => $row[6] ?? null,
+                'email'         => $row[7] ?? $this->generateEmail($row[0]),
+                'role'          => $getRoleId ?? null,
+            ]);
+        }
+
+        // == generate QR ==
+
+        $users = User::where('id', '!=', '1')->get();
+
+        foreach ($users as $user) {
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($user->username)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $nameQR = $user->id . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path   = 'user-qrcodes/' . $nameQR; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('users')->where('id', $user->id)->update(['user_qr_code' => $nameQR]);
+        }
+        // =================
+
+        return back()->with('success', 'Users imported successfully!');
+    }
+
+    public function qrGenerate()
+    {
+
+        /* $machines = DB::table('machine_master')->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($machines as $machine) {
+            // Insert the machine record and get its IDph
+            $jsonData = ['id' => $machine->id, 'machine' => $machine->machine];
+
+            $jsonString = json_encode($jsonData);
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($jsonString)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $machine->machine . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path = 'machine-qrcodes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('machine_master')
+                ->where('id', $machine->id)
+                ->update(['machine_qr_code' => $name]);
+        } */
+
+        $products = DB::table('product_masters')->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($products as $product) {
+            // == Insert the machine record and get its ID
+            $jsonData   =  ['id' => $product->id, 'product' => $product->erp_product];
+
+            $jsonString =  json_encode($jsonData);
+
+            // == Generate the QR code 
+            $result = Builder::create()
+                ->data($jsonString)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $product->unit . '-' . $product->erp_nomenclature . '-' . $product->group . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path = 'product-qrcodes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('product_masters')
+                ->where('id', $product->id)
+                ->update(['product_qr_code' => $name]);
+        }
+    }
+
+    public function qrGenerateOperations()
+    {
+        $operations = DB::table('operation_masters')->get();
+
+        // Insert each machine, generate its QR code, and update the machine_qr_code field
+        foreach ($operations as $operation) {
+            // Insert the machine record and get its IDph
+            $jsonData   = ['id' => $operation->id, 'type' => 'operation', 'operation_name' => $operation->operation_name];
+
+            $jsonString = json_encode($jsonData);
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($operation->id . ';Operation')
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $operation->id . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path = 'operation-qr-codes/' . $name; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('operation_masters')->where('id', $operation->id)->update(['operation_qr_code' => $name]);
+        }
+    }
+
+    public function subProductOperation(Request $request)
+    {
+        $request->validate(['subproductoperation_csv_file' => 'required|mimes:csv,txt']);
+
+        $file  = $request->file('subproductoperation_csv_file');
+        $data  = array_map('str_getcsv', file($file->getRealPath()));
+
+        foreach (array_slice($data, 1) as $row) {
+            if (!empty($row[0]) && !empty($row[3])) {
+                $operationName = $row[3];
+
+                $operationName = str_replace(' - ', '-', $operationName);
+                $operationName = str_replace('- ', '-', $operationName);
+                $operationName = str_replace(' -', '-', $operationName);
+                $operationName = str_replace(' + ', '+', $operationName);
+                $operationName = str_replace('+ ', '+', $operationName);
+                $operationName = str_replace(' +', '+', $operationName);
+
+                $operation = OperationMaster::select('operation_name', 'id', 'unit')->where('operation_name', 'like', "%$operationName%")->where('unit', 'like', "RMR")->first();
+
+                $unit = $operationid = '';
+
+                if ($operation) {
+                    $operationid = $operation->id;
+                    if (is_object($operation) && isset($operation->unit)) {
+                        $unit = $operation->unit;
+                    }
+                }
+
+                DB::table('subproduct_wise_operation')->insert([
+                    'product_master_id' => $row[0] ?? null,
+                    'subproduct_id'     => $row[1] ?? null,
+                    'operation_id'      => $operationid,
+                    'operation_name'    => $row[3] ?? null,
+                    'unit'              => $unit,
+                    'sub_operations'    => $row[4] ?? null,
+                ]);
+            }
+        }
+
+        return back()->with('success', 'Subproduct Operation imported successfully!');
+    }
+
+    public function importIdealCycleData11(Request $request)
+    {
+        $request->validate(['cycle_csv_file' => 'required|mimes:csv,txt']);
+
+        $file = $request->file('cycle_csv_file');
+        // $data = array_map('str_getcsv', file($file->getRealPath()));
+
+        $data = array_map(function ($line) {
+            return str_getcsv($line, ';');
+        }, file($file->getRealPath()));
+
+        echo "<pre>";
+        print_r($data);
+        exit;
+
+        // == Optional: skip header if needed ==//
+        foreach (array_slice($data, 1) as $row) {
+            $machineIds = trim($row[5]);
+            IctMaterial::create([
+                'diameter_start_range' => $row[0] ?? null,
+                'diameter_end_range' => $row[1] ?? null,
+                'd2_h13' => $row[2] ?? null,
+                'd3' => $row[3] ?? null,
+                'en31' => $row[4] ?? null,
+                'machine_id' => $machineIds,
+                'operation_id' => $row[6] ?? null,
+                'product_id' => $row[7] ?? null,
+                'sub_product_id' => $row[8] ?? null,
+            ]);
+        }
+        return back()->with('success', 'data imported successfully!');
+    }
+
+    public function importIdealCycleData(Request $request)
+    {
+        $request->validate(['cycle_csv_file' => 'required|mimes:csv,txt']);
+
+        $file = $request->file('cycle_csv_file');
+        $handle = fopen($file->getRealPath(), "r");
+
+        $header = fgetcsv($handle); // skip header
+
+        while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
+           
+           /* IctMaterial::create([
+                'diameter_start_range' => $row[0] ?? null,
+                'diameter_end_range' => $row[1] ?? null,
+                'd2_h13' => $row[2] ?? null,
+                'd3' => $row[3] ?? null,
+                'en31' => $row[4] ?? null,
+                'machine_id' => trim($row[5]),   // "101,102,96,..."
+                'operation_id' => $row[6] ?? null,
+                'product_id' => $row[7] ?? null,
+                'sub_product_id' => $row[8] ?? null,
+            ]); 
+            DB::table('ict_direct_cycle_time')->insert([
+                'diameter_start_range' => $row[0] ?? null,
+                'diameter_end_range' => $row[1] ?? null,
+                'cycle_time' => $row[2] ?? null,
+                'machine_id' => trim($row[3]), // remove extra quotes
+                'operation_id' => $row[4] ?? null,
+                'product_id' => $row[5] ?? null,
+                'sub_product_id' => $row[6] ?? null,
+                'table_count' => $row[7] ?? null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]); */
+             	  
+            DB::table('ict_bore_thickness_values')->insert([
+                'bore_min' => $row[0] ?? null,
+                'bore_max' => $row[1] ?? null,
+                'cycle_time_value' => $row[2] ?? null,
+                'machine_id' => trim($row[3]), // remove extra quotes
+                'operation_id' => $row[4] ?? null,
+                'product_id' => $row[5] ?? null,
+                'sub_product_id' => $row[6] ?? null,
+                'table_count' => $row[7] ?? null,
+                'thickness_min' => $row[0] ?? null,
+                'thickness_max' => $row[1] ?? null 
+            ]);
+        }
+        fclose($handle);
+        return back()->with('success', 'Data imported successfully!');
+    }
+
+    public function export()
+    {
+        return Excel::download(new SalesOrderTrackingExport, 'sales_order_trackings.xlsx');
+    }
+    
+}
