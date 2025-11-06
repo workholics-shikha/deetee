@@ -11,8 +11,7 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
-    </style>
-    {{ $pass_sheet }}
+    </style> 
 
     <div class="main-content-area">
         <div class="">

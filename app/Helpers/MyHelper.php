@@ -428,16 +428,11 @@ class MyHelper
  
         // Parameter 1 For RMR
         $salesOrderProduct = SalesOrderProduct::where(['so_id' => $so_id, 'product_id' => $so_pid, 'sub_product_id' => $so_spid])->first();
- 
-        // print_r($operationid ."=====".$so_id ."=====".$so_pid ."=====".$so_spid ."=====".$machine_id); echo "<br>";
-      // exit;
+  
         $salesOrderProductOperatonDetails = SOProductOperationDetails::where(['so_id' => $so_id, 'product_id' => $so_pid, 'sub_product_id' => $so_spid, 'operation_id' => $operationid, 'sales_order_product_id' => $salesOrderProduct->id])->first();
-
-       // echo "hello222"; exit;
+ 
         $getMapId = IdealCycleTime::where(['operation_id' => $operationid, 'machine_id' => $machine_id])->value('id');
-
-        // print_r ($getMapId); exit;
-
+ 
         if ($getData->operation_type === "Fixed_ICT") {
             return $getData->fixed_ICT;
         }
@@ -469,10 +464,7 @@ class MyHelper
             $bs1_dia = $passDetails->bs1_dia;
             $bs1_depth = $passDetails->bs1_depth;
         }
-        // print_r('size3=='.$size3);
-        // echo "<br>";
-        // print_r('bs1_depth==='.$bs1_depth);
-        // echo "<br>";
+        
         // Cutting
         if ($parameter1 === "Material" && $parameter2 === "Outer Diameter") {
 

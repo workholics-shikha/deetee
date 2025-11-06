@@ -209,10 +209,28 @@
                                                         $seconds,
                                                     );
 
-                                                    $idealCycleTimeMinutes = $operation->ideal_cycle_time; // in minutes
-                                                    $actualCycleTimeMinutes = ($totalTimeForRoll/60); // in minutes
+                                                    $idealCycleTimeMinutes = is_numeric($operation->ideal_cycle_time)
+                                                        ? (float) $operation->ideal_cycle_time
+                                                        : 0;
+                                                    // in minutes
+                                                    $actualCycleTimeMinutes = $totalTimeForRoll / 60; // in minutes
 
-                                                    $ctEfficiency = round(($idealCycleTimeMinutes/$actualCycleTimeMinutes),2);
+                                                    $ctEfficiency = 0;
+
+                                                    if ($operation->ideal_cycle_time === 'NA') {
+                                                        $ctEfficiency = 'NA';
+                                                    } else {
+                                                        $idealCycleTimeMinutes = (float) $operation->ideal_cycle_time;
+                                                        $actualCycleTimeMinutes = (float) ($totalTimeForRoll / 60);
+
+                                                        $ctEfficiency =
+                                                            $actualCycleTimeMinutes > 0
+                                                                ? round(
+                                                                    $idealCycleTimeMinutes / $actualCycleTimeMinutes,
+                                                                    2,
+                                                                )
+                                                                : 0;
+                                                    }
 
                                                     // Convert ideal time to seconds
                                                     $idealTimeInSeconds = $idealCycleTimeMinutes * 60;
@@ -324,8 +342,16 @@
                                                         @endif
                                                     </td>
 
-                                                    <td class="border-right p-3"> @if ($operation->roll_status == 'completed') {{ $differenceText }} @endif </td>
-                                                    <td class="border-right p-3"> @if ($operation->roll_status == 'completed') {{ $ctEfficiency.'%' }} @endif </td>
+                                                    <td class="border-right p-3">
+                                                        @if ($operation->roll_status == 'completed')
+                                                            {{ $differenceText }}
+                                                        @endif
+                                                    </td>
+                                                    <td class="border-right p-3">
+                                                        @if ($operation->roll_status == 'completed')
+                                                            {{ $ctEfficiency . '%' }}
+                                                        @endif
+                                                    </td>
 
                                                     <td class="border-right p-3">
                                                         <div class="d-flex align-items-center justify-content-end">

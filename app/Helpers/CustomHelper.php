@@ -697,285 +697,7 @@ if (!function_exists('getCompletedQty')) {
         return $totalCompletedQty;
     }
 }
-
-if (!function_exists('getParamFirstValueNew1')) {
-    function getParamFirstValueNew1($op_id, $p_id)
-    {
-
-        if (empty($op_id) || empty($p_id)) {
-            return 'NA';
-        }
-
-        $operation = OperationMaster::find($op_id);
-        $soo = SOProductOperationDetails::where(['sales_order_product_id' => $p_id, 'operation_id' => $op_id])->first();
-        $sop = SalesOrderProduct::where(['so_id' => $soo->so_id, 'sub_product_id' => $soo->sub_product_id])->value('measureunit');
-
-        if (!$operation || !$soo) {
-            return 'NA';
-        }
-
-        $data = SalesOrderProduct::where([
-            'so_id' => $soo->so_id,
-            'sub_product_id' => $soo->sub_product_id
-        ])->first();
-
-        if (!$data) {
-            return 'NA';
-        }
-
-        $getVal = 'NA';
-
-        $op_name = $operation->operation_name;
-
-        if ($operation->unit === 'Tooling') {
-
-            $size1_ops = [
-                'Cutting',
-                'Fine Grinding-1',
-                'Fine Grinding-2',
-                'Rubber Vulcanization'
-            ];
-
-            $size3_ops = [
-                'Axial Parting',
-                'U Drilling',
-                'Round Keyway Milling',
-                'CNC Blanking-OD Grooving',
-                'Bevel Grinding'
-            ];
-
-            $average_ops = [
-                'Radial Parting',
-                'Ring Parting',
-                'Rough Surface Grinding',
-                'Semi Final Thickness Grinding CNC',
-                'Final Thickness Grinding-CNC',
-                'Final Thickness Grinding',
-                'Final Thickness Grinding on CNC-1',
-                'Final Thickness Grinding on CNC-2',
-                'Final Thickness Grinding on CNC',
-                'Fine Grinding'
-            ];
-
-            $erpFormula = [
-                'CNC Blanking Disc Form-1',
-                'CNC Blanking Disc Form-2',
-                'CNC Blanking Ring Form-1',
-                'CNC Blanking Ring Form-2',
-                'CNC Blanking-Deep Undercut',
-                'CNC Blanking-Shallow Undercut',
-            ];
-
-            $erpManual = ['Keyway Slotting'];
-
-            $fixed  = ['Lapping-1',];
-            $fixed1 = ['Lapping-2',];
-            $fixed2 = ['Lapping-3',];
-            $fixed3 = ['Lapping-4',];
-            $fixed4 = ['Dirt Groove Cleaning', 'Junction Grinding'];
-
-            $NA_Opt = ['Bore Grinding', 'Keyway Width', 'Bore Grinding', 'Stack Length'];
-
-            if (in_array($op_name, $size1_ops)) {
-                // $getVal = $data->size1;
-                $getVal = $data->material;
-            } else if (in_array($op_name, $size3_ops)) {
-                $getVal = $data->size3;
-            } else if (in_array($op_name, $average_ops)) {
-                // $getVal = (($data->size1) - ($data->size2)) / 2;
-                $getVal = 0;
-            } else if (in_array($op_name, $erpFormula)) {
-                //  $getVal = (($data->size1) - ($data->size2)) / 2;
-                $getVal = 0;
-            } else if (in_array($op_name, $fixed)) {
-                $getVal = 60;
-            } else if (in_array($op_name, $fixed1)) {
-                $getVal = 120;
-            } else if (in_array($op_name, $fixed2)) {
-                $getVal = 150;
-            } else if (in_array($op_name, $fixed3)) {
-                $getVal = 180;
-            } else if (in_array($op_name, $fixed4)) {
-                $getVal = 10;
-            } else if (in_array($op_name, $erpManual)) {
-                // $getVal = '0';
-                $getVal = $data->size3;
-            } else if (in_array($op_name, $NA_Opt)) {
-                $getVal = 'NA';
-            }
-        }
-
-        if ($operation->unit === 'RMR') {
-
-            $size1_ops = ['Raw Material', 'Hard Turning-1', 'Stress Relieve', 'Hard Turning-2', 'Grinding', 'Hard Turning', 'Grinding-1', 'Grinding-2', 'Grinding-3', 'Milling', 'Manual lathe', 'Manual lathe-1', 'Manual lathe-2', 'Milling-2', 'Manual Lathe-3', 'Manual Lathe-4'];
-
-            $size3_ops = ['Cutting'];
-
-            if (in_array($op_name, $size1_ops)) {
-                $getVal = $data->size1;
-            } else if (in_array($op_name, $size3_ops)) {
-                $getVal = $data->size3;
-            }
-        }
-
-        // NOS k liye TMR
-
-        if ($operation->unit === 'TMR' && $sop === 'NOS') {
-
-            $size1_ops = ['Cutting'];
-            $size1_ops = ['CNC Blanking-4'];
-            $size2_ops = [
-                'CNC Blanking-1',
-                'Plain Bore Turning Both Side',
-                'Plain Bore Turning with Under Cut - Single Side',
-                'Bore Turning with Keyway - Both Side',
-                'Bore Turning with Keyway & Under Cut - Single Side'
-            ];
-
-            $size3_ops = ['U Drilling', 'Round Keyway Milling', 'Bore Turning With Under Cut - Single Side', 'Bore Turning Both Side', 'Bore Grinding with Under Cut - Single Side', 'Bore Grinding Both Side', 'Keyway Wirecut', 'Rib Thickness/Boss OD - Both Side', 'Final OD Final Angle', 'Bevel Grinding'];
-
-            $other     = ['Keyway Slotting', ''];
-
-            $erpFormula = ['CNC Blanking-2', 'CNC Blanking-3', 'Thickness Turning - Single Side',];
-
-            if (in_array($op_name, $size1_ops)) {
-                $getVal = $data->material;
-            } else if (in_array($op_name, $size2_ops)) {
-                $getVal = $data->size2;
-            } else if (in_array($op_name, $size3_ops)) {
-                $getVal = $data->size3;
-            } else if (in_array($op_name, $size3_ops)) {
-                $getVal = $data->size1;
-            } else if (in_array($op_name, $other)) {
-                $getVal = $data->kw_size1; //Keyway Slotting
-            } else if (in_array($op_name, $erpFormula)) {
-                // $getVal = (($data->size1) - ($data->size2)) / 2;
-                $getVal = 'Non numeric value';
-            }
-        }
-
-        // param 2 k liye
-
-        if ($operation->unit === 'TMR' && $sop === 'NOS') {
-
-            $size1_ops = ['Cutting'];
-            $NA_ops = ['U Drilling', ''];
-            $size3_ops = [];
-
-            if (in_array($op_name, $size1_ops)) {
-                $getVal = $data->size1;
-            } else if (in_array($op_name, $size3_ops)) {
-                $getVal = $data->size3;
-            } else if (in_array($op_name, $NA_ops)) {
-                $getVal = 'NA';
-            }
-        }
-
-        // SET k liye
-
-        if ($operation->unit === 'TMR' && $sop === 'SET') {
-
-            $size1_ops = ['', 'Manual Lathe-4'];
-
-            $size3_ops = ['Cutting'];
-
-            if (in_array($op_name, $size1_ops)) {
-                $getVal = $data->size1;
-            } else if (in_array($op_name, $size3_ops)) {
-                $getVal = $data->size3;
-            }
-        }
-
-        if ($operation->unit === 'TMR' && $sop === 'SET') {
-
-            $size1_ops = ['', 'Manual Lathe-4'];
-            $size3_ops = ['Cutting'];
-
-            if (in_array($op_name, $size1_ops)) {
-                // $getVal = $data->size1;
-                $getVal = 0;
-            } else if (in_array($op_name, $size3_ops)) {
-                // $getVal = $data->size3;
-                $getVal = 0;
-            }
-        }
-
-        return $getVal;
-    }
-}
-
-if (!function_exists('getParamSecondValueNew1')) {
-    function getParamSecondValueNew1($op_id, $p_id)
-    {
-        if (empty($op_id) || empty($p_id)) {
-            return 'NA';
-        }
-
-        $operation = OperationMaster::find($op_id);
-        $soo = SOProductOperationDetails::where(['sales_order_product_id' => $p_id, 'operation_id' => $op_id])->first();
-
-        if (!$operation || !$soo) {
-            return 'NA';
-        }
-
-        $data = SalesOrderProduct::where([
-            'so_id' => $soo->so_id,
-            'sub_product_id' => $soo->sub_product_id
-        ])->first();
-
-        if (!$data) {
-            return 'NA';
-        }
-
-        $getVal = 'NA';
-
-        $op_name = $operation->operation_name;
-
-        if ($operation->unit === 'Tooling') {
-
-            $size1_ops = ['Cutting'];
-
-            $erpFormula = [
-                'CNC Blanking Disc Form-1',
-                'CNC Blanking Ring Form-1',
-                'CNC Blanking-Deep Undercut',
-                'CNC Blanking-Shallow Undercut',
-                'Rubber Vulcanization',
-            ];
-
-            $erpParam = ['Round Keyway Milling'];
-
-            if (in_array($op_name, $size1_ops)) {
-                $getVal = $data->size1;
-            } elseif (in_array($op_name, $erpFormula)) {
-                $getVal = $data->size3;
-            } elseif (in_array($op_name, $erpParam)) {
-                $getVal = $data->kw_size1;
-            } else if (in_array($op_name, $erpFormula)) {
-                $getVal = 0;
-            }
-        }
-
-        if ($operation->unit === 'RMR') {
-
-            $naParam   = ['Raw Material',];
-            $size1_ops = ['Hard Turning-1', 'Stress Relieve', 'Hard Turning-2', 'Grinding', 'Hard Turning', 'Grinding-1', 'Grinding-2', 'Grinding-3', 'Milling', 'Manual lathe', 'Manual lathe-1', 'Manual lathe-2', 'Milling-2', 'Manual Lathe-3', 'Manual Lathe-4'];
-
-            if (in_array($op_name, $size1_ops)) {
-                $getVal = $data->size3;
-            } else if (in_array($op_name, $naParam)) {
-                $getVal = 'NA';
-            }
-        }
-
-        // TMR
-        if ($operation->unit === 'TMR') {
-        }
-
-        return $getVal;
-    }
-}
-
+  
 if (!function_exists('getNotificationCount')) {
     function getNotificationCount()
     {
@@ -991,7 +713,7 @@ if (!function_exists('getNotificationInDrop')) {
 }
 
 if (!function_exists('getParamFirstValueNew')) {
-    function getParamFirstValueNew($op_id, $p_id)
+    function getParamFirstValueNew($op_id, $p_id, $passId=NULL)
     {
 
         if (empty($op_id) || empty($p_id)) {
@@ -1006,7 +728,7 @@ if (!function_exists('getParamFirstValueNew')) {
             return 'NA';
         }
 
-        if ($soo->operation_status === 'Manual') {
+        if ($soo->operation_status === 'Manual' || $soo->operation_status === 'ERP-Manual') {
             return $soo->cycle_time;
         }
 
@@ -1110,17 +832,46 @@ if (!function_exists('getParamFirstValueNew')) {
         //  TMR
         if ($operation->unit === 'TMR') {
 
+            $size1 = $data->size1;
+            $size2 = $data->size2;
+            $size3 = $data->size3;
+            $bs1_dia = $data->bs1_blankdia;
+            $bs1_depth = $data->bs1_depthdia;
+
+            if ($data->measureunit == 'SET') {
+
+                if(!empty($passId)){
+                    $passDetails = PassSheet::find($passId);
+                } else {
+                    $passDetails = PassSheet::where('cpoitemid', $data->cpoitemid)->first();
+                }   
+                
+                $passDetails = PassSheet::find($passId);
+
+                $size1 = $passDetails->size1;
+                $size2 = $passDetails->size2;
+                $size3 = $passDetails->size3;
+                $bs1_dia = $passDetails->bs1_dia;
+                $bs1_depth = $passDetails->bs1_depth;
+            }
+
             $material = ['Cutting'];
             $size1_ops = ['CNC Blanking-4'];
             $size2_ops = [
                 'CNC Blanking-1',
-                'Plain Bore Turning Both Side', 
+                'Plain Bore Turning Both Side',
                 'Bore Turning with Keyway-Both Side',
                 'Bore Turning with Keyway & Under Cut-Single Side',
                 'Plain Bore Turning with Under Cut-Single Side',
             ];
 
-            $size3_ops = ['U Drilling', 'Round Keyway Milling', 'Bore Turning With Under Cut-Single Side', 'Bore Turning Both Side', 'Bore Grinding Both Side', 'Keyway Wirecut', 'Rib Thickness/ Boss OD-Both side', 'Final OD Final Angle', 'Bevel Grinding', 'Final OD, Final Angle', 'Bore Grinding with Under Cut-Single Side'  ];
+            $material = ['Cutting'];
+
+            if (in_array($op_name, $material)) {
+                $getVal = $data->material;
+            }
+
+            $size3_ops = ['U Drilling', 'Round Keyway Milling', 'Bore Turning With Under Cut-Single Side', 'Bore Turning Both Side', 'Bore Grinding Both Side', 'Keyway Wirecut', 'Rib Thickness/ Boss OD-Both side', 'Final OD Final Angle', 'Bevel Grinding', 'Final OD, Final Angle', 'Bore Grinding with Under Cut-Single Side'];
 
             $other = ['Keyway Slotting', ''];
             $bs1 = ['Bearing Seat-Single Side-2', 'Bearing Seat-Single Side', 'Bearing Seat-Single Side-1'];
@@ -1129,36 +880,36 @@ if (!function_exists('getParamFirstValueNew')) {
 
             if (in_array($op_name, $material)) {
                 $getVal = $data->material;
-            } 
-             if (in_array($op_name, $size1_ops)) {
+            }
+            if (in_array($op_name, $size1_ops)) {
                 $getVal = $data->size1;
-            } 
-             if (in_array($op_name, $size2_ops)) {
+            }
+            if (in_array($op_name, $size2_ops)) {
                 $getVal = $data->size2;
-            } 
-             if (in_array($op_name, $size3_ops)) {
+            }
+            if (in_array($op_name, $size3_ops)) {
                 $getVal = $data->size3;
-            } 
-             if (in_array($op_name, $size1_ops)) {
+            }
+            if (in_array($op_name, $size1_ops)) {
                 $getVal = $data->size1;
-            } 
-             if (in_array($op_name, $other)) {
+            }
+            if (in_array($op_name, $other)) {
                 $getVal = $data->kw_size1; //Keyway Slotting
-            } 
-             if (in_array($op_name, $erpFormula)) {
+            }
+            if (in_array($op_name, $erpFormula)) {
                 $getVal = 'Non numeric value';
-            } 
-             if (in_array($op_name, $bs1)) {
+            }
+            if (in_array($op_name, $bs1)) {
                 $getVal = $data->bs1_blankdia;
             }
         }
- 
+
         return $getVal;
     }
 }
 
 if (!function_exists('getParamSecondValueNew')) {
-    function getParamSecondValueNew($op_id, $p_id)
+    function getParamSecondValueNew($op_id, $p_id, $passId=NULL)
     {
         if (empty($op_id) || empty($p_id)) {
             return 'NA';
@@ -1171,10 +922,7 @@ if (!function_exists('getParamSecondValueNew')) {
             return 'NA';
         }
 
-        $data = SalesOrderProduct::where([
-            'so_id' => $soo->so_id,
-            'sub_product_id' => $soo->sub_product_id
-        ])->first();
+        $data = SalesOrderProduct::where(['so_id' => $soo->so_id, 'sub_product_id' => $soo->sub_product_id])->first();
 
         if (!$data) {
             return 'NA';
@@ -1221,9 +969,9 @@ if (!function_exists('getParamSecondValueNew')) {
             }
         }
 
-        // TMR
+        // TMR ==========================
         if ($operation->unit === 'TMR') {
- 
+
             $size1_ops = ['Cutting'];
             $size2_ops = ['Bore Turning With Under Cut-Single Side', 'Bore Turning Both Side', 'Bore Grinding Both Side', 'Bore Grinding with Under Cut-Single Side'];
             $size3_ops = ['CNC Blanking-1', 'Plain Bore Turning Both Side', 'Plain Bore Turning with Under Cut-Single Side', 'Bore Turning with Keyway-Both Side', 'Bore Turning with Keyway & Under Cut-Single Side'];
