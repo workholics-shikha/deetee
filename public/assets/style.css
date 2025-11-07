@@ -688,3 +688,10 @@ th {
     /*background-color: #f0f0f0;   light gray background */
     cursor: not-allowed!important; 
 }
+
+@media (max-width: 992px) {
+    .responsive-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}

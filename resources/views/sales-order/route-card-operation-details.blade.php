@@ -139,8 +139,8 @@
                 </div>
                 <div class="col-12">
                     <div class="card border-0 rounded-3 mb-1">
-                        <div class="table-responsive">
-                            <div class="accordion" id="accordionExample">
+                        <div class="accordion" id="accordionExample">
+                            <div class="responsive-table-wrapper">
 
                                 <table class="table mb-0 border border-1">
                                     <thead>
@@ -155,9 +155,9 @@
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Machine
                                             </th>
-                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                            {{-- <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Ideal <br> Cycle Time
-                                            </th>
+                                            </th> --}}
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Start time
                                             </th>
@@ -167,7 +167,7 @@
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Time taken
                                             </th>
-                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                            {{-- <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Actual <br> Cycle Time
                                             </th>
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
@@ -175,11 +175,11 @@
                                             </th>
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 CT Efficiency
-                                            </th>
-                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal text-end">
+                                            </th> --}}
+                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Status
                                             </th>
-                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal text-end">
+                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Action
                                             </th>
                                         </tr>
@@ -264,7 +264,6 @@
                                                     } else {
                                                         $differenceText = 'On target';
                                                     }
-
                                                 @endphp
 
                                                 <tr>
@@ -289,11 +288,11 @@
                                                         {{ \App\Helpers\MyHelper::getMachinename($operation->machine_id) }}
                                                     </td>
 
-                                                    <td class="border-right p-3">
+                                                    {{-- <td class="border-right p-3">
                                                         @if ($operation->roll_status == 'completed')
                                                             {{ $idealCycleTimeMinutes . 'm' }}
                                                         @endif
-                                                    </td>
+                                                    </td> --}}
 
                                                     <td class="border-right p-3">
                                                         @if (!empty($operation->start_date_time))
@@ -305,7 +304,7 @@
                                                         @endif
                                                     </td>
 
-                                                    <td class="border-right p-3 text-center">
+                                                    <td class="border-right p-3">
                                                         @if (!empty($operation->end_date_time))
                                                             {{ \Carbon\Carbon::parse($operation->end_date_time)->format('d M y') }}
                                                             <br>
@@ -336,7 +335,7 @@
 
                                                     </td>
 
-                                                    <td class="border-right p-3">
+                                                    {{-- <td class="border-right p-3">
                                                         @if ($operation->roll_status == 'completed')
                                                             {{ $formattedTotal }}
                                                         @endif
@@ -351,19 +350,19 @@
                                                         @if ($operation->roll_status == 'completed')
                                                             {{ $ctEfficiency . '%' }}
                                                         @endif
-                                                    </td>
+                                                    </td> --}}
 
                                                     <td class="border-right p-3">
-                                                        <div class="d-flex align-items-center justify-content-end">
+                                                        {{-- <div class="d-flex justify-content-end"> --}}
+                                                        <div class="d-flex">
                                                             <span class="text-00B200 mb-0 me-1">
                                                                 {{ ucfirst($operation->roll_status) ?? 'pending' }} </span>
                                                             <img src="{{ asset('assets/images/completeDot.png') }}"
-                                                                alt="" class=""
                                                                 style="width: 20px; height: 20px;">
                                                         </div>
                                                     </td>
 
-                                                    <td class="text-center p-3">
+                                                    <td class="align-left p-3">
                                                         @if ($operation->roll_status == 'completed')
                                                             <div class="dropdown">
                                                                 <button
@@ -414,8 +413,33 @@
                                                             </div>
                                                         @endif
                                                     </td>
+                                                </tr>
 
-                                                <tr>
+                                                @if ($operation->roll_status == 'completed')
+                                                    <tr>
+                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> Ideal
+                                                        <br> Cycle Time : @if ($operation->roll_status == 'completed')
+                                                            {{ $idealCycleTimeMinutes . 'm' }}
+                                                        @endif
+                                                    </td >
+
+                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                                        Actual <br> Cycle Time : @if ($operation->roll_status == 'completed')
+                                                            {{ $formattedTotal }}
+                                                        @endif
+                                                    </td >
+                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> GAP :
+                                                        @if ($operation->roll_status == 'completed')
+                                                            {{ $differenceText }}
+                                                        @endif
+                                                    </td >
+                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> CT
+                                                        Efficiency : @if ($operation->roll_status == 'completed')
+                                                            {{ $ctEfficiency . '%' }}
+                                                        @endif
+                                                    </td >
+                                                    </tr>
+                                                @endif
                                             @endforeach
                                         @else
                                             <tr>
