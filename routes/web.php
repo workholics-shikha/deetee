@@ -82,6 +82,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('admin/updateRouteCardOperationCycleTimeNew', [SubProductOperationController::class, 'route_card_operation_cycletime_new'])->name('admin.route-card-operation-cycletime-new');
 
+    Route::post('admin/lockRouteCard', [SubProductOperationController::class, 'lockRouteCard'])->name('admin.lockRouteCard');
+
     Route::get('admin/pass-sheet/{id}',          [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');
 
     Route::get('admin/route-card-preview',       [SalesOrderController::class, 'route_card_preview'])->name('admin.route-card-preview');

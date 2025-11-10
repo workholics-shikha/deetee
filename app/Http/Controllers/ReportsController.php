@@ -250,7 +250,7 @@ class ReportsController extends Controller
         ];
 
         $unitId = $unitMap[$unit] ?? null;
- 
+
         $baseQuery = SalesOrderTracking::query()
             ->join('erp_sales_orders as eso', 'sales_order_trackings.so_id', '=', 'eso.so_id')
             ->whereNotNull('sales_order_trackings.end_date_time')
@@ -263,6 +263,7 @@ class ReportsController extends Controller
         $soRollTracking = (clone $baseQuery)
             ->select(
                 'sales_order_trackings.so_id',
+                'sales_order_trackings.ideal_cycle_time',
                 'operation_id',
                 'so_product_id',
                 'sub_product_id',
@@ -287,7 +288,7 @@ class ReportsController extends Controller
                     ->where('st.roll_status', 'completed')
                     ->groupBy('st.so_id', 'st.operation_id', 'st.so_product_id', 'st.sub_product_id');
             })
-            ->groupBy('so_id', 'operation_id', 'so_product_id', 'sub_product_id', DB::raw('DATE(end_date_time)'))
+            ->groupBy('so_id', 'ideal_cycle_time', 'operation_id', 'so_product_id', 'sub_product_id', DB::raw('DATE(end_date_time)'))
             ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')
             ->get();
 
@@ -376,5 +377,4 @@ class ReportsController extends Controller
             }
         });
     }
-
 }

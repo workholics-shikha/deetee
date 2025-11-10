@@ -226,4 +226,26 @@ class SubProductOperationController extends Controller
         }
     }
 
+    public function lockRouteCard(Request $request)
+    {
+        $tbSOProductId = $request->get('tbSOProductId');
+
+        $salesOrderProduct = SalesOrderProduct::find($tbSOProductId);
+
+        if (!$salesOrderProduct) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Sales order product not found.',
+            ]);
+        }
+
+        $salesOrderProduct->is_route_card_locked = 1;
+        $salesOrderProduct->save();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Route Card Locked Successfully.',
+        ]);
+    }
+
 }

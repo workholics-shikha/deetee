@@ -90,7 +90,7 @@
 
                             <td class="border-right" style="width: 45%;">
 
-                                <?php
+                             <?php
                                 if (isset($pass_sheet)) {
                                     $parameter1Val = $operation->parameter1_value_set;
                                     $parameter2Val = $operation->parameter2_value_set;

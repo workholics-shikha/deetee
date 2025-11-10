@@ -179,7 +179,7 @@
                                                                     {{ $overview->unit_name }}</th>
                                                                 <td class="text-445B64 p-3">
                                                                     {{ ucfirst($overview->monitor_for) }}</td>
-                                                                <td class="text-445B64 p-3"> 
+                                                                <td class="text-445B64 p-3">
                                                                     {{ round($overview->total_seconds / 60, 2) }} Mins</td>
                                                             </tr>
                                                         @endforeach
@@ -222,7 +222,8 @@
                                                 <thead>
                                                     <tr>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">Date</th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3">SO <br> Date.</th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3">SO <br> Date.
+                                                        </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">SO No.</th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">Group </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">Product </th>
@@ -233,8 +234,10 @@
                                                             Size2</th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
                                                             Size3</th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3"> SO <br> Quanity </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3"> SO <br> Start <br> Date
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3"> SO <br> Quanity
+                                                        </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3"> SO <br> Start
+                                                            <br> Date
                                                         </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">Quantity <br>
                                                             Produced </th>
@@ -259,7 +262,8 @@
                                                                 <th scope="row" class="p-3">
                                                                     {{ \Carbon\Carbon::parse($completionTracking->end_date)->format('Y-m-d') }}
                                                                 </th>
-                                                                <td class="text-445B64 p-3"> {{ $completionTracking->soProduct->so_date }}</td>
+                                                                <td class="text-445B64 p-3">
+                                                                    {{ $completionTracking->soProduct->so_date }}</td>
                                                                 <td class="text-445B64 p-3">
                                                                     {{ $completionTracking->soProduct->so_no }}</td>
                                                                 <td class="text-445B64 p-3">
@@ -277,8 +281,12 @@
                                                                 <td class="text-445B64 p-3"> {{ $sizeVals[2] ?? '' }}:
                                                                     {{ !empty($completionTracking->salesorderProducts->size3) ? $completionTracking->salesorderProducts->size3 : '-' }}
                                                                 </td>
-                                                                <td class="text-445B64 p-3"> {{ $completionTracking->salesorderProducts->soquantity }} </td> 
-                                                                <td class="text-445B64 p-3">  {{ \Carbon\Carbon::parse($completionTracking->start_date)->format('Y-m-d') }} </td>
+                                                                <td class="text-445B64 p-3">
+                                                                    {{ $completionTracking->salesorderProducts->soquantity }}
+                                                                </td>
+                                                                <td class="text-445B64 p-3">
+                                                                    {{ \Carbon\Carbon::parse($completionTracking->start_date)->format('Y-m-d') }}
+                                                                </td>
                                                                 <td class="text-445B64 p-3 text-left">
                                                                     {{ getCompletedQty($completionTracking->end_date, $completionTracking->so_product_id, $completionTracking->sub_product_id, $unit) }}
                                                                 </td>
@@ -383,7 +391,21 @@
                                                                         {{ $rollTracking->operation->operation_name }}</td>
                                                                     <td class="text-445B64 p-3 text-center">
                                                                         {{ $rollTracking->total_quantity_processed }}</td>
-                                                                    <td> ICT X QTY </td>
+
+                                                                    @php
+                                                                        $ideal = $rollTracking->ideal_cycle_time;
+                                                                        $qty = $rollTracking->total_quantity_processed ??
+                                                                            0;
+
+                                                                        // Only multiply when ideal_cycle_time is NOT "NA" and NOT null
+                                                                        $idealTotal =
+                                                                            $ideal !== 'NA' && !is_null($ideal)
+                                                                                ? $ideal * $qty
+                                                                                : 'NA';
+                                                                    @endphp
+
+                                                                    <td>{{ $idealTotal }}</td>
+                                                                    
                                                                     <td class="text-445B64 p-3 text-center">
                                                                         {{ round($rollTracking->time_taken_minutes / 60, 2) }}
                                                                         Mins</td>

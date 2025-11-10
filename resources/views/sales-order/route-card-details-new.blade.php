@@ -11,7 +11,7 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
-    </style> 
+    </style>
 
     <div class="main-content-area">
         <div class="">
@@ -143,12 +143,18 @@
                                                 Stage</th>
                                             <th scope="col" class="text-445B64 border-right p-3" style="width: 45%;">
                                                 Parameter Details </th>
-                                            <th scope="col" class="text-445B64" style="width: 15%;"> <button
-                                                    class="btn btn-sm bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100 editOperation">
-                                                    Edit</button> </th>
-                                            <th scope="col" class="text-445B64" style="width: 15%;"> <button
-                                                    class="btn btn-sm bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100">
-                                                    Lock </button>
+
+                                            @if ($data->is_route_card_locked != 1)
+                                                <th scope="col" class="text-445B64" style="width: 15%;"> <button
+                                                        class="btn btn-sm bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100 editOperation">
+                                                        Edit</button> </th>
+                                                <th scope="col" class="text-445B64" style="width: 15%;"> <button
+                                                        class="btn btn-sm bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100 lockOperation">
+                                                        Lock </button>
+                                                @else
+                                                <th scope="col" class="text-445B64" style="width: 15%;"> </th>
+                                                <th scope="col" class="text-445B64" style="width: 15%;"> </th>
+                                            @endif
                                             </th>
                                         </tr>
                                     </thead>
@@ -163,10 +169,33 @@
             </div>
         </div>
     </div>
-  
+
     <script>
         let toggled = false;
-        $(".editOperation").click(function() {  
+        $(".lockOperation").click(function() {
+            var token = $("meta[name='csrf-token']").attr("content");
+            var tbSOProductId = $('.routeCardOperation').data("sopid");
+             
+            $.ajax({
+                url: "{{ url('admin/lockRouteCard') }}",
+                method: "POST",
+                data: {
+                    _token: token,
+                    tbSOProductId: tbSOProductId
+                },
+                success: function(response) {
+                    successToaster(response.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 90);
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        });
+
+        $(".editOperation").click(function() {
             var btn = $(this);
             if (!toggled) {
                 $(".parentDiv").removeClass('disabled-div');
@@ -192,8 +221,9 @@
                 var manualCycleTime = $(this).find(".enterValManually1").val();
                 var cycleTimeVal2 = $(this).find(".enterValManually2").val(); // fixed selector
                 var operationType = $(this).data("operation_type");
- 
-                if (operationType === "ManualIn" || operationType === "Manual_ICT" || operationType === "Manual") {
+
+                if (operationType === "ManualIn" || operationType === "Manual_ICT" || operationType ===
+                    "Manual") {
                     operationData.push({
                         id: rcOperationID,
                         soProductId: tbSOProductId,
@@ -203,7 +233,7 @@
                     });
                 }
             });
- 
+
             $.ajax({
                 url: "{{ url('admin/updateRouteCardOperationCycleTimeNew') }}",
                 method: "POST",
@@ -231,6 +261,5 @@
                 alert("Back navigation is disabled.");
             }; // your code here
         });
- 
     </script>
 @stop
