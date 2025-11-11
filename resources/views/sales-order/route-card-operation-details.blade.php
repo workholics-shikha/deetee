@@ -182,6 +182,9 @@
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Action
                                             </th>
+                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                                Review
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -412,6 +415,9 @@
                                                                 </ul>
                                                             </div>
                                                         @endif
+                                                    </td>
+                                                    <td class="border-right p-3">
+                                                        {{$operation->comment ?? 'N/A'}}
                                                     </td>
                                                 </tr>
 
