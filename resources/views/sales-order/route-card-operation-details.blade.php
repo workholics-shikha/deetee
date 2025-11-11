@@ -417,14 +417,12 @@
 
                                                 @if ($operation->roll_status == 'completed')
                                                     <tr>
-                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> Ideal
-                                                        <br> Cycle Time : @if ($operation->roll_status == 'completed')
+                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> Ideal Cycle Time : @if ($operation->roll_status == 'completed')
                                                             {{ $idealCycleTimeMinutes . 'm' }}
                                                         @endif
                                                     </td >
 
-                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal">
-                                                        Actual <br> Cycle Time : @if ($operation->roll_status == 'completed')
+                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> Actual Cycle Time : @if ($operation->roll_status == 'completed')
                                                             {{ $formattedTotal }}
                                                         @endif
                                                     </td >
@@ -472,16 +470,13 @@
                     @csrf
                     <div class="modal-body">
                         <div class="form-group">
-                            <input type="hidden" name="tracking_id" id="tracking_id" value="">
-                            <input type="hidden" name="routecardid" id="routecardid"
-                                value="{{ request()->route('id') }}">
+                            
+                            <input type="hidden" name="routecardid" id="routecardid" value="{{ request()->route('id') }}">
                             <input type="hidden" name="odid" id="odid" value="">
                             <input type="hidden" name="type" id="optype" value="">
                             <label for="reviewText">Review</label>
-                            <textarea class="form-control" name="reviewText" id="reviewText" rows="4"
-                                placeholder="Enter your review here..."></textarea>
-                            <span class="text-danger" id="reviewError" style="display: none;">Please enter a
-                                review.</span>
+                            <textarea class="form-control" name="reviewText" id="reviewText" rows="4" placeholder="Enter your review here..."></textarea>
+                            <span class="text-danger" id="reviewError" style="display: none;">Please enter a review.</span>
                         </div>
                         <div class="form-group">
                             <div class="unitForm">

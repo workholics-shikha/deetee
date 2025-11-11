@@ -17,7 +17,7 @@ class ProductController extends Controller
         $count['totalsubProduct']    = SubProduct::count();
         $count['unavailableProduct'] = ProductMasters::whereNot('status', 'Available')->count();
         $count['totalGroup']         = ProductMasters::groupBy('group')->count();
-    $rowCount = $data->total();
+        $rowCount = $data->total();
         return view('product.index', compact('data', 'count', 'rowCount'));
     }
 

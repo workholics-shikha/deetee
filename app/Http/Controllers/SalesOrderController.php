@@ -13,7 +13,7 @@ use App\Models\{
     SubproductWiseOperation
 };
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Storage, DB};
+use Illuminate\Support\Facades\{Storage, DB, Log};
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class SalesOrderController extends Controller
@@ -56,14 +56,14 @@ class SalesOrderController extends Controller
 
         if ($itemsExist) {
             updateSubProductDetails($soId);
-        } else {  
+        } else {
             addSubProductDetails($soId);
         }
 
         // Eager load all required data in single queries
         $items = SalesOrderProduct::where('so_id', $soId)
             ->with(['item', 'product'])
-            ->get(); 
+            ->get();
 
         $subProducts = SOProductOperationDetails::where('so_id', $soId)->get();
 
@@ -279,7 +279,6 @@ class SalesOrderController extends Controller
     public function operationReview(Request $request)
     {
         try {
-
             // Validate the request
             $validated = $request->validate([
                 'routecardid' => 'required|integer',
@@ -288,12 +287,77 @@ class SalesOrderController extends Controller
                 'reviewText' => 'required|string|max:1000', // Note: using reviewText to match your form field name
             ]);
 
-            $trackingId =  $request->odid;
+            // print_r($request->all()); exit;
+
+            $trackingId = $request->odid;
 
             $review = SalesOrderTracking::where('id', $trackingId)->first();
-            $review->roll_status = $request->type;
-            $review->comment = $request->reviewText;
+            $review->roll_status = $reviewType =  $request->type;
+            $review->comment = $reviewText = $request->reviewText;
             $review->save();
+
+            //=======================
+            $trackingDetails = SalesOrderTracking::where('id', $trackingId)->first();
+            $so_product_id = $trackingDetails->so_pid_primary;
+            $pass_id = $trackingDetails->pass_id??0;
+            $current_roll = $trackingDetails->quantity_processed;
+            $operator_id = $trackingDetails->operator_id;
+            $so_product_details = SalesOrderProduct::select('id', 'so_id', 'poquantity', 'sub_product_id', 'product_id', 'measureunit')
+                ->find($so_product_id);
+
+            // -------------------------------
+            // 12️⃣ Update operation detail JSON
+            // -------------------------------
+            $operationDetails = SOProductOperationDetails::where([
+                'so_id' => $trackingDetails->so_id,
+                'sales_order_product_id' => $so_product_id,
+                'product_id' => $so_product_details->product_id,
+                'sub_product_id' => $so_product_details->sub_product_id,
+                'operation_id' => $trackingDetails->operation_id
+            ])->first(['id', 'processed_qty', 'qty']);
+
+            if ($operationDetails && $operationDetails->processed_qty) {
+                $processedQty = json_decode($operationDetails->processed_qty, true);
+                if (!is_array($processedQty)) {
+                    Log::warning('operation_start - processed_qty malformed', ['processed_qty' => $operationDetails->processed_qty]);
+                    $processedQty = [];
+                }
+
+                $updated = false;
+
+                foreach ($processedQty as &$item) {
+                    $item['pass_sheet_id'] = $item['pass_sheet_id'] ?? 0;
+                    $item['quantity']      = $item['quantity'] ?? 0;
+                     
+                    $itemPassId = (int) $item['pass_sheet_id'];
+                    $itemQty    = (int) $item['quantity'];
+
+                    if ($pass_id > 0) {
+                        if ($item['status'] != 'pending' && $itemPassId === (int) $pass_id && $itemQty === (int) $current_roll) {
+                            $item['status']     = $reviewType;
+                            $item['updated_by'] = $operator_id;
+                            $updated = true;
+                            break;
+                        }
+                    } else {
+                        if ($item['status'] != 'pending' && $itemQty === (int) $current_roll) {
+                            $item['status']     = $reviewType ;
+                            $item['updated_by'] = $operator_id;
+                            $updated = true;
+                            break;
+                        }
+                    }
+                }
+
+                if ($updated) {
+                    $operationDetails->processed_qty = json_encode($processedQty);
+                    $operationDetails->save();
+                    Log::info('operation_start - updated processed_qty', ['operation_detail_id' => $operationDetails->id]);
+                }
+
+                DB::table('rc_review')->insert(['so_track_id'=>$trackingId,	'review_for'=>$reviewType, 'review'=>$reviewText, 'review_by'=> auth()->id() ?? 0]);
+            }
+            //=======================
 
             return response()->json([
                 'status' => 'success',

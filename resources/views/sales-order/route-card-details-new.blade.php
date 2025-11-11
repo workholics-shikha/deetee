@@ -235,7 +235,7 @@
             });
 
             $.ajax({
-                url: "{{ url('admin/updateRouteCardOperationCycleTimeNew') }}",
+                url: "{{ url('admin/updateRouteCardOperationCycleTime') }}",
                 method: "POST",
                 data: {
                     _token: token,

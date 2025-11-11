@@ -368,9 +368,7 @@ class QRCodeController extends Controller
             return back()->withErrors(['qr' => 'Failed to generate QR.'])->withInput();
         }
     }
-
-
-
+ 
     public function genericQRs()
     {
         $data =  DB::table('generic_qrcodes')->get();

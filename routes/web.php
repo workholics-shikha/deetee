@@ -74,14 +74,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('admin/sales-order-details/{id}', [SalesOrderController::class, 'so_details'])->name('admin.sales-order-details');
 
-    Route::get('admin/route-card-details/{id}/{any?}', [SubProductOperationController::class, 'route_card_details_new'])->name('admin.route-card-details');
+    Route::get('admin/route-card-details/{id}/{any?}', [SubProductOperationController::class, 'route_card_details'])->name('admin.route-card-details');
 
     Route::get('admin/route-card-operation-details/{id}', [SubProductOperationController::class, 'route_card_operation_details'])->name('admin.route-card-operation-details');
 
     Route::post('admin/updateRouteCardOperationCycleTime', [SubProductOperationController::class, 'route_card_operation_cycletime'])->name('admin.route-card-operation-cycletime');
-
-    Route::post('admin/updateRouteCardOperationCycleTimeNew', [SubProductOperationController::class, 'route_card_operation_cycletime_new'])->name('admin.route-card-operation-cycletime-new');
-
+  
     Route::post('admin/lockRouteCard', [SubProductOperationController::class, 'lockRouteCard'])->name('admin.lockRouteCard');
 
     Route::get('admin/pass-sheet/{id}',          [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');

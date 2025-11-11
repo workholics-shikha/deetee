@@ -108,7 +108,6 @@ TRUNCATE TABLE  `personal_access_tokens`;
 TRUNCATE TABLE  `password_resets`;
 
 // ===================== 30-Oct-25 ===================
-
 ALTER TABLE `sales_order_products` ADD `kw_depth` INT NOT NULL DEFAULT '0' AFTER `kw_size1` ;
 
 ALTER TABLE `sales_order_products` ADD `bs1_blankdia` INT NOT NULL DEFAULT '0' AFTER `kw_depth`, ADD `bs1_depthdia` INT NOT NULL DEFAULT '0' AFTER `bs1_blankdia`;
@@ -116,5 +115,7 @@ ALTER TABLE `sales_order_products` ADD `bs1_blankdia` INT NOT NULL DEFAULT '0' A
 ALTER TABLE `machine_master` ADD `operator_id` INT NULL DEFAULT NULL AFTER `machine_status`, ADD `tracking_id` INT NULL DEFAULT NULL AFTER `operator_id`;
 
 // === 10-Nov ==============
-
 ALTER TABLE `sales_order_products` CHANGE `tube_size` `is_route_card_locked` TINYINT NULL DEFAULT '0';
+
+// === 11-Nov ==============
+CREATE TABLE `deetee_prod`.`rc_review` (`id` INT NOT NULL AUTO_INCREMENT, `so_track_id` INT NOT NULL, `review` INT NOT NULL, `review_by` INT NOT NULL , `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;
