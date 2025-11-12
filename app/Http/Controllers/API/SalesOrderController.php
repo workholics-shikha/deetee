@@ -1410,7 +1410,7 @@ class SalesOrderController extends Controller
         }
 
         $getData = $query->orderBy('id', 'desc')->first();
-
+ /*
         // ✅ If no tracking found
         if (!$getData) {
             return response()->json([
@@ -1427,7 +1427,7 @@ class SalesOrderController extends Controller
                 'message' => 'Already completed',
                 'data'    => []
             ], 404);
-        }
+        } */
 
         // ✅ Get ideal cycle & total actual time
         $getActualIdeal = SalesOrderTracking::where([
@@ -1481,17 +1481,19 @@ class SalesOrderController extends Controller
         $final_status = ($processed_qty >= $getDetails->qty) ? 'completed' : 'pending';
 
         $getDetails->update([
-            'processed_qty'  => $processed_qty,
+            'completed_qty'  => $processed_qty,
             'final_status'   => $final_status,
             'process_status' => 'completed',
             'updated_at'     => now()
         ]);
 
         // ✅ Update nested JSON processed_qty
-        if ($getDetails && $getDetails->processed_qty_json) {
+        if ($getDetails && $getDetails->processed_qty) {
 
-            $processedQty = json_decode($getDetails->processed_qty_json, true);
+            $processedQty = json_decode($getDetails->processed_qty, true);
             $updated = false;
+
+            // print_r($processedQty); exit;
 
             foreach ($processedQty as &$item) {
                 $itemPassId = (int)($item['pass_sheet_id'] ?? 0);
@@ -1527,7 +1529,7 @@ class SalesOrderController extends Controller
                 }
 
                 $getDetails->completed_qty += 1;
-                $getDetails->processed_qty_json = json_encode($processedQty);
+                $getDetails->processed_qty = json_encode($processedQty);
                 $getDetails->save();
             }
         }

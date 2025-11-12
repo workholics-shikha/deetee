@@ -276,7 +276,7 @@ class SalesOrderController extends Controller
         return $rows;
     }
 
-    public function operationReview(Request $request)
+    public function operationReview111(Request $request)
     {
         try {
             // Validate the request
@@ -299,7 +299,7 @@ class SalesOrderController extends Controller
             //=======================
             $trackingDetails = SalesOrderTracking::where('id', $trackingId)->first();
             $so_product_id = $trackingDetails->so_pid_primary;
-            $pass_id = $trackingDetails->pass_id??0;
+            $pass_id = $trackingDetails->pass_id ?? 0;
             $current_roll = $trackingDetails->quantity_processed;
             $operator_id = $trackingDetails->operator_id;
             $so_product_details = SalesOrderProduct::select('id', 'so_id', 'poquantity', 'sub_product_id', 'product_id', 'measureunit')
@@ -318,36 +318,45 @@ class SalesOrderController extends Controller
 
             if ($operationDetails && $operationDetails->processed_qty) {
                 $processedQty = json_decode($operationDetails->processed_qty, true);
-                if (!is_array($processedQty)) {
-                    Log::warning('operation_start - processed_qty malformed', ['processed_qty' => $operationDetails->processed_qty]);
-                    $processedQty = [];
-                }
 
                 $updated = false;
 
-                foreach ($processedQty as &$item) {
+                foreach ($processedQty as $item) {
+
                     $item['pass_sheet_id'] = $item['pass_sheet_id'] ?? 0;
                     $item['quantity']      = $item['quantity'] ?? 0;
-                     
+
                     $itemPassId = (int) $item['pass_sheet_id'];
                     $itemQty    = (int) $item['quantity'];
-
+                    print_r($itemQty);
+                    echo "<br>";
+                    print_r($current_roll);
+                    echo "<br>";
                     if ($pass_id > 0) {
-                        if ($item['status'] != 'pending' && $itemPassId === (int) $pass_id && $itemQty === (int) $current_roll) {
+                        if ($itemPassId == (int) $pass_id && $itemQty == (int) $current_roll) {
                             $item['status']     = $reviewType;
                             $item['updated_by'] = $operator_id;
                             $updated = true;
                             break;
                         }
                     } else {
-                        if ($item['status'] != 'pending' && $itemQty === (int) $current_roll) {
-                            $item['status']     = $reviewType ;
+                        if ($itemQty == (int) $current_roll) {
+                            $item['status']     = $reviewType;
                             $item['updated_by'] = $operator_id;
                             $updated = true;
                             break;
                         }
                     }
                 }
+                unset($item); // ✅ Important to unbind the reference
+                $allCompleted = collect($processedQty)->every(fn($item) => strtolower($item['status']) === $reviewType);
+
+                print_r($reviewType);
+                echo "<br>";
+                print_r($allCompleted);
+                echo "<br>";
+                print_r($processedQty);
+                exit;
 
                 if ($updated) {
                     $operationDetails->processed_qty = json_encode($processedQty);
@@ -355,7 +364,7 @@ class SalesOrderController extends Controller
                     Log::info('operation_start - updated processed_qty', ['operation_detail_id' => $operationDetails->id]);
                 }
 
-                DB::table('rc_review')->insert(['so_track_id'=>$trackingId,	'review_for'=>$reviewType, 'review'=>$reviewText, 'review_by'=> auth()->id() ?? 0]);
+                DB::table('rc_review')->insert(['so_track_id' => $trackingId, 'review_for' => $reviewType, 'review' => $reviewText, 'review_by' => auth()->id() ?? 0]);
             }
             //=======================
 
@@ -372,6 +381,171 @@ class SalesOrderController extends Controller
             ], 422);
         } catch (\Exception $e) {
 
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function operationReview(Request $request)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'routecardid' => 'required|integer',
+                'odid'        => 'required|integer',
+                'type'        => 'required|string',
+                'reviewText'  => 'required|string|max:1000',
+            ]);
+
+            $trackingId = $request->odid;
+            $reviewType = strtolower(trim($request->type)); // normalized type
+            $reviewText = trim($request->reviewText);
+
+            // =======================
+            // 1️⃣ Update main tracking
+            // =======================
+            $review = SalesOrderTracking::find($trackingId);
+            if (!$review) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tracking record not found.'
+                ], 404);
+            }
+
+            $review->roll_status = $reviewType;
+            $review->comment     = $reviewText;
+            $review->save();
+
+            // =======================
+            // 2️⃣ Get related details
+            // =======================
+            $trackingDetails   = $review;
+            $so_product_id     = $trackingDetails->so_pid_primary;
+            $pass_id           = $trackingDetails->pass_id ?? 0;
+            $current_roll      = (int) $trackingDetails->quantity_processed;
+            $operator_id       = $trackingDetails->operator_id;
+
+            $so_product_details = SalesOrderProduct::select('id', 'so_id', 'poquantity', 'sub_product_id', 'product_id', 'measureunit')
+                ->find($so_product_id);
+
+            if (!$so_product_details) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Sales order product not found.'
+                ], 404);
+            }
+
+            // =======================
+            // 3️⃣ Find operation detail
+            // =======================
+            $operationDetails = SOProductOperationDetails::where([
+                'so_id'                 => $trackingDetails->so_id,
+                'sales_order_product_id' => $so_product_id,
+                'product_id'            => $so_product_details->product_id,
+                'sub_product_id'        => $so_product_details->sub_product_id,
+                'operation_id'          => $trackingDetails->operation_id
+            ])->first(['id', 'processed_qty', 'qty']);
+
+            if (!$operationDetails || !$operationDetails->processed_qty) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Operation details not found or no processed data.'
+                ], 404);
+            }
+
+            $processedQty = json_decode($operationDetails->processed_qty, true);
+            if (!is_array($processedQty)) {
+                Log::error('Invalid JSON in processed_qty', [
+                    'operation_detail_id' => $operationDetails->id,
+                    'value' => $operationDetails->processed_qty
+                ]);
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid JSON data in processed_qty.'
+                ], 500);
+            }
+
+            // =======================
+            // 4️⃣ Update status inside JSON
+            // =======================
+            $updated = false;
+            foreach ($processedQty as &$item) {
+                $item['pass_sheet_id'] = $item['pass_sheet_id'] ?? 0;
+                $item['quantity']      = $item['quantity'] ?? 0;
+
+                $itemPassId = (int) $item['pass_sheet_id'];
+                $itemQty    = (int) $item['quantity'];
+
+                if ($pass_id > 0) {
+                    if ($itemPassId == $pass_id && $itemQty == $current_roll) {
+                        $item['status']     = $reviewType;
+                        $item['updated_by'] = $operator_id;
+                        $updated = true;
+                        break;
+                    }
+                } else {
+                    if ($itemQty == $current_roll) {
+                        $item['status']     = $reviewType;
+                        $item['updated_by'] = $operator_id;
+                        $updated = true;
+                        break;
+                    }
+                }
+            }
+            unset($item); // ✅ Important to release reference
+
+            // =======================
+            // 5️⃣ Save if updated
+            // =======================
+            if ($updated) {
+                $operationDetails->processed_qty = json_encode($processedQty, JSON_UNESCAPED_UNICODE);
+                $operationDetails->save();
+
+                Log::info('Operation updated successfully', [
+                    'operation_detail_id' => $operationDetails->id,
+                    'updated_by' => $operator_id,
+                    'review_type' => $reviewType,
+                    'current_roll' => $current_roll,
+                ]);
+            } else {
+                Log::warning('No matching item found for update', [
+                    'operation_detail_id' => $operationDetails->id,
+                    'pass_id' => $pass_id,
+                    'current_roll' => $current_roll,
+                ]);
+            }
+
+            // =======================
+            // 6️⃣ Save review log
+            // =======================
+            DB::table('rc_review')->insert([
+                'so_track_id' => $trackingId,
+                'review_for'  => $reviewType,
+                'review'      => $reviewText,
+                'review_by'   => auth()->id() ?? 0,
+                'created_at'  => now(),
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Review added and operation status updated successfully!',
+                'data' => [
+                    'operation_detail_id' => $operationDetails->id,
+                    'updated' => $updated,
+                    'review_type' => $reviewType
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error in operationReview', ['error' => $e->getMessage()]);
             return response()->json([
                 'status' => 'error',
                 'message' => 'Server error: ' . $e->getMessage()

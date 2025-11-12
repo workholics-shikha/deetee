@@ -144,7 +144,6 @@
 
                                 <table class="table mb-0 border border-1">
                                     <thead>
-
                                         <tr>
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Roll <br> data
@@ -155,9 +154,6 @@
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Machine
                                             </th>
-                                            {{-- <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
-                                                Ideal <br> Cycle Time
-                                            </th> --}}
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Start time
                                             </th>
@@ -167,22 +163,13 @@
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Time taken
                                             </th>
-                                            {{-- <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
-                                                Actual <br> Cycle Time
-                                            </th>
-                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
-                                                GAP
-                                            </th>
-                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
-                                                CT Efficiency
-                                            </th> --}}
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Status
                                             </th>
                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Action
                                             </th>
-                                             <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                            <th class="bg-F0F5F6 text-445B64 px-3 fw-normal">
                                                 Review
                                             </th>
                                         </tr>
@@ -365,8 +352,8 @@
                                                         </div>
                                                     </td>
 
-                                                    <td class="align-left p-3">
-                                                        @if ($operation->roll_status == 'completed')
+                                                    <td class="border-right p-3">
+                                                        {{-- @if ($operation->roll_status == 'completed') --}}
                                                             <div class="dropdown">
                                                                 <button
                                                                     class="table-circular-icon bg-F0F5F6 mx-auto dropdown-toggle"
@@ -414,34 +401,38 @@
                                                                     </li>
                                                                 </ul>
                                                             </div>
-                                                        @endif
+                                                        {{-- @endif --}}
                                                     </td>
                                                     <td class="border-right p-3">
-                                                        {{$operation->comment ?? 'N/A'}}
+                                                        {{ $operation->comment ?? 'N/A' }}
                                                     </td>
                                                 </tr>
 
                                                 @if ($operation->roll_status == 'completed')
                                                     <tr>
-                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> Ideal Cycle Time : @if ($operation->roll_status == 'completed')
-                                                            {{ $idealCycleTimeMinutes . 'm' }}
-                                                        @endif
-                                                    </td >
+                                                        <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                                            Ideal Cycle Time : @if ($operation->roll_status == 'completed')
+                                                                {{ $idealCycleTimeMinutes . 'm' }}
+                                                            @endif
+                                                        </td>
 
-                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> Actual Cycle Time : @if ($operation->roll_status == 'completed')
-                                                            {{ $formattedTotal }}
-                                                        @endif
-                                                    </td >
-                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> GAP :
-                                                        @if ($operation->roll_status == 'completed')
-                                                            {{ $differenceText }}
-                                                        @endif
-                                                    </td >
-                                                    <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal"> CT
-                                                        Efficiency : @if ($operation->roll_status == 'completed')
-                                                            {{ $ctEfficiency . '%' }}
-                                                        @endif
-                                                    </td >
+                                                        <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                                            Actual Cycle Time : @if ($operation->roll_status == 'completed')
+                                                                {{ $formattedTotal }}
+                                                            @endif
+                                                        </td>
+                                                        <td colspan="2" class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                                            GAP :
+                                                            @if ($operation->roll_status == 'completed')
+                                                                {{ $differenceText }}
+                                                            @endif
+                                                        </td>
+                                                        <td colspan="3" class="bg-F0F5F6 text-445B64 px-3 fw-normal">
+                                                            CT
+                                                            Efficiency : @if ($operation->roll_status == 'completed')
+                                                                {{ $ctEfficiency . '%' }}
+                                                            @endif
+                                                        </td>
                                                     </tr>
                                                 @endif
                                             @endforeach
@@ -476,7 +467,6 @@
                     @csrf
                     <div class="modal-body">
                         <div class="form-group">
-                            
                             <input type="hidden" name="routecardid" id="routecardid" value="{{ request()->route('id') }}">
                             <input type="hidden" name="odid" id="odid" value="">
                             <input type="hidden" name="type" id="optype" value="">
@@ -500,14 +490,7 @@
     </div>
 
     <script>
-        // // Push a new state into the history
-        // history.pushState(null, null, location.href);
-        // // Listen for back/forward navigation
-        // window.onpopstate = function() {
-        //     history.pushState(null, null, location.href);
-        //     alert("Back navigation is disabled.");
-        // };
-
+        
         $(document).ready(function() {
             let backNavigationEnabled = true;
 
@@ -581,6 +564,10 @@
                             successToaster(response.message);
                             $("#reviewModal").modal("hide");
                             $("#reviewForm")[0].reset();
+
+                            setTimeout(() => {
+                                location.reload();
+                            }, 90);
                         } else {
                             errorToaster(response.message || 'An error occurred');
                         }
