@@ -30,7 +30,7 @@ class User extends Authenticatable
         'shift',
         'user_qr_code',
         'profile_image',
-        'username', 
+        'username',
     ];
 
     /**
@@ -127,5 +127,9 @@ class User extends Authenticatable
 
         return $value;
     }
-    
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role');
+    }
 }
