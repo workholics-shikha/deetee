@@ -94,6 +94,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('admin/operation-review',        [SalesOrderController::class, 'operationReview'])->name('admin.operation-review');
 
+    Route::get('admin/get-reviews-list/{id}',        [SalesOrderController::class, 'getOperationReviewList'])->name('admin.get-reviews-list');
+
     Route::get('admin/getOperationDetails/{id}/{any?}', [SalesOrderController::class, 'getOperationDetails'])->name('admin.getOperationDetails');
 
     // Machines routes ====
@@ -199,5 +201,11 @@ Route::get('qrGenerateOperations', [ImportController::class, 'qrGenerateOperatio
 Route::post('importIdealCycleData', [ImportController::class, 'importIdealCycleData'])->name('importIdealCycleData');
 
 Route::get('generateQR', [UserController::class, 'generateQR'])->name('generateQR');
-  
+
 Route::get('/sales-tracking/export', [ImportController::class, 'export']);
+
+// 13112025
+Route::get('qrGenerateSO', [ImportController::class, 'qrGenerateSO'])->name('qrGenerateSO');
+Route::get('qrGenerateUsers', [ImportController::class, 'qrGenerateUsers'])->name('qrGenerateUsers');
+Route::get('qrGenerateGeneric', [ImportController::class, 'qrGenerateGeneric'])->name('qrGenerateGeneric');
+Route::get('qrGenerateSoProduct', [ImportController::class, 'qrGenerateSoProduct'])->name('qrGenerateSoProduct');

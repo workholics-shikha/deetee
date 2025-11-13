@@ -102,7 +102,6 @@
                                 </div>
 
                                 @php
-
                                     $parts = explode('-', $so->so_no);
                                     $group = implode('-', array_slice($parts, 4));
                                     $sizeVals = getSizeValue($group);
@@ -278,12 +277,6 @@
                                                         {{ \App\Helpers\MyHelper::getMachinename($operation->machine_id) }}
                                                     </td>
 
-                                                    {{-- <td class="border-right p-3">
-                                                        @if ($operation->roll_status == 'completed')
-                                                            {{ $idealCycleTimeMinutes . 'm' }}
-                                                        @endif
-                                                    </td> --}}
-
                                                     <td class="border-right p-3">
                                                         @if (!empty($operation->start_date_time))
                                                             {{ \Carbon\Carbon::parse($operation->start_date_time)->format('d M y') }}
@@ -325,25 +318,7 @@
 
                                                     </td>
 
-                                                    {{-- <td class="border-right p-3">
-                                                        @if ($operation->roll_status == 'completed')
-                                                            {{ $formattedTotal }}
-                                                        @endif
-                                                    </td>
-
                                                     <td class="border-right p-3">
-                                                        @if ($operation->roll_status == 'completed')
-                                                            {{ $differenceText }}
-                                                        @endif
-                                                    </td>
-                                                    <td class="border-right p-3">
-                                                        @if ($operation->roll_status == 'completed')
-                                                            {{ $ctEfficiency . '%' }}
-                                                        @endif
-                                                    </td> --}}
-
-                                                    <td class="border-right p-3">
-                                                        {{-- <div class="d-flex justify-content-end"> --}}
                                                         <div class="d-flex">
                                                             <span class="text-00B200 mb-0 me-1">
                                                                 {{ ucfirst($operation->roll_status) ?? 'pending' }} </span>
@@ -353,7 +328,7 @@
                                                     </td>
 
                                                     <td class="border-right p-3">
-                                                        {{-- @if ($operation->roll_status == 'completed') --}}
+                                                        @if ($operation->roll_status == 'completed')
                                                             <div class="dropdown">
                                                                 <button
                                                                     class="table-circular-icon bg-F0F5F6 mx-auto dropdown-toggle"
@@ -401,10 +376,15 @@
                                                                     </li>
                                                                 </ul>
                                                             </div>
-                                                        {{-- @endif --}}
+                                                        @endif
                                                     </td>
                                                     <td class="border-right p-3">
-                                                        {{ $operation->comment ?? 'N/A' }}
+                                                        @if ($operation->roll_status != 'pending')
+                                                            <button class="btn btn-primary openReviewModal"
+                                                                data-bs-toggle="modal" data-bs-target="#reviewListModal"
+                                                                data-id="{{ $operation->id }}"> <i class="fa fa-eye"></i>
+                                                            </button>
+                                                        @endif
                                                     </td>
                                                 </tr>
 
@@ -428,9 +408,8 @@
                                                             @endif
                                                         </td>
                                                         <td colspan="3" class="bg-F0F5F6 text-445B64 px-3 fw-normal">
-                                                            CT
-                                                            Efficiency : @if ($operation->roll_status == 'completed')
-                                                                {{ $ctEfficiency . '%' }}
+                                                            CT Efficiency : @if ($operation->roll_status == 'completed')
+                                                                {{ $ctEfficiency * 100 . '%' }}
                                                             @endif
                                                         </td>
                                                     </tr>
@@ -445,12 +424,44 @@
                                         @endif
                                     </tbody>
                                 </table>
-
                             </div>
-
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review List Modal (ONLY ONE) -->
+    <div class="modal fade" id="reviewListModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Review List</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sr No</th>
+                                <th>Review</th>
+                                <th>Review Given Date</th>
+                                <th>Review Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewTableBody">
+                            <!-- Dynamic rows here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -462,17 +473,22 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="reviewModalLabel">Add Review</h5>
+                    <button type="button" class="btn-close btn-secondary" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
                 </div>
                 <form id="reviewForm" method="post" action="{{ route('admin.operation-review') }}">
                     @csrf
                     <div class="modal-body">
                         <div class="form-group">
-                            <input type="hidden" name="routecardid" id="routecardid" value="{{ request()->route('id') }}">
+                            <input type="hidden" name="routecardid" id="routecardid"
+                                value="{{ request()->route('id') }}">
                             <input type="hidden" name="odid" id="odid" value="">
                             <input type="hidden" name="type" id="optype" value="">
-                            <label for="reviewText">Review</label>
-                            <textarea class="form-control" name="reviewText" id="reviewText" rows="4" placeholder="Enter your review here..."></textarea>
-                            <span class="text-danger" id="reviewError" style="display: none;">Please enter a review.</span>
+                            {{-- <label for="reviewText">Review</label> --}}
+                            <textarea class="form-control" name="reviewText" id="reviewText" rows="4"
+                                placeholder="Enter your review here..."></textarea>
+                            <span class="text-danger" id="reviewError" style="display: none;">Please enter a
+                                review.</span>
                         </div>
                         <div class="form-group">
                             <div class="unitForm">
@@ -481,7 +497,6 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Submit Review</button>
                     </div>
                 </form>
@@ -490,7 +505,66 @@
     </div>
 
     <script>
-        
+        $(document).on('click', '.openReviewModal', function() {
+
+            let id = $(this).data('id'); // Get ID from button
+
+            $("#reviewTableBody").html(`
+        <tr>
+            <td colspan="4" class="text-center text-muted">
+                Loading...
+            </td>
+        </tr>
+    `);
+
+            $.ajax({
+                url: "{{ url('admin/get-reviews-list') }}/" + id,
+                type: "GET",
+                success: function(response) {
+
+                    console.log(response); // Debugging line
+
+                    let rows = "";
+
+                    // Handle no data
+                    if (!response || response.length === 0) {
+                        rows = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            No Data Found
+                        </td>
+                    </tr>
+                `;
+                    } else {
+                        response.forEach((item, index) => {
+                            rows += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.review ?? '-'}</td>
+                            <td>${item.created_at ?? '-'}</td>
+                            <td>${item.review_for ?? '-'}</td>
+                        </tr>
+                    `;
+                        });
+                    }
+
+                    $("#reviewTableBody").html(rows);
+                },
+                error: function() {
+                    $("#reviewTableBody").html(`
+                <tr>
+                    <td colspan="4" class="text-center text-danger">
+                        Error loading data
+                    </td>
+                </tr>
+            `);
+                }
+            });
+
+        });
+    </script>
+
+    <script>
         $(document).ready(function() {
             let backNavigationEnabled = true;
 
@@ -551,15 +625,12 @@
                 $submitBtn.prop('disabled', true).html(
                     '<i class="fa fa-spinner fa-spin"></i> Submitting...');
 
-                console.log("Submitting form data:", formData);
-
                 // AJAX request
                 $.ajax({
                     url: $(this).attr('action'),
                     method: 'POST',
                     data: formData,
                     success: function(response) {
-                        console.log("Success response:", response);
                         if (response.status === 'success') {
                             successToaster(response.message);
                             $("#reviewModal").modal("hide");
@@ -573,8 +644,6 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.log("Full error response:", xhr);
-
                         if (xhr.status === 422) {
                             // Laravel validation errors
                             var errors = xhr.responseJSON.errors;

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{IctMaterial, MachineMaster, ProductMasters, SubProduct, OperationMaster, Role, User};
+use App\Models\{ErpSalesOrder, IctMaterial, MachineMaster, ProductMasters, SubProduct, OperationMaster, Role, SalesOrderProduct, User};
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{DB, Storage};
+use Illuminate\Support\Facades\{DB, Storage, File};
 use App\Exports\SalesOrderTrackingExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -103,17 +103,14 @@ class ImportController extends Controller
             $operationName = str_replace(' +', '+', $operationName);
 
             OperationMaster::create([
-
-                'operation_name'  => $operationName ?? null,
-                'unit'            => $row[1] ?? null,
+                'operation_name' => $operationName ?? null,
+                'unit' => $row[1] ?? null,
                 'parameter_input' => $row[2] ?? null,
-                'matrix'          => $row[3] ?? null,
-
-                'parameter1'      => $row[4] ?? null,
-                'parameter2'      => $row[5] ?? null,
-                'parameter3'      => $row[6] ?? null,
-                'parameter4'      => $row[7] ?? null,
-                // 'operation_comment' => $row[8] ?? null 
+                'matrix' => $row[3] ?? null,
+                'parameter1' => $row[4] ?? null,
+                'parameter2' => $row[5] ?? null,
+                'parameter3' => $row[6] ?? null,
+                'parameter4' => $row[7] ?? null
             ]);
         }
         return back()->with('success', 'Operations imported successfully!');
@@ -188,7 +185,7 @@ class ImportController extends Controller
     public function qrGenerate()
     {
 
-        /* $machines = DB::table('machine_master')->get();
+        $machines = DB::table('machine_master')->get();
 
         // Insert each machine, generate its QR code, and update the machine_qr_code field
         foreach ($machines as $machine) {
@@ -216,7 +213,7 @@ class ImportController extends Controller
             DB::table('machine_master')
                 ->where('id', $machine->id)
                 ->update(['machine_qr_code' => $name]);
-        } */
+        }
 
         $products = DB::table('product_masters')->get();
 
@@ -366,31 +363,7 @@ class ImportController extends Controller
         $header = fgetcsv($handle); // skip header
 
         while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
-           
-           /* IctMaterial::create([
-                'diameter_start_range' => $row[0] ?? null,
-                'diameter_end_range' => $row[1] ?? null,
-                'd2_h13' => $row[2] ?? null,
-                'd3' => $row[3] ?? null,
-                'en31' => $row[4] ?? null,
-                'machine_id' => trim($row[5]),   // "101,102,96,..."
-                'operation_id' => $row[6] ?? null,
-                'product_id' => $row[7] ?? null,
-                'sub_product_id' => $row[8] ?? null,
-            ]); 
-            DB::table('ict_direct_cycle_time')->insert([
-                'diameter_start_range' => $row[0] ?? null,
-                'diameter_end_range' => $row[1] ?? null,
-                'cycle_time' => $row[2] ?? null,
-                'machine_id' => trim($row[3]), // remove extra quotes
-                'operation_id' => $row[4] ?? null,
-                'product_id' => $row[5] ?? null,
-                'sub_product_id' => $row[6] ?? null,
-                'table_count' => $row[7] ?? null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]); */
-             	  
+
             DB::table('ict_bore_thickness_values')->insert([
                 'bore_min' => $row[0] ?? null,
                 'bore_max' => $row[1] ?? null,
@@ -401,7 +374,7 @@ class ImportController extends Controller
                 'sub_product_id' => $row[6] ?? null,
                 'table_count' => $row[7] ?? null,
                 'thickness_min' => $row[0] ?? null,
-                'thickness_max' => $row[1] ?? null 
+                'thickness_max' => $row[1] ?? null
             ]);
         }
         fclose($handle);
@@ -412,5 +385,115 @@ class ImportController extends Controller
     {
         return Excel::download(new SalesOrderTrackingExport, 'sales_order_trackings.xlsx');
     }
-    
+
+    public function qrGenerateSO()
+    {
+        $erpSalesOrder = ErpSalesOrder::get();
+
+        foreach ($erpSalesOrder as $salesOrder) {
+
+            $jsonData   = ['id' => $salesOrder->id, 'so_no' => $salesOrder->so_no];
+            $jsonString = json_encode($jsonData);
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($salesOrder->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $name = $salesOrder->so_no . '-' . time() . '.png';
+
+            $path = 'so-qrcodes/' . $name; // unique filename
+
+            Storage::disk('public')->put($path, $result->getString());
+            ErpSalesOrder::where('id', $salesOrder->id)->update(['so_qr_code' => $name]);
+        }
+    }
+
+    public function qrGenerateUsers()
+    {
+        $users = User::where('id', '!=', '1')->get();
+
+        foreach ($users as $user) {
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($user->username)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            $nameQR = $user->id . '-' . time() . '.png';
+
+            // Path where you want to save the QR code image
+            $path   = 'user-qrcodes/' . $nameQR; // unique filename
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update the machine record with the QR code path
+            DB::table('users')->where('id', $user->id)->update(['user_qr_code' => $nameQR]);
+        }
+    }
+
+    public function qrGenerateGeneric()
+    {
+        $users = DB::table('generic_qrcodes')->get();
+
+        foreach ($users as $user) {
+
+            $qr_value = $user->qr_code;
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data($qr_value)
+                ->size(300)
+                ->margin(10)
+                ->build();
+
+            // Clean file name to avoid special characters
+            $safeName = preg_replace('/[^A-Za-z0-9\-]/', '_', $qr_value);
+            $fileName = $safeName . '-' . time() . '.png';
+            $relativePath = 'storage/generic-qrcodes/' . $fileName;
+            $fullPath = public_path($relativePath);
+
+            // Ensure directory exists
+            $directory = dirname($fullPath);
+            if (!File::exists($directory)) {
+                File::makeDirectory($directory, 0755, true);
+            }
+
+            // Save file to public directory
+            file_put_contents($fullPath, $result->getString());
+
+
+            $path = 'generic-qrcodes/' . $fileName;
+
+            // Save to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+            // Update the machine record with the QR code path
+            DB::table('generic_qrcodes')->where('id', $user->id)->update(['qr_code' => $fileName]);
+        }
+    }
+
+    public function qrGenerateSoProduct()
+    {
+         $subProducts = SalesOrderProduct::get();
+        if (!empty($subProducts)) {
+            foreach ($subProducts as $products) {
+                $result = Builder::create()
+                    ->data($products->id . ';Product')
+                    ->size(300) // Set size in pixels
+                    ->margin(10) // Set margin in pixels
+                    ->build();
+
+                $qr_code_name = $products->cpoitemid . '-' . time() . '.png';
+                $path = 'so-product-qrcodes/' . $qr_code_name; // unique filename
+
+                Storage::disk('public')->put($path, $result->getString());
+                SalesOrderProduct::where('id', $products->id)->update(['so_product_qr_code' => $qr_code_name]);
+            }
+        }
+    }
 }

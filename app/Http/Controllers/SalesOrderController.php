@@ -479,19 +479,21 @@ class SalesOrderController extends Controller
                 $itemPassId = (int) $item['pass_sheet_id'];
                 $itemQty    = (int) $item['quantity'];
 
-                if ($pass_id > 0) {
-                    if ($itemPassId == $pass_id && $itemQty == $current_roll) {
-                        $item['status']     = $reviewType;
-                        $item['updated_by'] = $operator_id;
-                        $updated = true;
-                        break;
-                    }
-                } else {
-                    if ($itemQty == $current_roll) {
-                        $item['status']     = $reviewType;
-                        $item['updated_by'] = $operator_id;
-                        $updated = true;
-                        break;
+                if($reviewType === 'rework' || $reviewType === 'approved') {   
+                    if ($pass_id > 0) {
+                        if ($itemPassId == $pass_id && $itemQty == $current_roll) {
+                            $item['status']     = $reviewType;
+                            $item['updated_by'] = $operator_id;
+                            $updated = true;
+                            break;
+                        }
+                    } else {
+                        if ($itemQty == $current_roll) {
+                            $item['status']     = $reviewType;
+                            $item['updated_by'] = $operator_id;
+                            $updated = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -551,5 +553,9 @@ class SalesOrderController extends Controller
                 'message' => 'Server error: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getOperationReviewList($id){
+         return DB::table('rc_review')->where('so_track_id', $id)->get();
     }
 }

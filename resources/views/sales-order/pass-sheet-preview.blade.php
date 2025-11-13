@@ -76,16 +76,12 @@
         <!-- Header Section -->
         <div class="pdf-header p-3">
             <div class="logo">
-                <img src="{{ asset('assets/images/pdfLogo.png') }}" alt="" class="me-2">
-                DeeTee Industries Pvt. Ltd.
+                <img src="{{ asset('assets/images/pdfLogo.png') }}" alt="" class="me-2"> DeeTee Industries Pvt. Ltd.
             </div>
-            <div class="unit">
-                <h6 class=""> {{ $data->so_unitname }} </h6>
-            </div>
+            <div class="unit"> <h6 class=""> {{ $data->so_unitname }} </h6> </div>
         </div>
           <input type="hidden" id="searchInput" data-id="{{ $data->id }}" search-url="http://localhost/deetee/admin/route-card-preview" value="">
           
-
         <!-- SO No. and Product Table -->
         <table class="so-details">
             <tr class="">
@@ -97,8 +93,7 @@
                                 <h6 class="" style="font-weight: 600;"> {{ $saleOrder->so_no }} </h6>
                             </td>
                             <td class="" style="border: none; text-align: right;">
-                                <img src="{{ $saleOrder->so_qr_code }}" alt="QR Code"
-                                    style="width: 80px; height: 80px;">
+                                <img src="{{ $saleOrder->so_qr_code }}" alt="QR Code" style="width: 80px; height: 80px;">
                             </td>
                         </tr>
                     </table>

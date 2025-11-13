@@ -1069,10 +1069,185 @@ class SalesOrderController extends Controller
         };
     }
 
+    public function task_submit(Request $request)
+    {
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'so_product_id'   => 'required|integer|exists:sales_order_products,id',
+            'operation_id'    => 'required|integer|exists:operation_masters,id',
+            'current_roll_no' => 'nullable|integer',
+            'so_id'           => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation Error',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        // Inputs 
+        $so_id          = $request->input('so_id');
+        $so_product_id  = $request->input('so_product_id');
+        $pass_id        = $request->input('pass_id');
+        $operation_id   = $request->input('operation_id');
+        $current_roll_no = $request->input('current_roll_no');
+        $reason         = 'completed';
+
+        $so_product_details = SalesOrderProduct::select('id', 'so_id', 'sub_product_id', 'product_id', 'item_name')
+            ->find($so_product_id);
+
+        $getDetails = SOProductOperationDetails::where([
+            'so_id'                  => $so_product_details->so_id,
+            'sales_order_product_id' => $so_product_id,
+            'product_id'             => $so_product_details->product_id,
+            'sub_product_id'         => $so_product_details->sub_product_id,
+            'operation_id'           => $operation_id
+        ])->first();
+
+        // Fetch tracking row
+        $query = SalesOrderTracking::where('so_pid_primary', $so_product_id)
+            ->where('operation_id', $operation_id)
+            ->where('quantity_processed', $current_roll_no);
+
+        if (is_numeric($pass_id)) {
+            $query->where('pass_id', (int) $pass_id);
+        } else {
+            $query->whereNull('pass_id');
+        }
+
+        $getData = $query->orderBy('id', 'desc')->first();
+  
+        // ✅ If no tracking found
+        if (!$getData) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'No details found',
+                'data'    => []
+            ], 404);
+        }
+ 
+        // ✅ Prevent double submission
+        if ($getData->roll_status === 'completed') {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Already completed',
+                'data'    => []
+            ], 404);
+        }  
+
+        // ✅ Get ideal cycle & total actual time
+        $getActualIdeal = SalesOrderTracking::where([
+            'so_id' => $so_product_details->so_id,
+            'so_pid_primary' => $so_product_id,
+            'operation_id' => $operation_id
+        ])->selectRaw('ideal_cycle_time, SUM(time_taken) as total_time_taken')
+            ->groupBy('ideal_cycle_time')
+            ->first();
+
+        // ✅ Only if tracking row exists AND ideal cycle is available
+        if ($getActualIdeal && $getActualIdeal->ideal_cycle_time !== 'NA') {
+
+            $ideal = (float)$getActualIdeal->ideal_cycle_time;
+            $totalMinutes = $getActualIdeal->total_time_taken / 60;
+
+            if ($ideal < $totalMinutes) {
+
+                $so_no = $getDetails->so_no;
+                $operation = $getDetails->operation_name;
+                $product = $so_product_details->item_name;
+                $message = "Ideal Cycle Time of {$ideal} min exceeded for SO No: {$so_no}, Product: {$product}, Operation: {$operation}.";
+
+                Notification::create([
+                    'machine_id' => $getData->machine_id ?? 0,  // ✅ fixed
+                    'title'      => 'Ideal Cycle Time Exceeded',
+                    'message'    => $message,
+                    'type'       => 'ICT',
+                    'created_at' => now(),
+                ]);
+            }
+        }
+ 
+        // ✅ Calculate time taken
+        $start = Carbon::parse($getData->start_date_time);
+        $end = Carbon::now();
+        $durationInSeconds = $end->diffInSeconds($start);
+
+        // ✅ Update tracking entry
+        $getData->update([
+            'reason'        => $reason,
+            'roll_status'   => 'completed',
+            'end_date_time' => $end,
+            'time_taken'    => $durationInSeconds,
+            'updated_at'    => now(),
+        ]);
+
+        // ✅ Update processed qty 
+        $processed_qty = min(((int)$getDetails->processed_qty) + 1, (int)$getDetails->qty);
+        $final_status = ($processed_qty >= $getDetails->qty) ? 'completed' : 'pending';
+
+        $getDetails->update([
+            'completed_qty'  => $processed_qty,
+            'final_status'   => $final_status,
+            'process_status' => 'completed',
+            'updated_at'     => now()
+        ]);
+
+        // ✅ Update nested JSON processed_qty
+        if ($getDetails && $getDetails->processed_qty) {
+
+            $processedQty = json_decode($getDetails->processed_qty, true);
+            $updated = false;
+ 
+            foreach ($processedQty as &$item) {
+                $itemPassId = (int)($item['pass_sheet_id'] ?? 0);
+                $itemQty = (int)($item['quantity'] ?? 0);
+                $itemStatus = strtolower($item['status'] ?? '');
+
+                if ($itemStatus === 'in-progress') {
+                    if ($pass_id > 0) {
+                        if ($itemPassId === (int)$pass_id && $itemQty === (int)$current_roll_no) {
+                            $item['status'] = 'completed';
+                            $item['updated_by'] = auth()->id() ?? 0;
+                            $item['completed_date'] = now()->format('Y-m-d H:i:s');
+                            $updated = true;
+                            break;
+                        }
+                    } else {
+                        if ($itemQty === (int)$current_roll_no) {
+                            $item['status'] = 'completed';
+                            $item['updated_by'] = auth()->id() ?? 0;
+                            $item['completed_date'] = now()->format('Y-m-d H:i:s');
+                            $updated = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($updated) {
+                $allCompleted = collect($processedQty)->every(fn($item) => strtolower($item['status']) === 'completed');
+
+                if ($allCompleted) {
+                    $getDetails->final_status = 'completed';
+                }
+
+                $getDetails->completed_qty += 1;
+                $getDetails->processed_qty = json_encode($processedQty);
+                $getDetails->save();
+            }
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Operation Status Updated'
+        ], 200);
+    }
+
     public function operation_start(Request $request)
     {
         Log::info('operation_start - API called', ['request' => $request->all()]);
-
         try {
             // -------------------------------
             // 1️⃣ Validate input
@@ -1170,7 +1345,7 @@ class SalesOrderController extends Controller
             ])->orderBy('id', 'desc')->first();
 
             if (!empty($existingTracking)) {
-                if ($existingTracking->reason == 'completed' || $existingTracking->roll_status == 'completed') {
+                if ( $existingTracking->roll_status == 'completed') {
                     Log::warning('operation_start - already completed', ['tracking_id' => $existingTracking->id]);
                     return response()->json(['status' => false, 'message' => 'Operation is already completed.'], 409);
                 }
@@ -1262,9 +1437,7 @@ class SalesOrderController extends Controller
                 'so_pid_primary'     => $so_product_details->id,
                 'roll_status'        => 'pending'
             ];
-
-            Log::info('operation_start - creating tracking record', $data);
-
+ 
             try {
                 $tracking = SalesOrderTracking::create($data);
             } catch (\Exception $e) {
@@ -1272,8 +1445,7 @@ class SalesOrderController extends Controller
                 return response()->json(['status' => false, 'message' => 'Failed to create tracking record.'], 500);
             }
 
-            $lastInsertedId = $tracking->id;
-            Log::info('operation_start - tracking created', ['tracking_id' => $lastInsertedId]);
+            $lastInsertedId = $tracking->id; 
 
             // -------------------------------
             // 11️⃣ Update machine status
@@ -1283,9 +1455,7 @@ class SalesOrderController extends Controller
                 'operator_id' => $operator_id,
                 'tracking_id' => $lastInsertedId
             ]);
-
-            Log::info('operation_start - machine updated', ['machine_id' => $machine_id]);
-
+ 
             // -------------------------------
             // 12️⃣ Update operation detail JSON
             // -------------------------------
@@ -1299,8 +1469,7 @@ class SalesOrderController extends Controller
 
             if ($operationDetails && $operationDetails->processed_qty) {
                 $processedQty = json_decode($operationDetails->processed_qty, true);
-                if (!is_array($processedQty)) {
-                    Log::warning('operation_start - processed_qty malformed', ['processed_qty' => $operationDetails->processed_qty]);
+                if (!is_array($processedQty)) { 
                     $processedQty = [];
                 }
 
@@ -1308,22 +1477,22 @@ class SalesOrderController extends Controller
 
                 foreach ($processedQty as &$item) {
                     $item['pass_sheet_id'] = $item['pass_sheet_id'] ?? 0;
-                    $item['quantity']      = $item['quantity'] ?? 0;
-                    $item['status']        = $item['status'] ?? 'not-started';
+                    $item['quantity'] = $item['quantity'] ?? 0;
+                    $item['status'] = $item['status'] ?? 'not-started';
 
                     $itemPassId = (int) $item['pass_sheet_id'];
                     $itemQty    = (int) $item['quantity'];
 
                     if ($pass_id > 0) {
                         if ($item['status'] === 'not-started' && $itemPassId === (int) $pass_id && $itemQty === (int) $current_roll) {
-                            $item['status']     = 'in-progress';
+                            $item['status'] = 'in-progress';
                             $item['updated_by'] = $operator_id;
                             $updated = true;
                             break;
                         }
                     } else {
                         if ($item['status'] === 'not-started' && $itemQty === (int) $current_roll) {
-                            $item['status']     = 'in-progress';
+                            $item['status'] = 'in-progress';
                             $item['updated_by'] = $operator_id;
                             $updated = true;
                             break;
@@ -1333,211 +1502,24 @@ class SalesOrderController extends Controller
 
                 if ($updated) {
                     $operationDetails->processed_qty = json_encode($processedQty);
-                    $operationDetails->save();
-                    Log::info('operation_start - updated processed_qty', ['operation_detail_id' => $operationDetails->id]);
+                    $operationDetails->save(); 
                 }
             }
 
             // -------------------------------
             // ✅ Final Response
-            // -------------------------------
-            Log::info('operation_start - completed successfully', ['tracking_id' => $lastInsertedId]);
-
+            // ------------------------------- 
             return response()->json([
                 'status'  => true,
                 'message' => 'Operation started successfully',
                 'tracking_id' => $lastInsertedId
             ], 200);
-        } catch (\Throwable $e) {
-            Log::error('operation_start - exception caught', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
+        } catch (\Throwable $e) { 
             return response()->json([
                 'status' => false,
                 'message' => 'Internal Server Error: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    public function task_submit(Request $request)
-    {
-        // Validate input
-        $validator = Validator::make($request->all(), [
-            'so_product_id'   => 'required|integer|exists:sales_order_products,id',
-            'operation_id'    => 'required|integer|exists:operation_masters,id',
-            'current_roll_no' => 'nullable|integer',
-            'so_id'           => 'required|integer',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation Error',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
-
-        // Inputs 
-        $so_id          = $request->input('so_id');
-        $so_product_id  = $request->input('so_product_id');
-        $pass_id        = $request->input('pass_id');
-        $operation_id   = $request->input('operation_id');
-        $current_roll_no = $request->input('current_roll_no');
-        $reason         = 'completed';
-
-        $so_product_details = SalesOrderProduct::select('id', 'so_id', 'sub_product_id', 'product_id', 'item_name')
-            ->find($so_product_id);
-
-        $getDetails = SOProductOperationDetails::where([
-            'so_id'                  => $so_product_details->so_id,
-            'sales_order_product_id' => $so_product_id,
-            'product_id'             => $so_product_details->product_id,
-            'sub_product_id'         => $so_product_details->sub_product_id,
-            'operation_id'           => $operation_id
-        ])->first();
-
-        // Fetch tracking row
-        $query = SalesOrderTracking::where('so_pid_primary', $so_product_id)
-            ->where('operation_id', $operation_id)
-            ->where('quantity_processed', $current_roll_no);
-
-        if (is_numeric($pass_id)) {
-            $query->where('pass_id', (int) $pass_id);
-        } else {
-            $query->whereNull('pass_id');
-        }
-
-        $getData = $query->orderBy('id', 'desc')->first();
- /*
-        // ✅ If no tracking found
-        if (!$getData) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'No details found',
-                'data'    => []
-            ], 404);
-        }
- 
-        // ✅ Prevent double submission
-        if ($getData->roll_status === 'completed') {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Already completed',
-                'data'    => []
-            ], 404);
-        } */
-
-        // ✅ Get ideal cycle & total actual time
-        $getActualIdeal = SalesOrderTracking::where([
-            'so_id'          => $so_product_details->so_id,
-            'so_pid_primary' => $so_product_id,
-            'operation_id'   => $operation_id
-        ])->selectRaw('ideal_cycle_time, SUM(time_taken) as total_time_taken')
-            ->groupBy('ideal_cycle_time')
-            ->first();
-
-        // ✅ Only if tracking row exists AND ideal cycle is available
-        if ($getActualIdeal && $getActualIdeal->ideal_cycle_time !== 'NA') {
-
-            $ideal = (float)$getActualIdeal->ideal_cycle_time;
-            $totalMinutes = $getActualIdeal->total_time_taken / 60;
-
-            if ($ideal < $totalMinutes) {
-
-                $so_no     = $getDetails->so_no;
-                $operation = $getDetails->operation_name;
-                $product   = $so_product_details->item_name;
-
-                $message = "Ideal Cycle Time of {$ideal} min exceeded for SO No: {$so_no}, Product: {$product}, Operation: {$operation}.";
-
-                Notification::create([
-                    'machine_id' => $getData->machine_id ?? 0,  // ✅ fixed
-                    'title'      => 'Ideal Cycle Time Exceeded',
-                    'message'    => $message,
-                    'type'       => 'ICT',
-                    'created_at' => now(),
-                ]);
-            }
-        }
- 
-        // ✅ Calculate time taken
-        $start = Carbon::parse($getData->start_date_time);
-        $end   = Carbon::now();
-        $durationInSeconds = $end->diffInSeconds($start);
-
-        // ✅ Update tracking entry
-        $getData->update([
-            'reason'        => $reason,
-            'roll_status'   => 'completed',
-            'end_date_time' => $end,
-            'time_taken'    => $durationInSeconds,
-            'updated_at'    => now(),
-        ]);
-
-        // ✅ Update processed qty 
-        $processed_qty = min(((int)$getDetails->processed_qty) + 1, (int)$getDetails->qty);
-        $final_status = ($processed_qty >= $getDetails->qty) ? 'completed' : 'pending';
-
-        $getDetails->update([
-            'completed_qty'  => $processed_qty,
-            'final_status'   => $final_status,
-            'process_status' => 'completed',
-            'updated_at'     => now()
-        ]);
-
-        // ✅ Update nested JSON processed_qty
-        if ($getDetails && $getDetails->processed_qty) {
-
-            $processedQty = json_decode($getDetails->processed_qty, true);
-            $updated = false;
-
-            // print_r($processedQty); exit;
-
-            foreach ($processedQty as &$item) {
-                $itemPassId = (int)($item['pass_sheet_id'] ?? 0);
-                $itemQty    = (int)($item['quantity'] ?? 0);
-                $itemStatus = strtolower($item['status'] ?? '');
-
-                if ($itemStatus === 'in-progress') {
-                    if ($pass_id > 0) {
-                        if ($itemPassId === (int)$pass_id && $itemQty === (int)$current_roll_no) {
-                            $item['status'] = 'completed';
-                            $item['updated_by'] = auth()->id() ?? 0;
-                            $item['completed_date'] = now()->format('Y-m-d H:i:s');
-                            $updated = true;
-                            break;
-                        }
-                    } else {
-                        if ($itemQty === (int)$current_roll_no) {
-                            $item['status'] = 'completed';
-                            $item['updated_by'] = auth()->id() ?? 0;
-                            $item['completed_date'] = now()->format('Y-m-d H:i:s');
-                            $updated = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if ($updated) {
-                $allCompleted = collect($processedQty)->every(fn($item) => strtolower($item['status']) === 'completed');
-
-                if ($allCompleted) {
-                    $getDetails->final_status = 'completed';
-                }
-
-                $getDetails->completed_qty += 1;
-                $getDetails->processed_qty = json_encode($processedQty);
-                $getDetails->save();
-            }
-        }
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Operation Status Updated'
-        ], 200);
     }
 
 }

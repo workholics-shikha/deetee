@@ -123,7 +123,6 @@ class ErpApiController extends Controller
                         "so_groupid" => $datum['so_groupid'],
                         "soquantity" => !empty($datum['soquantity']) ? (int)$datum['soquantity'] : 0,
                         "so_date" => $datum['so_date'],
-                        // "so_deliverytimeline" => $datum['so_deliverytimeline'],
                     ];
 
                     $order = ErpSalesOrder::firstOrNew(['so_id' => $datum['so_id']]);
