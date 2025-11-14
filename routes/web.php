@@ -211,3 +211,4 @@ Route::get('qrGenerateSO', [ImportController::class, 'qrGenerateSO'])->name('qrG
 Route::get('qrGenerateUsers', [ImportController::class, 'qrGenerateUsers'])->name('qrGenerateUsers');
 Route::get('qrGenerateGeneric', [ImportController::class, 'qrGenerateGeneric'])->name('qrGenerateGeneric');
 Route::get('qrGenerateSoProduct', [ImportController::class, 'qrGenerateSoProduct'])->name('qrGenerateSoProduct');
+Route::get('copyOperationPngInSOPDetails', [ImportController::class, 'copyOperationPngInSOPDetails'])->name('copyOperationPngInSOPDetails');
