@@ -122,3 +122,6 @@ CREATE TABLE `deetee_prod`.`rc_review` (`id` INT NOT NULL AUTO_INCREMENT, `so_tr
 
 // 13-11-2025
 wget -O /dev/null https://weblaunchpad.in/deetee_industries/so-list
+
+// 14-11-2025
+ALTER TABLE roles MODIFY permissions JSON NULL;

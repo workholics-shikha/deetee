@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\{PassSheet, SalesOrderProduct, ProductMasters, ErpSalesOrder, OperationMaster, SOProductOperationDetails, SubProduct, SubproductWiseOperation, Notification};
+use App\Models\{PassSheet, SalesOrderProduct, ProductMasters, ErpSalesOrder, OperationMaster, SOProductOperationDetails, SubProduct, Notification};
 use Illuminate\Support\Facades\{Http, Image, Storage, DB};
 use Illuminate\Support\{Carbon, Str};
 use Endroid\QrCode\Builder\Builder;
@@ -697,7 +697,7 @@ if (!function_exists('getCompletedQty')) {
         return $totalCompletedQty;
     }
 }
-  
+
 if (!function_exists('getNotificationCount')) {
     function getNotificationCount()
     {
@@ -713,7 +713,7 @@ if (!function_exists('getNotificationInDrop')) {
 }
 
 if (!function_exists('getParamFirstValueNew')) {
-    function getParamFirstValueNew($op_id, $p_id, $passId=NULL)
+    function getParamFirstValueNew($op_id, $p_id, $passId = NULL)
     {
 
         if (empty($op_id) || empty($p_id)) {
@@ -840,12 +840,12 @@ if (!function_exists('getParamFirstValueNew')) {
 
             if ($data->measureunit == 'SET') {
 
-                if(!empty($passId)){
+                if (!empty($passId)) {
                     $passDetails = PassSheet::find($passId);
                 } else {
                     $passDetails = PassSheet::where('cpoitemid', $data->cpoitemid)->first();
-                }   
-                
+                }
+
                 $passDetails = PassSheet::find($passId);
 
                 $size1 = $passDetails->size1;
@@ -909,7 +909,7 @@ if (!function_exists('getParamFirstValueNew')) {
 }
 
 if (!function_exists('getParamSecondValueNew')) {
-    function getParamSecondValueNew($op_id, $p_id, $passId=NULL)
+    function getParamSecondValueNew($op_id, $p_id, $passId = NULL)
     {
         if (empty($op_id) || empty($p_id)) {
             return 'NA';
@@ -993,7 +993,23 @@ if (!function_exists('getParamSecondValueNew')) {
                 $getVal = $data->bs1_depthdia;
             }
         }
-
         return $getVal;
+    }
+}
+
+if (!function_exists('hasPermission')) {
+    function hasPermission($key)
+    {
+        $user = auth()->user();
+
+        if (!$user || !$user->roleName) {
+            return false;
+        }
+ 
+        $permissions = $user->rolePermission->permissions;
+
+        if (empty($permissions)) return false;
+
+        return !empty($permissions[$key]);
     }
 }

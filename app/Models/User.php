@@ -128,8 +128,8 @@ class User extends Authenticatable
         return $value;
     }
 
-    public function role()
+    public function rolePermission()
     {
-        return $this->belongsTo(Role::class, 'role');
+        return $this->belongsTo(Role::class, 'role', 'id');
     }
 }

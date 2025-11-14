@@ -30,6 +30,7 @@ Route::get('/truncate-data', function () {
 
 Route::get('so-list', [ErpApiController::class, 'so_list'])->name('so-list');
 
+
 Route::get('/',              [AdminLoginController::class, 'showLoginForm'])->name('login');
 
 Route::get('login',          [AdminLoginController::class, 'showLoginForm'])->name('login');
@@ -52,6 +53,7 @@ Route::post('admin/check/email',    [AdminLoginController::class, 'checkEmail'])
 
 Route::get('thankyou',              [AdminLoginController::class, 'thankyou'])->name('thankyou');
 
+
 Route::get('admin/pdf-document/{id}', [SalesOrderController::class, 'printPreview'])->name('printPdf');
 
 Route::get('admin/printPassSheet/{id}', [SalesOrderController::class, 'printPassSheet'])->name('printPassSheet');
@@ -65,38 +67,38 @@ Route::middleware(['auth'])->group(function () {
     Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     // Sales order routes ====
+    Route::group(['middleware' => ['auth', 'permission:sale_orders']], function () {
 
-    // Route::get('so_list',                        [SalesOrderController::class, 'so_list'])->name('so_list'); // fetch sales order
+        Route::get('admin/sales-order',              [SalesOrderController::class, 'index'])->name('admin.sales-order');
 
-    Route::get('admin/sales-order',              [SalesOrderController::class, 'index'])->name('admin.sales-order');
+        Route::get('admin/searchInSo',               [SalesOrderController::class, 'searchInSo'])->name('admin.searchInSo');
 
-    Route::get('admin/searchInSo',               [SalesOrderController::class, 'searchInSo'])->name('admin.searchInSo');
+        Route::get('admin/sales-order-details/{id}', [SalesOrderController::class, 'so_details'])->name('admin.sales-order-details');
 
-    Route::get('admin/sales-order-details/{id}', [SalesOrderController::class, 'so_details'])->name('admin.sales-order-details');
+        Route::get('admin/route-card-details/{id}/{any?}', [SubProductOperationController::class, 'route_card_details'])->name('admin.route-card-details');
 
-    Route::get('admin/route-card-details/{id}/{any?}', [SubProductOperationController::class, 'route_card_details'])->name('admin.route-card-details');
+        Route::get('admin/route-card-operation-details/{id}', [SubProductOperationController::class, 'route_card_operation_details'])->name('admin.route-card-operation-details');
 
-    Route::get('admin/route-card-operation-details/{id}', [SubProductOperationController::class, 'route_card_operation_details'])->name('admin.route-card-operation-details');
+        Route::post('admin/updateRouteCardOperationCycleTime', [SubProductOperationController::class, 'route_card_operation_cycletime'])->name('admin.route-card-operation-cycletime');
 
-    Route::post('admin/updateRouteCardOperationCycleTime', [SubProductOperationController::class, 'route_card_operation_cycletime'])->name('admin.route-card-operation-cycletime');
-  
-    Route::post('admin/lockRouteCard', [SubProductOperationController::class, 'lockRouteCard'])->name('admin.lockRouteCard');
+        Route::post('admin/lockRouteCard', [SubProductOperationController::class, 'lockRouteCard'])->name('admin.lockRouteCard');
 
-    Route::get('admin/pass-sheet/{id}',          [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');
+        Route::get('admin/pass-sheet/{id}',          [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');
 
-    Route::get('admin/route-card-preview',       [SalesOrderController::class, 'route_card_preview'])->name('admin.route-card-preview');
+        Route::get('admin/route-card-preview',       [SalesOrderController::class, 'route_card_preview'])->name('admin.route-card-preview');
 
-    Route::get('admin/pass-sheet-preview',       [SalesOrderController::class, 'pass_sheet_preview'])->name('admin.pass-sheet-preview');
+        Route::get('admin/pass-sheet-preview',       [SalesOrderController::class, 'pass_sheet_preview'])->name('admin.pass-sheet-preview');
 
-    Route::get('admin/fetch-sub-product',        [SalesOrderController::class, 'fetch_sub_product'])->name('admin.fetch-sub-product');
+        Route::get('admin/fetch-sub-product',        [SalesOrderController::class, 'fetch_sub_product'])->name('admin.fetch-sub-product');
 
-    Route::post('admin/update-sub-product',      [SalesOrderController::class, 'update_sub_product'])->name('admin.update-sub-product');
+        Route::post('admin/update-sub-product',      [SalesOrderController::class, 'update_sub_product'])->name('admin.update-sub-product');
 
-    Route::post('admin/operation-review',        [SalesOrderController::class, 'operationReview'])->name('admin.operation-review');
+        Route::post('admin/operation-review',        [SalesOrderController::class, 'operationReview'])->name('admin.operation-review');
 
-    Route::get('admin/get-reviews-list/{id}',        [SalesOrderController::class, 'getOperationReviewList'])->name('admin.get-reviews-list');
+        Route::get('admin/get-reviews-list/{id}',        [SalesOrderController::class, 'getOperationReviewList'])->name('admin.get-reviews-list');
 
-    Route::get('admin/getOperationDetails/{id}/{any?}', [SalesOrderController::class, 'getOperationDetails'])->name('admin.getOperationDetails');
+        Route::get('admin/getOperationDetails/{id}/{any?}', [SalesOrderController::class, 'getOperationDetails'])->name('admin.getOperationDetails');
+    });
 
     // Machines routes ====
 
@@ -177,7 +179,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('admin/notification', [NotificationController::class, 'index'])->name('admin.notification');
 });
- 
+
 Route::get('importView', function () {
     return view('admin/importView');
 });
