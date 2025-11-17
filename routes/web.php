@@ -165,19 +165,22 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('admin/submitCycleTime',       [SalesOrderController::class, 'submitCycleTime'])->name('admin.submitCycleTime');
 
-    Route::get('genericQRs',        [QRCodeController::class, 'genericQRs'])->name('genericQRs');
-
-    Route::get('deleteGenericQR/{id}',   [QRCodeController::class, 'deleteGenericQR'])->name('deleteGenericQR');
-
+    Route::get('genericQRs', [QRCodeController::class, 'genericQRs'])->name('genericQRs');
+    
+    Route::get('deleteGenericQR/{id}', [QRCodeController::class, 'deleteGenericQR'])->name('deleteGenericQR');
+    
     Route::post('generate/qr-code', [QRCodeController::class, 'generateQrCard'])->name('generate.qr-code');
-
+    
     Route::get('admin/qr-pdf-preview', [QRCodeController::class, 'qrPdfPreview'])->name('generate.qrPdfPreview');
-
+    
     Route::get('admin/machine-pdf-preview/{id}', [QRCodeController::class, 'machinePdfPreview'])->name('admin.machinePdfPreview');
-
+    
     Route::post('/admin/update-machine-status', [MachineController::class, 'updateStatus'])->name('admin.updateMachineStatus');
-
+    
     Route::get('admin/notification', [NotificationController::class, 'index'])->name('admin.notification');
+    
+    Route::get('generateMachineQrCard', [QRCodeController::class, 'generateMachineQrCard'])->name('generateMachineQrCard');
+
 });
 
 Route::get('importView', function () {
@@ -212,3 +215,5 @@ Route::get('qrGenerateUsers', [ImportController::class, 'qrGenerateUsers'])->nam
 Route::get('qrGenerateGeneric', [ImportController::class, 'qrGenerateGeneric'])->name('qrGenerateGeneric');
 Route::get('qrGenerateSoProduct', [ImportController::class, 'qrGenerateSoProduct'])->name('qrGenerateSoProduct');
 Route::get('copyOperationPngInSOPDetails', [ImportController::class, 'copyOperationPngInSOPDetails'])->name('copyOperationPngInSOPDetails');
+Route::get('generateNewQrCodes', [ImportController::class, 'generateNewQrCodes'])->name('generateNewQrCodes');
+Route::get('generateNewQrCodes2', [ImportController::class, 'generateNewQrCodes2'])->name('generateNewQrCodes2');

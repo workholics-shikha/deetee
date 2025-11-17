@@ -166,6 +166,17 @@
                                                         @endif
                                                     </select>
                                                 </div>
+ 
+                                                <div class="col-6 mb-3">
+                                                    <label for="password" class="form-label">Password</label>
+                                                    <input type="password" class="form-control @error('password') is-invalid @enderror"
+                                                        id="password" name="password" value="{{ old('password') }}"
+                                                        placeholder="Enter Password">
+                                                    @error('password')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                             
                                             </div>
 
                                             <div class="d-flex justify-content-center w-100">

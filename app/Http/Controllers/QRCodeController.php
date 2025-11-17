@@ -7,9 +7,10 @@ use Illuminate\Http\Request;
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Support\Facades\{Storage, DB, File};
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class QRCodeController extends Controller
-{   
+{
     public function index()
     {
 
@@ -368,7 +369,7 @@ class QRCodeController extends Controller
             return back()->withErrors(['qr' => 'Failed to generate QR.'])->withInput();
         }
     }
- 
+
     public function genericQRs()
     {
         $data =  DB::table('generic_qrcodes')->get();
@@ -404,18 +405,56 @@ class QRCodeController extends Controller
         }
         return view('qr-codes.qr-pdf-preview', compact('data'));
     }
-     
+
     public function machinePdfPreview($id)
     {
         $data =  MachineMaster::with('operations')->find($id);
- 
-        if(isset($_GET['pdf']) && $_GET['pdf'] == 'true') {
-                $pdf =  Pdf::setOptions([
-                    'isPhpEnabled' => true,
-                    'isRemoteEnabled' => true,
-                ])->loadView('qr-codes.pdf.machine-pdf', compact('data'));
-                return $pdf->stream('document.pdf');    
+
+        if (isset($_GET['pdf']) && $_GET['pdf'] == 'true') {
+            $pdf =  Pdf::setOptions([
+                'isPhpEnabled' => true,
+                'isRemoteEnabled' => true,
+            ])->loadView('qr-codes.pdf.machine-pdf', compact('data'));
+            return $pdf->stream('document.pdf');
         }
         return view('qr-codes.machine-pdf-preview', compact('data'));
+    }
+
+    public function generateMachineQrCard(Request $request)
+    {
+        // Get all machines
+        $machines = MachineMaster::get();
+        $generatedCount = 0;
+
+        foreach ($machines as $machine) {
+
+            $machine_id = $machine->id;
+            $machine_name = $machine->machine ?? 'machine-' . $machine_id;
+
+            // Generate QR code (store machine_id or any info you want)
+            $result = Builder::create()
+                ->data($machine_id)
+                ->size(300)
+                ->margin(10)
+                ->build();
+
+            // Clean and lowercase the filename
+            $safeName = Str::slug(strtolower($machine_name), '-');
+            $fileName = $safeName . '-' . time() . '.png';
+            $path = 'machine-qrcodes/' . $fileName; // relative to 'storage/app/public'
+
+            // Save file to storage/app/public/machine-qrcodes
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Update database
+            $machine->machine_qr_code = $fileName;
+            $machine->save();
+
+            $generatedCount++;
+        }
+
+        return response()->json([
+            'message' => "✅ Successfully generated QR codes for {$generatedCount} machine(s)."
+        ]);
     }
 }

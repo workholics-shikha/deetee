@@ -83,19 +83,19 @@
                                                                     </tr> --}}
                                                                     <tr>
                                                                         <td>Unit</td>
-                                                                        <td>RMR (Unit II)</td>
+                                                                        <td>{{$data->unit_name}}</td>
                                                                     </tr>
                                                                     {{-- <tr>
                                                                         <td>Bank Account Number</td>
                                                                         <td>EBP2534DF42</td>
                                                                     </tr> --}}
                                                                     <tr>
-                                                                        <td>Address</td>
-                                                                        <td>{{$data->address}}</td>
+                                                                        <td>Department</td>
+                                                                        <td>{{$data->department}}</td>
                                                                     </tr>
                                                                     <tr>
-                                                                        <td>Skills</td>
-                                                                        <td>Blanking, Lathe</td>
+                                                                        <td>Designation</td>
+                                                                        <td>{{$data->designation}}</td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td>Status</td>
