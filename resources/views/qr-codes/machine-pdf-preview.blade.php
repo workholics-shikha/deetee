@@ -86,8 +86,7 @@
     <div class="pdf-container page">
 
         <!-- Table Section -->
-        <input type="hidden" id="searchInput" data-id="{{ $data->id }}"
-            search-url="http://localhost/deetee/admin/route-card-preview" value="">
+        <input type="hidden" id="searchInput" data-id="{{ $data->id }}" search-url="http://localhost/deetee/admin/route-card-preview" value="">
 
         <table width="100%" cellspacing="0" cellpadding="5" style="border-collapse: collapse;">
             <tbody id="myTableBody">
@@ -133,11 +132,8 @@
                         <p style="margin-bottom: 0;">Unit name:</p>
                         <h6 style="font-weight: 600;">{{ $data->unit_name ?? '-' }}</h6>
                     </td>
-                    <td style="border-left: none; text-align: right;">
-                        {{-- <img src="{{ $data->so_product_qr_code ?? asset(DEFAULT_QR) }}" alt="QR Code" style="width: 80px; height: 80px;"> --}}
-                    </td>
+                    <td style="border-left: none; text-align: right;"> </td>
                 </tr>
-
                 <tr>
                     <th colspan="4">Operations</th>
                 </tr>
@@ -161,7 +157,6 @@
 
             </tbody>
         </table>
-
 
         <!-- Footer -->
         <div class="footer d-flex flex-column align-items-center flex-wrap align-content-stretch">

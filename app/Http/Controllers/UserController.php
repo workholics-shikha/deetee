@@ -14,12 +14,12 @@ class UserController extends Controller
     public function index()
     {
         // ======= 'operator','admin','supervisor','HOD','unit_head','CEO' =======
-        $data['operator'] = User::operator()->with('roleName')->paginate(PAGE_NO);
-        $data['supervisor'] = User::supervisor()->with('roleName')->paginate(PAGE_NO);
-        $data['unit_head'] = User::UnitHead()->with('roleName')->paginate(PAGE_NO);
-        $data['admin'] = User::admin()->with('roleName')->paginate(PAGE_NO);
-        $data['hod'] = User::HOD()->with('roleName')->paginate(PAGE_NO);
-        $data['ceo'] = User::CEO()->with('roleName')->paginate(PAGE_NO);
+        $data['operator'] = User::operator()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
+        $data['supervisor'] = User::supervisor()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
+        $data['unit_head'] = User::UnitHead()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
+        $data['admin'] = User::admin()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
+        $data['hod'] = User::HOD()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
+        $data['ceo'] = User::CEO()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
 
         return view('users.index', compact('data'));
     }
@@ -110,7 +110,7 @@ class UserController extends Controller
         $userData['name'] = $name;
         $userData['email'] = $request->email;
         $userData['phone'] = $request->phone;
-        // $userData['password'] = Hash::make($request->password);
+        $userData['password'] = Hash::make($request->password);
         $userData['unit'] = $unit = $request->unit;
         $userData['designation'] = $request->designation;
         $userData['department'] = $request->department;
@@ -187,6 +187,10 @@ class UserController extends Controller
             $validated['profile_image'] = $attachment;
         }
         $validated['designation'] = Role::where('id',$request->role)->value('name');
+
+        if($request->password != ''){
+            $validated['password'] = Hash::make($request->password);
+        }
         // Update user details
         $user->update($validated);
 

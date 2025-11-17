@@ -22,7 +22,7 @@ class AdminLoginController extends Controller
     public function login(AdminLoginRequest $request)
     {
         $credentials = $request->only('email', 'password');
-        $roleIds = [1, 3, 4, 5, 6]; // Allowed role IDs
+        $roleIds = [1, 3, 4, 5, 6, 7]; //-Allowed role IDs
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
