@@ -127,7 +127,7 @@ if (!function_exists('addSubProductDetails')) {
 
                 $product = ProductMasters::where('erp_product', 'LIKE', $item["item_name"])
                     ->where(['unit' => $salesOrder->industry, 'group' => $salesOrder->so_group])
-                    ->first(['id', 'cycle_flow']);
+                    ->first(['id', 'product_flow', 'cycle_flow']);
 
                 $getScrutienyId = callErpApi(ERP_LINK . '/OH_showSOScrutineyWithsoid/' . $so_id);
                 $getScrutienyDetails = $getScrutienyId->json();
@@ -212,7 +212,12 @@ if (!function_exists('addSubProductDetails')) {
                         "soquantity"          => $item["soquantity"] ?? 0,
                         "scr_status"          => $item["scr_status"] ?? 0,
                         "product_id"          => ($product) ? $product->id : 0,
-                        "product_status"      => ($product) ? ($product->cycle_flow) : 'Not Available',
+                        "product_status" => ($product &&
+                            strtolower($product->product_flow) === 'available' &&
+                            strtolower($product->cycle_flow) === 'available')
+                            ? 'Available'
+                            : 'Not Available',
+
                         "created_at"          => now(),
                         "updated_at"          => now()
                     ]
@@ -1005,7 +1010,7 @@ if (!function_exists('hasPermission')) {
         if (!$user || !$user->roleName) {
             return false;
         }
- 
+
         $permissions = $user->rolePermission->permissions;
 
         if (empty($permissions)) return false;

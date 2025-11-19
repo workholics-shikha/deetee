@@ -471,7 +471,7 @@ class ImportController extends Controller
         $subProducts = SalesOrderProduct::get();
         if (!empty($subProducts)) {
             foreach ($subProducts as $products) {
-                $result = Builder::create()
+                /* $result = Builder::create()
                     ->data($products->id . ';Product')
                     ->size(300) // Set size in pixels
                     ->margin(10) // Set margin in pixels
@@ -481,7 +481,18 @@ class ImportController extends Controller
                 $path = 'so-product-qrcodes/' . $qr_code_name; // unique filename
 
                 Storage::disk('public')->put($path, $result->getString());
-                SalesOrderProduct::where('id', $products->id)->update(['so_product_qr_code' => $qr_code_name]);
+                SalesOrderProduct::where('id', $products->id)->update(['so_product_qr_code' => $qr_code_name]); */
+
+                $product = ProductMasters::where(['id' => $products->product_id])
+                    ->first(['id', 'product_flow', 'cycle_flow']);
+
+                $product_status  = ($product &&
+                    strtolower($product->product_flow) === 'available' &&
+                    strtolower($product->cycle_flow) === 'available')
+                    ? 'Available'
+                    : 'Not Available';
+
+                SalesOrderProduct::where('id', $products->id)->update(['product_status' => $product_status]);
             }
         }
     }

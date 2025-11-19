@@ -123,7 +123,7 @@
                                         @php  
                                             $btnDisable = $disableDiv = '';
                                             if (
-                                                $item['product_status'] != 'Available' ||
+                                                $item['product_status'] != 'Available' || $item['product_status'] != 'Available' ||
                                                 $item['scr_status'] != 'Scrutinized'  
                                             ) {
                                                 $btnDisable = 'disabled';

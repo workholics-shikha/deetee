@@ -1152,8 +1152,11 @@ class SalesOrderController extends Controller
             $ideal = (float)$getActualIdeal->ideal_cycle_time;
             $totalMinutes = $getActualIdeal->total_time_taken / 60;
 
+            // =========== Send Notification ===========
+
             if ($ideal < $totalMinutes) {
 
+                if($ideal > 0)
                 $so_no = $getDetails->so_no;
                 $operation = $getDetails->operation_name;
                 $product = $so_product_details->item_name;
@@ -1166,7 +1169,7 @@ class SalesOrderController extends Controller
                     'type'       => 'ICT',
                     'created_at' => now(),
                 ]);
-            }
+            } }
         }
  
         // ✅ Calculate time taken
