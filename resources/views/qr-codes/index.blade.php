@@ -485,8 +485,7 @@
                                                             <td class="p-3">
                                                                 <a onclick="return confirm('Are you sure you want to delete this QR?');"
                                                                     href="{{ route('deleteGenericQR', [$datum->id]) }}">
-                                                                    <i
-                                                                        class="rounded-pill fw-bolder fa-solid fa-trash"></i>
+                                                                    <i class="rounded-pill fw-bolder fa-solid fa-trash"></i>
                                                                 </a>
                                                             </td>
                                                         </tr>
@@ -500,7 +499,6 @@
                                                 {{ $data['genericQr']->appends(['tab' => 'GenericQR'])->links() }}
                                             </div>
                                         </div>
-
 
                                     </div>
                                 </div>

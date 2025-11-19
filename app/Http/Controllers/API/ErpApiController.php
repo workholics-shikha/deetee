@@ -103,9 +103,10 @@ class ErpApiController extends Controller
  
     public function so_list()
     {
+        ini_set('max_execution_time', 300); // 300 seconds = 5 minutes
         $response = $this->callErpApi(ERP_LINK . '/OH_showSO');
 
-        $allData     = $response->json();
+        $allData = $response->json();
         if (!empty($allData)) {
             foreach ($allData as $datum) {
 

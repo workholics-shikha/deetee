@@ -125,3 +125,6 @@ wget -O /dev/null https://weblaunchpad.in/deetee_industries/so-list
 
 // 14-11-2025
 ALTER TABLE roles MODIFY permissions JSON NULL;
+
+// 17-11-2025
+ALTER TABLE `generic_qrcodes` CHANGE `qr_use_for` `qr_use_for` VARCHAR(130) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;
