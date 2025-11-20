@@ -7,11 +7,10 @@ use App\Models\Notification;
 
 class NotificationController extends Controller
 {
-   
     public function index()
     {
         // Get all notifications
-        $notifications = Notification::orderBy('id', 'desc')->paginate(10);
+        $notifications = Notification::where('type', 'Machine')->orderBy('id', 'desc')->paginate(10);
 
         // Mark all as read
         Notification::where('is_read', false)->update(['is_read' => true]);
@@ -19,6 +18,9 @@ class NotificationController extends Controller
         // Get active tab from request or default
         $activeTab = request()->get('tab', 'MaintenanceAlerts');
 
-        return view('admin.notifications', compact('notifications', 'activeTab'));
+        // Get ICT notifications
+        $ideal_cycle_time = Notification::where('type', 'ICT')->orderBy('id', 'desc')->paginate(10);
+
+        return view('admin.notifications', compact('notifications', 'activeTab', 'ideal_cycle_time'));
     }
 }

@@ -1142,8 +1142,8 @@ class SalesOrderController extends Controller
             'so_id' => $so_product_details->so_id,
             'so_pid_primary' => $so_product_id,
             'operation_id' => $operation_id
-        ])->selectRaw('ideal_cycle_time, SUM(time_taken) as total_time_taken')
-            ->groupBy('ideal_cycle_time')
+        ])->selectRaw('ideal_cycle_time, id, SUM(time_taken) as total_time_taken')
+            ->groupBy('id','ideal_cycle_time')
             ->first();
 
         // ✅ Only if tracking row exists AND ideal cycle is available
@@ -1153,23 +1153,22 @@ class SalesOrderController extends Controller
             $totalMinutes = $getActualIdeal->total_time_taken / 60;
 
             // =========== Send Notification ===========
-
-            if ($ideal < $totalMinutes) {
-
-                if($ideal > 0)
+           // if ($ideal < $totalMinutes) {  if($totalMinutes > 0) {
+ 
                 $so_no = $getDetails->so_no;
                 $operation = $getDetails->operation_name;
                 $product = $so_product_details->item_name;
                 $message = "Ideal Cycle Time of {$ideal} min exceeded for SO No: {$so_no}, Product: {$product}, Operation: {$operation}.";
 
-                Notification::create([
-                    'machine_id' => $getData->machine_id ?? 0,  // ✅ fixed
-                    'title'      => 'Ideal Cycle Time Exceeded',
-                    'message'    => $message,
-                    'type'       => 'ICT',
+                 Notification::create([
+                    'machine_id' => $getActualIdeal->id ?? 0, // ✅ fixed
+                    'title' => 'Ideal Cycle Time Exceeded',
+                    'message' => $message,
+                    'type' => 'ICT',
                     'created_at' => now(),
-                ]);
-            } }
+                 ]);
+                // } }
+        
         }
  
         // ✅ Calculate time taken
