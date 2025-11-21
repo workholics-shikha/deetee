@@ -192,6 +192,9 @@
                                                     @endif
                                                 </tbody>
                                             </table>
+                                            {{-- <div class="d-flex justify-content-center mt-3">
+                                                {{ $maintenanceOverview->withPath(request()->url())->appends(request()->query())->links() }}
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -301,6 +304,10 @@
                                                     @endif
                                                 </tbody>
                                             </table>
+                                            <!-- Pagination Section -->
+                                            {{-- <div class="paginationQ d-flex justify-content-center" id="operator-paginate">
+                                                {{ $soCompletionTracking->appends(request()->query())->links() }}
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -394,7 +401,8 @@
 
                                                                     @php
                                                                         $ideal = $rollTracking->ideal_cycle_time;
-                                                                        $qty = $rollTracking->total_quantity_processed ??
+                                                                        $qty =
+                                                                            $rollTracking->total_quantity_processed ??
                                                                             0;
 
                                                                         // Only multiply when ideal_cycle_time is NOT "NA" and NOT null
@@ -405,7 +413,7 @@
                                                                     @endphp
 
                                                                     <td>{{ $idealTotal }}</td>
-                                                                    
+
                                                                     <td class="text-445B64 p-3 text-center">
                                                                         {{ round($rollTracking->time_taken_minutes / 60, 2) }}
                                                                         Mins</td>
@@ -421,6 +429,9 @@
                                                     @endif
                                                 </tbody>
                                             </table>
+                                            {{-- <div class="d-flex justify-content-center mt-3">
+                                                {{ $soRollTracking->appends(request()->query())->links() }}
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -428,8 +439,7 @@
                         </div>
                     </div>
                     {{-- tab 2 end --}}
-
-                    {{-- tab 3 --}}
+                      {{-- tab 3 --}}
                     <div id="Maintenance" class="tabcontent" style="display: none;">
                         <!-- First card -->
                         <div class="card border-0 rounded-3 mb-4 overflow-hidden">
@@ -490,12 +500,14 @@
                                                     @endif
                                                 </tbody>
                                             </table>
+                                            <div class="d-flex justify-content-center mt-3">
+                                                {{ $maintenanceHistory->appends(request()->query())->links() }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                     </div>
                     {{-- tab 3 end --}}
                 </div>
@@ -505,9 +517,10 @@
 
     {{-- Modal end --}}
     <script>
+       
         document.addEventListener("DOMContentLoaded", function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const activeTab = urlParams.get("tab") || "MIS"; // MIS,Sale Orders,Maintenance
+            const activeTab = urlParams.get("tab") || "MIS";
 
             openTab({
                 currentTarget: document.querySelector(`[onclick="openTab(event, '${activeTab}')"]`)
@@ -515,9 +528,9 @@
 
         });
 
-        function openTab(evt, tabName) {
+        function openTab(evt, cityName) {
             var i, tabcontent, tablinks;
-            $('#tabName').val(tabName);
+
             // Hide all tab content
             tabcontent = document.getElementsByClassName("tabcontent");
             for (i = 0; i < tabcontent.length; i++) {
@@ -531,20 +544,33 @@
             }
 
             // Display the selected tab's content and add 'active' class
-            document.getElementById(tabName).style.display = "block";
+            document.getElementById(cityName).style.display = "block";
             evt.currentTarget.classList.add("active");
 
-            // Update the URL to reflect the active tab and remove the page number
+            // Update the URL to reflect the active tab but KEEP existing parameters
             const urlParams = new URLSearchParams(window.location.search);
-            urlParams.set("tab", tabName); // Update the 'tab' parameter
-            urlParams.delete("page"); // Remove the 'page' parameter if it exists
+            urlParams.set("tab", cityName);
+            // Don't delete page parameter - let it stay for pagination
 
             // Use history.replaceState to update the URL without reloading the page
             const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
             window.history.replaceState({}, "", newUrl);
-
-            // MIS, Sale Orders, Maintenance
-
         }
+
+        //===========
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.pagination a').forEach(link => {
+                console.log(link.href);
+            });
+
+            // Monitor clicks on pagination links
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.pagination a')) {
+                    e.preventDefault();
+                    const link = e.target.closest('.pagination a');
+                    window.location.href = link.getAttribute('href');
+                }
+            });
+        });
     </script>
 @stop

@@ -10,181 +10,6 @@ use Illuminate\Support\Facades\DB;
 class ReportsController extends Controller
 {
 
-    public function index_new(Request $request)
-    {
-        $unit      = $request->input('unit'); // 1-Tooling, 2-RMR, 3-TMR
-        $tab       = $request->input('tab');
-        $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
-
-        // Normalize dates
-        $fromDate = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
-        $toDate   = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
-
-        // ========= Tab 3 - Maintenance History =========
-        $query = DB::table('machine_health_monitorings as m')
-            ->join('machine_master as mm', 'm.master_id', '=', 'mm.id')
-            ->select(
-                'm.master_id',
-                'm.start_date_time',
-                'm.end_date_time',
-                'm.reason',
-                'm.monitor_for',
-                'mm.machine',
-                'mm.unit_name',
-                'm.created_at',
-                DB::raw('TIMESTAMPDIFF(SECOND, m.start_date_time, COALESCE(m.end_date_time, NOW())) as total_seconds')
-            )
-            ->when($unit, function ($q) use ($unit) {
-                return $q->where('mm.unit_name', $unit);
-            })
-            ->orderBy('m.start_date_time', 'DESC');
-
-        if ($fromDate && $toDate) {
-            $query->whereBetween('m.start_date_time', [$fromDate, $toDate]);
-        }
-        $maintenanceHistory = $query->get();
-        // ========= Maintenance History End =========
-
-        // =========  Tab 1 - MIS - Production Overview =========
-        // Subquery: completed SO counts per date
-        $completedSub = DB::table('sales_order_product_operation_details')
-            ->select(
-                DB::raw('DATE(updated_at) as udate'),
-                DB::raw('COUNT(DISTINCT so_id) as completed_so_count') // or COUNT(*) if row count
-            )
-            ->where('final_status', 'completed')
-            ->groupBy(DB::raw('DATE(updated_at)'));
-
-        // Main query
-        $production = DB::table('erp_sales_orders as eso')
-            ->leftJoinSub($completedSub, 'spd_counts', function ($join) {
-                $join->on(DB::raw('DATE(eso.so_date)'), '=', 'spd_counts.udate');
-            })
-            ->select(
-                DB::raw('DATE(eso.so_date) as so_date'),
-                DB::raw('COUNT(*) as total_so'),
-                DB::raw('SUM(eso.soquantity) as total_quantity'),
-                // use MAX() so it plays nice with ONLY_FULL_GROUP_BY
-                DB::raw('COALESCE(MAX(spd_counts.completed_so_count), 0) as completed_so_count')
-            );
-
-        if ($fromDate && $toDate) {
-            $production->whereBetween(DB::raw('DATE(eso.so_date)'), [
-                $fromDate->toDateString(),
-                $toDate->toDateString()
-            ]);
-        } else {
-            $production->whereBetween(DB::raw('DATE(eso.so_date)'), [
-                now()->subDays(7)->toDateString(),
-                now()->toDateString()
-            ]);
-        }
-
-        $productionOverview = $production
-            ->groupBy(DB::raw('DATE(eso.so_date)'))
-            ->orderBy(DB::raw('DATE(eso.so_date)'), 'DESC')
-            ->get();
-        // =========  Tab 1 - MIS - Production Overview END =====
-
-        // =========  Tab 1 - MIS - Maintenance Overview =========
-        $query1 = DB::table('machine_health_monitorings as m')
-            ->join('machine_master as mm', 'm.master_id', '=', 'mm.id')
-            ->select(
-                'm.monitor_for',
-                'mm.unit_name',
-                DB::raw('DATE(m.created_at) as created_date'),
-                DB::raw('SUM(TIMESTAMPDIFF(SECOND, m.start_date_time, COALESCE(m.end_date_time, NOW()))) as total_seconds')
-            )
-            ->when($unit, function ($q) use ($unit) {
-                return $q->where('mm.unit_name', $unit);
-            })
-            ->groupBy(DB::raw('DATE(m.created_at)'), 'm.monitor_for', 'mm.unit_name')
-            ->orderBy(DB::raw('DATE(m.created_at)'), 'DESC');
-
-        if ($fromDate && $toDate) {
-            $query1->whereBetween(DB::raw('DATE(m.created_at)'), [$fromDate->toDateString(), $toDate->toDateString()]);
-        }
-
-        $maintenanceOverview = $query1->get();
-        // =========  Tab 1 End =========
-
-        // =========  Tab 2 - Sale Order Completion Tracking =========
-        $baseQuery = SalesOrderTracking::query()
-            ->whereNotNull('end_date_time')
-            ->where('roll_status', 'completed');
-
-        if ($fromDate && $toDate) {
-            $baseQuery->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()]);
-        }
-
-        $soRollTracking = (clone $baseQuery)
-            ->select(
-                'so_id',
-                'operation_id',
-                'machine_id',
-                'so_product_id',
-                'sub_product_id',
-                DB::raw('MIN(start_date_time) as start_date'),
-                DB::raw('MAX(end_date_time) as end_date'),
-                DB::raw('SUM(time_taken) as time_taken_minutes'),
-                DB::raw('COUNT(quantity_processed) as total_quantity_processed')
-            )
-            ->with([
-                'operation:id,operation_name',
-                'soProduct:so_id,so_no',
-                'machine:id,machine',
-                'product:id,product_modified_name',
-                'subProduct:id,sub_product_name'
-            ])
-            ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id')
-            ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')
-            // ->orderBy(DB::raw('so_id'), 'DESC')
-            ->get();
-
-        // ==========
-        $soCompletionTracking = (clone $baseQuery)
-            ->join('product_masters as p', 'sales_order_trackings.so_product_id', '=', 'p.id')
-            ->leftJoin('sub_product as sp', 'sales_order_trackings.sub_product_id', '=', 'sp.id')
-            ->select(
-                'so_id',
-                'so_product_id',
-                'sub_product_id',
-                DB::raw('MIN(start_date_time) as start_date'),
-                DB::raw('MAX(end_date_time) as end_date'),
-                // count of distinct quantity_processed where roll_status = completed
-                DB::raw("COUNT(DISTINCT CASE WHEN roll_status = 'completed' THEN quantity_processed END) as completed_quantity_count"),
-                DB::raw('MAX(p.product_modified_name) as product_name'), // single product
-                DB::raw('MAX(sp.sub_product_name) as sub_product_name')  // single sub-product
-            )
-            ->groupBy('so_id', 'so_product_id', 'sub_product_id')
-            ->orderBy(DB::raw('DATE(MAX(end_date_time))'), 'DESC')
-            ->get();
-        // =========  Tab 2 End =========
-
-        // ========= Count handling =========
-        $queryCount = 0;
-
-        if ($tab == 'MIS') {
-            $queryCount = $query1->count();
-        } elseif ($tab == 'SaleOrders') {
-            $queryCount = $baseQuery->count();
-        } elseif ($tab == 'Maintenance') {
-            $queryCount = $query->count();
-        }
-
-        // === Redirect Handling ===
-        if (in_array($tab, ['Maintenance', 'SaleOrders', 'MIS']) && !$request->has(['from_date', 'to_date'])) {
-            return redirect()->route('admin.reports', [
-                'from_date' => now()->startOfMonth()->toDateString(),
-                'to_date'   => now()->endOfMonth()->toDateString(),
-                'tab'       => $tab
-            ]);
-        }
-
-        return view('reports.index', compact('maintenanceHistory', 'maintenanceOverview', 'soRollTracking', 'soCompletionTracking', 'productionOverview', 'queryCount'));
-    }
-
     public function index(Request $request)
     {
         $unit      = $request->input('unit'); // 1-Tooling, 2-RMR, 3-TMR
@@ -195,7 +20,7 @@ class ReportsController extends Controller
         // === Default to last 7 days if no filter provided ===
         $fromDate = $startDate
             ? Carbon::parse($startDate)->startOfDay()
-            : now()->subDays(7)->startOfDay();
+            : now()->subDays(6)->startOfDay();
 
         $toDate = $endDate
             ? Carbon::parse($endDate)->endOfDay()
@@ -221,7 +46,8 @@ class ReportsController extends Controller
             ->whereBetween('m.start_date_time', [$fromDate, $toDate])
             ->orderBy('m.start_date_time', 'DESC');
 
-        $maintenanceHistory = $query->get();
+         $maintenanceHistory = $query->paginate(10)->appends($request->all());
+        // $maintenanceHistory = $query->get();
 
         // ========= Tab 1 - MIS - Maintenance Overview =========
         $query1 = DB::table('machine_health_monitorings as m')
@@ -239,7 +65,8 @@ class ReportsController extends Controller
             ->groupBy(DB::raw('DATE(m.created_at)'), 'm.monitor_for', 'mm.unit_name')
             ->orderBy(DB::raw('DATE(m.created_at)'), 'DESC');
 
-        $maintenanceOverview = $query1->get();
+        // $maintenanceOverview = $query1->paginate(10)->appends($request->all());
+        $maintenanceOverview = $query1->limit(45)->get();
 
         // ========= Tab 2 - Sale Order Completion Tracking =========
 
@@ -290,7 +117,8 @@ class ReportsController extends Controller
             })
             ->groupBy('so_id', 'ideal_cycle_time', 'operation_id', 'so_product_id', 'sub_product_id', DB::raw('DATE(end_date_time)'))
             ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')
-            ->get();
+             ->limit(45) ->get();
+            // ->paginate(10)->appends($request->all());
 
         $soCompletionTracking = (clone $baseQuery)
             ->join('product_masters as p', 'sales_order_trackings.so_product_id', '=', 'p.id')
@@ -311,7 +139,9 @@ class ReportsController extends Controller
             ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
             ->groupBy('so_id', 'so_product_id', 'sub_product_id')
             ->orderBy(DB::raw('DATE(MAX(end_date_time))'), 'DESC')
-            ->get();
+           // ->paginate(10)->appends($request->all());
+           ->limit(45)
+         ->get();
 
         // ========= Tab 4 - Production Overview =========
         $completedSub = DB::table('sales_order_product_operation_details')
@@ -339,7 +169,8 @@ class ReportsController extends Controller
             ->groupBy(DB::raw('DATE(eso.so_date)'))
             ->orderBy(DB::raw('DATE(eso.so_date)'), 'DESC');
 
-        $productionOverview = $production->get();
+          // $productionOverview = $production->paginate(10)->appends($request->all());;
+          $productionOverview = $production->get();
 
         // ========= Count handling =========
         $queryCount = 0;

@@ -128,3 +128,51 @@ ALTER TABLE roles MODIFY permissions JSON NULL;
 
 // 17-11-2025
 ALTER TABLE `generic_qrcodes` CHANGE `qr_use_for` `qr_use_for` VARCHAR(130) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;
+
+// indexing in DB --------- (21-11-2025)
+
+ALTER TABLE machine_health_monitorings ADD INDEX idx_master_id (master_id);
+ALTER TABLE machine_health_monitorings ADD INDEX idx_start_date (start_date_time);
+ALTER TABLE machine_health_monitorings ADD INDEX idx_end_date (end_date_time);
+ALTER TABLE machine_health_monitorings ADD INDEX idx_monitor_for (monitor_for);
+ALTER TABLE machine_health_monitorings ADD INDEX idx_created_at (created_at);
+
+ALTER TABLE `erp_sales_orders` ADD INDEX idx_so_id (so_id);
+ALTER TABLE `erp_sales_orders` ADD INDEX idx_so_no (so_no);
+
+ALTER TABLE `machine_wise_operations` ADD INDEX idx_machine_id (machine_id);
+ALTER TABLE `machine_wise_operations` ADD INDEX idx_operation_id (operation_id);
+
+ALTER TABLE `notifications` ADD INDEX idx_machine_id (machine_id);
+
+ALTER TABLE `operator_attendances` ADD INDEX idx_operator_id (operator_id);
+
+ALTER TABLE `pass_sheets` ADD INDEX idx_cpoitemid (cpoitemid);
+
+ALTER TABLE `sales_order_products` ADD INDEX idx_so_id (so_id);
+ALTER TABLE `sales_order_products` ADD INDEX idx_product_id (product_id);
+ALTER TABLE `sales_order_products` ADD INDEX idx_cpoitemid (cpoitemid);
+
+ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_so_id (so_id);
+ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_so_no (so_no);
+ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_sales_order_product_id (sales_order_product_id);
+ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_product_id (product_id);
+ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_operation_id (operation_id);
+ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_sub_product_id (sub_product_id);
+
+
+ALTER TABLE `sales_order_trackings` ADD INDEX idx_so_id (so_id);
+ALTER TABLE `sales_order_trackings` ADD INDEX idx_so_pid_primary (so_pid_primary); 
+ALTER TABLE `sales_order_trackings` ADD INDEX idx_operation_id (operation_id);
+ALTER TABLE `sales_order_trackings` ADD INDEX idx_sub_product_id (sub_product_id);
+ALTER TABLE `sales_order_trackings` ADD INDEX idx_machine_id (machine_id);
+ALTER TABLE `sales_order_trackings` ADD INDEX idx_operator_id (operator_id);
+
+
+ALTER TABLE `subproduct_wise_operation` ADD INDEX idx_operation_id (operation_id);
+ALTER TABLE `subproduct_wise_operation` ADD INDEX idx_sub_product_id (subproduct_id);
+ALTER TABLE `subproduct_wise_operation` ADD INDEX idx_product_master_id (product_master_id);
+
+
+ALTER TABLE `users` ADD INDEX idx_role (role);
+ALTER TABLE `users` ADD INDEX idx_username (username);

@@ -115,7 +115,7 @@
                                             </table>
                                             <!-- Pagination Section -->
                                             <div class="paginationQ d-flex justify-content-center" id="operator-paginate">
-                                                {{ $ideal_cycle_time->withPath(url('/admin/notification'))->withQueryString()->links() }}
+                                                {{ $ideal_cycle_time->withPath(url('/admin/notification'))->withPath(request()->url())->appends(request()->query())->links() }}
                                             </div>
                                         </div>
                                     </div>
