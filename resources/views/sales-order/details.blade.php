@@ -120,7 +120,8 @@
 
                                 @if (!empty($items))
                                     @foreach ($items as $key => $item)
-                                        @php  
+                                    
+                                        @php 
                                             $btnDisable = $disableDiv = '';
                                             if (
                                                 $item['product_status'] != 'Available' || $item['product_status'] != 'Available' ||
@@ -131,7 +132,6 @@
                                             }
 
                                             $sizeVals = getSizeValue($group);
-                                             
                                         @endphp
 
                                         <div class="col-12 col-md-6 col-xl-4 mt-1 {{ $disableDiv }}">
@@ -147,8 +147,8 @@
                                                             <span class="ps-2"> <a
                                                                     class="text-0D161A fw-semibold mb-0 text-decoration-none">
                                                                     <strong> #0{{ $key + 1 }} &nbsp;
-                                                                        {{ $item->product->erp_product }} (
-                                                                        {{ $item->product->product_modified_name }}
+                                                                        {{ $item->product?$item->product->erp_product:"NA" }} (
+                                                                        {{ $item->product?$item->product->product_modified_name:"NA" }}
                                                                         )</strong>
                                                                     <br>
                                                                     <span class="text-445B64" style="font-size: 12px">
@@ -160,8 +160,7 @@
                                                         </div>
                                                         <div class="d-flex align-items-center">
                                                             <h6 class="text-0073E5 mb-0 me-2"> Under Progress </h6>
-                                                            <img src="{{ asset('assets/images/progressDot.png') }}"
-                                                                style="width: 20px; height: 20px;">
+                                                            <img src="{{ asset('assets/images/progressDot.png') }}" style="width: 20px; height: 20px;">
                                                         </div>
                                                     </div>
                                                 </div>

@@ -150,7 +150,7 @@ if (!function_exists('addSubProductDetails')) {
                     }
                 }
 
-                $kw_depth = $set_size1 = $set_size2 = $set_size3 = 0;
+                $kw_depth = 0;
 
                 if ($item["measureunit"] === 'SET') {
                     $kwVal = callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $item['cpoitemid']);
@@ -340,11 +340,9 @@ if (!function_exists('addPassSheetDetails')) {
     function addPassSheetDetails($sop_id)
     {
         $erp_response = callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $sop_id);
-
         $itemjson = $erp_response->json();
 
         if (!empty($itemjson)) {
-
             foreach ($itemjson as $item) {
 
                 $passNos = splitPassNo($item['pass_no']);

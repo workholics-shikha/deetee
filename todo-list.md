@@ -160,7 +160,6 @@ ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_product_id (pr
 ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_operation_id (operation_id);
 ALTER TABLE `sales_order_product_operation_details` ADD INDEX idx_sub_product_id (sub_product_id);
 
-
 ALTER TABLE `sales_order_trackings` ADD INDEX idx_so_id (so_id);
 ALTER TABLE `sales_order_trackings` ADD INDEX idx_so_pid_primary (so_pid_primary); 
 ALTER TABLE `sales_order_trackings` ADD INDEX idx_operation_id (operation_id);
@@ -168,11 +167,15 @@ ALTER TABLE `sales_order_trackings` ADD INDEX idx_sub_product_id (sub_product_id
 ALTER TABLE `sales_order_trackings` ADD INDEX idx_machine_id (machine_id);
 ALTER TABLE `sales_order_trackings` ADD INDEX idx_operator_id (operator_id);
 
-
 ALTER TABLE `subproduct_wise_operation` ADD INDEX idx_operation_id (operation_id);
 ALTER TABLE `subproduct_wise_operation` ADD INDEX idx_sub_product_id (subproduct_id);
 ALTER TABLE `subproduct_wise_operation` ADD INDEX idx_product_master_id (product_master_id);
 
-
 ALTER TABLE `users` ADD INDEX idx_role (role);
 ALTER TABLE `users` ADD INDEX idx_username (username);
+
+//============ 24-11-2025
+
+UPDATE `product_masters` SET `cycle_flow` = 'Available' WHERE `product_masters`.`id` = 16;
+UPDATE `sales_order_products` SET `product_status` = 'Available' WHERE `product_id` = 16;
+
