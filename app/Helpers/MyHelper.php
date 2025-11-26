@@ -425,14 +425,14 @@ class MyHelper
 
         $getSoId = ErpSalesOrder::find($so_id);
         $so_id = $getSoId->so_id;
- 
+
         // Parameter 1 For RMR
         $salesOrderProduct = SalesOrderProduct::where(['so_id' => $so_id, 'product_id' => $so_pid, 'sub_product_id' => $so_spid])->first();
-  
+
         $salesOrderProductOperatonDetails = SOProductOperationDetails::where(['so_id' => $so_id, 'product_id' => $so_pid, 'sub_product_id' => $so_spid, 'operation_id' => $operationid, 'sales_order_product_id' => $salesOrderProduct->id])->first();
- 
+
         $getMapId = IdealCycleTime::where(['operation_id' => $operationid, 'machine_id' => $machine_id])->value('id');
- 
+
         if ($getData->operation_type === "Fixed_ICT") {
             return $getData->fixed_ICT;
         }
@@ -464,7 +464,7 @@ class MyHelper
             $bs1_dia = $passDetails->bs1_dia;
             $bs1_depth = $passDetails->bs1_depth;
         }
-        
+
         // Cutting
         if ($parameter1 === "Material" && $parameter2 === "Outer Diameter") {
 
@@ -810,21 +810,21 @@ class MyHelper
             }))->cycle_time ?? null;
         }
 
-        if ($parameter1 === "Corners") {  
-             
+        if ($parameter1 === "Corners") {
+
             $corner = $salesOrderProductOperatonDetails->cycle_time;
             $cornerRecord = DB::table('ict_tapping')
                 ->select('cycle_time')
                 ->where('operation', $operationid)
                 ->where('size', $corner)->where('machine_id', $machine_id)
                 ->first();
- 
+
             if ($cornerRecord) {
                 return $cornerRecord->cycle_time;
             }
         }
     }
- 
+
     public static function getCycleTimeForRMR($operationid, $so_id, $so_pid, $so_spid, $machine_id)
     {
         $getData = SubproductWiseOperation::where(['product_master_id' => $so_pid, 'subproduct_id' => $so_spid, 'operation_id' => $operationid])->first();
@@ -854,10 +854,20 @@ class MyHelper
             return 'NA';
         }
 
+        // print_r($parameter1); 
+        // print_r($parameter2); 
+
+        // exit;
+
         if ($parameter1 === "Outer Diameter" && $parameter2 === "Total Length") {
 
             $getVal = $salesOrderProduct->size1;
             $getVal2 = $salesOrderProduct->size3;
+
+            if ($getData->operation_type === "ManualIn") {
+                $getVal = $salesOrderProductOperatonDetails->cycle_time;
+                $getVal2 = $salesOrderProductOperatonDetails->cycle_time_value2;
+            }
 
             $cycleTime = DB::table('ict_rmr_2matrix')
                 ->where('od_min', '<=', $getVal)
@@ -870,28 +880,17 @@ class MyHelper
                 ->where('sub_product_id', $so_spid)
                 ->where('table_parts', '1')
                 ->value('total_cycle_time'); // gets the single value
- 
-            if ( (in_array($so_spid, [1,2,3,12,13]) && in_array($operationid, [30, 31])) 
-                || (in_array($so_spid, [4,5,6]) && in_array($operationid, [30, 21])) 
-                || (in_array($so_spid, [7,8,9,10,11]) && in_array($operationid, [30, 23])) 
-                || (in_array($so_spid, [14,15,16,18,19,30,31,33]) && in_array($operationid, [31])) 
-                || (in_array($so_spid, [17,20,32]) && in_array($operationid, [29])) 
-                || (in_array($so_spid, [21]) && in_array($operationid, [21, 33])) 
-                || (in_array($so_spid, [22]) && in_array($operationid, [24, 33])) 
-                || (in_array($so_spid, [23]) && in_array($operationid, [21])) 
-                || (in_array($so_spid, [24]) && in_array($operationid, [24])) 
-               ) {
 
-                /** 1,2,3,12,13  -  31,30
-                 *  4,5,6,  -  30,21, 
-                 *  7,8,9,10,11  -  30, 23,  
-                 *  14,15,16,18,19,30, 31, 33  -  31
-                 *  17,20,32 - 29
-                 *  21 - 21, 33,
-                 *  22 - 24, 33
-                 *  23 - 21, 
-                 *  24 - 24 
-                 */ 
+            if ((in_array($so_spid, [1, 2, 3, 12, 13]) && in_array($operationid, [30, 31]))
+                || (in_array($so_spid, [4, 5, 6, 26]) && in_array($operationid, [30, 21]))
+                || (in_array($so_spid, [7, 8, 9, 10, 11]) && in_array($operationid, [30, 23]))
+                || (in_array($so_spid, [14, 15, 16, 18, 19, 30, 31, 33]) && in_array($operationid, [31]))
+                || (in_array($so_spid, [17, 20, 32, 62]) && in_array($operationid, [29]))
+                || (in_array($so_spid, [21]) && in_array($operationid, [21, 33]))
+                || (in_array($so_spid, [22]) && in_array($operationid, [24, 33]))
+                || (in_array($so_spid, [23]) && in_array($operationid, [21]))
+                || (in_array($so_spid, [24]) && in_array($operationid, [24]))
+            ) {
 
                 $cycleTime2 = DB::table('ict_rmr_2matrix')
                     ->where('od_min', '<=', $getVal)
@@ -925,5 +924,4 @@ class MyHelper
             }
         }
     }
-
 }

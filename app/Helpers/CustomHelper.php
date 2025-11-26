@@ -725,7 +725,7 @@ if (!function_exists('getParamFirstValueNew')) {
 
         $operation = OperationMaster::find($op_id);
         $soo = SOProductOperationDetails::where(['sales_order_product_id' => $p_id, 'operation_id' => $op_id])->first();
-        $sop = SalesOrderProduct::where(['so_id' => $soo->so_id, 'sub_product_id' => $soo->sub_product_id])->value('measureunit');
+        // $sop = SalesOrderProduct::where(['so_id' => $soo->so_id, 'sub_product_id' => $soo->sub_product_id])->value('measureunit');
 
         if (!$operation || !$soo) {
             return 'NA';

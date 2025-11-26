@@ -95,91 +95,6 @@ class SalesOrderController extends Controller
         ], 401);
     }
 
-    public function sales_order_details(Request $request)
-    {
-        /** Expected input: so_id:86, machine_id:1, so_product_id:349 */
-        $machine_id = $request->input('machine_id');
-        $so_product_id = $request->input('so_product_id');
-
-        // Fetch SO Product details ====
-        $so_product_details = SalesOrderProduct::select(
-            'id',
-            'so_id',
-            'drawingno',
-            'sub_product_id',
-            'item_name',
-            'description',
-            'measureunit',
-            'poquantity as quantity',
-            'operation1',
-            'operation2',
-            'operation3',
-            'cpoitemid',
-        )->find($so_product_id);
-
-        if (!$so_product_details) {
-            return response()->json([
-                'status' => false,
-                'message' => 'SO Product not found'
-            ], 404);
-        }
-
-        if ($so_product_details->sub_product_id == null) {
-            return response()->json([
-                'status' => false,
-                'message' => 'SO Sub Product not found'
-            ], 404);
-        }
-
-        if ($so_product_details->measureunit === 'SET') {
-            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code')->where('cpoitemid', $so_product_details->cpoitemid)->get();
-            $so_product_details->pass_sheet = $pass_sheet;
-        } else {
-            $so_product_details->pass_sheet = null;
-        }
-
-        // Get allowed operation IDs for the product
-        $operationIds = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id])
-            ->pluck('operation_id')->toArray();
-        $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
-        $getDetails = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
-
-        $operations = [];
-
-        if (!empty($getDetails)) {
-            foreach ($getDetails as $details) {
-
-                $completedCount = 0;
-
-                if ($getDetails) {
-                    $processedQty = json_decode($details->processed_qty, true);
-                    foreach ($processedQty as $item) {
-                        if (isset($item['status']) && $item['status'] === 'completed') {
-                            $completedCount++;
-                        }
-                    }
-                }
-
-                $operations[] = [
-                    'id'               => $details->id,
-                    'operation_id'     => $details->operation_id,
-                    'operation_name'   => $details->operation_name ?? null,
-                    'completed_roll'   => $completedCount,
-                    'ideal_cycle_time' => '80 Mins'
-                ];
-            }
-        }
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Product details',
-            'data' => [
-                'so_details' => $so_product_details,
-                'operations' => $operations,
-            ]
-        ], 200);
-    }
-
     public function operation_stop(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -1522,6 +1437,95 @@ class SalesOrderController extends Controller
                 'message' => 'Internal Server Error: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    
+
+    public function sales_order_details(Request $request)
+    {
+        /** Expected input: so_id:86, machine_id:1, so_product_id:349 */
+        $machine_id = $request->input('machine_id');
+        $so_product_id = $request->input('so_product_id');
+
+        // Fetch SO Product details ====
+        $so_product_details = SalesOrderProduct::select(
+            'id',
+            'so_id',
+            'drawingno',
+            'sub_product_id',
+            'item_name',
+            'description',
+            'measureunit',
+            'poquantity as quantity',
+            'operation1',
+            'operation2',
+            'operation3',
+            'cpoitemid',
+        )->find($so_product_id);
+
+        if (!$so_product_details) {
+            return response()->json([
+                'status' => false,
+                'message' => 'SO Product not found'
+            ], 404);
+        }
+
+        if ($so_product_details->sub_product_id == null) {
+            return response()->json([
+                'status' => false,
+                'message' => 'SO Sub Product not found'
+            ], 404);
+        }
+
+        if ($so_product_details->measureunit === 'SET') {
+            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code')->where('cpoitemid', $so_product_details->cpoitemid)->get();
+            $so_product_details->pass_sheet = $pass_sheet;
+        } else {
+            $so_product_details->pass_sheet = null;
+        }
+
+        // Get allowed operation IDs for the product
+        $operationIds = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id])
+            ->pluck('operation_id')->toArray();
+ 
+        $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
+
+        $getDetails = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
+
+        $operations = [];
+
+        if (!empty($getDetails)) {
+            foreach ($getDetails as $details) {
+
+                $completedCount = 0;
+
+                if ($getDetails) {
+                    $processedQty = json_decode($details->processed_qty, true);
+                    foreach ($processedQty as $item) {
+                        if (isset($item['status']) && $item['status'] === 'completed') {
+                            $completedCount++;
+                        }
+                    }
+                }
+
+                $operations[] = [
+                    'id'               => $details->id,
+                    'operation_id'     => $details->operation_id,
+                    'operation_name'   => $details->operation_name ?? null,
+                    'completed_roll'   => $completedCount,
+                    'ideal_cycle_time' => '80 Mins'
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Product details',
+            'data' => [
+                'so_details' => $so_product_details,
+                'operations' => $operations,
+            ]
+        ], 200);
     }
 
 }

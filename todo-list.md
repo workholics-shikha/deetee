@@ -174,8 +174,49 @@ ALTER TABLE `subproduct_wise_operation` ADD INDEX idx_product_master_id (product
 ALTER TABLE `users` ADD INDEX idx_role (role);
 ALTER TABLE `users` ADD INDEX idx_username (username);
 
-//============ 24-11-2025
+// ============ ============ ============ 24-11-2025 ============ ============ ============ 
 
 UPDATE `product_masters` SET `cycle_flow` = 'Available' WHERE `product_masters`.`id` = 16;
 UPDATE `sales_order_products` SET `product_status` = 'Available' WHERE `product_id` = 16;
 
+INSERT INTO `product_masters` (`id`, `unit_number`, `unit`, `group`, `erp_product`, `erp_nomenclature`, `product_modified_name`, `product_qr_code`, `status`, `product_flow`, `cycle_flow`, `created_at`, `updated_at`) VALUES (NULL, '2', 'RMR', 'I', 'Shafts', 'SHF', 'Shafts', '', 'Available', 'Available', 'Available', '2025-04-23 00:36:19', '2025-04-23 00:36:19');
+
+INSERT INTO `sub_product` (`id`, `product_master_id`, `sub_product_name`, `product_flows`, `cycle_flow`, `erp_item_id`, `created_at`, `updated_at`) VALUES (NULL, '66', 'SHAFTS', 'Available', 'Available', NULL, '2025-04-23 06:06:23', '2025-04-23 06:06:23');
+  
+/**  update table = ict_rmr_2matrix AND table = subproduct_wise_operation     on live   **/
+
+
+
+INSERT INTO ict_rmr_2matrix 
+(
+    sub_product_id,
+    operation,
+    machine_id,
+    length_min,
+    length_max,
+    od_min,
+    od_max,
+    cycle_time_per_pc,
+    loading_unloading_time,
+    total_cycle_time,
+    table_parts,
+    created_at,
+    updated_at
+)
+SELECT 
+    sub_product_id,
+    23 AS operation,     
+    machine_id,
+    length_min,
+    length_max,
+    od_min,
+    od_max,
+    cycle_time_per_pc,
+    loading_unloading_time,
+    total_cycle_time,
+    table_parts,
+    NOW(),
+    NOW()
+FROM ict_rmr_2matrix
+WHERE `sub_product_id` = 26 AND `operation` = 37 AND `table_parts` = 1 ;
+ 
