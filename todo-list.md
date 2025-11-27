@@ -183,7 +183,11 @@ INSERT INTO `product_masters` (`id`, `unit_number`, `unit`, `group`, `erp_produc
 
 INSERT INTO `sub_product` (`id`, `product_master_id`, `sub_product_name`, `product_flows`, `cycle_flow`, `erp_item_id`, `created_at`, `updated_at`) VALUES (NULL, '66', 'SHAFTS', 'Available', 'Available', NULL, '2025-04-23 06:06:23', '2025-04-23 06:06:23');
   
-/**  update table = ict_rmr_2matrix AND table = subproduct_wise_operation     on live   **/
+/**  update table = ict_rmr_2matrix 
+AND table = subproduct_wise_operation    
+AND table = ict_keyway_operations    
+
+ on live  **/
 
 
 
@@ -205,7 +209,7 @@ INSERT INTO ict_rmr_2matrix
 )
 SELECT 
     sub_product_id,
-    23 AS operation,     
+    14 AS operation,     
     machine_id,
     length_min,
     length_max,
@@ -218,5 +222,91 @@ SELECT
     NOW(),
     NOW()
 FROM ict_rmr_2matrix
-WHERE `sub_product_id` = 26 AND `operation` = 37 AND `table_parts` = 1 ;
+WHERE  `sub_product_id` = 29 AND `operation` = 13 ;
  
+
+ // == Grinding-1
+
+  
+INSERT INTO `ict_rmr_2matrix` (`sub_product_id`, `table_parts`, `operation`, `machine_id`, `od_min`, `od_max`,
+`length_min`, `length_max`, `cycle_time_per_pc`, `loading_unloading_time`, `total_cycle_time`, `created_at`, `updated_at`)
+SELECT 29 as `sub_product_id`, 2 as `table_parts`, 22 as `operation`, NULL as `machine_id`, 
+0 as `od_min`, 75 as `od_max`, lmin AS `length_min`, lmax AS `length_max`, cycle AS `cycle_time_per_pc`, time AS `loading_unloading_time`, total AS `total_cycle_time`, NOW(),NOW()
+FROM
+(
+SELECT 400 AS 'lmin',1100 AS 'lmax',60 AS 'cycle',10 AS 'time',70 AS 'total' UNION
+SELECT 1100 AS 'lmin',1700 AS 'lmax',60 AS 'cycle',10 AS 'time',70 AS 'total' UNION
+SELECT 1700 AS 'lmin',2000 AS 'lmax',60 AS 'cycle',10 AS 'time',70 AS 'total' UNION
+SELECT 2000 AS 'lmin',2500 AS 'lmax',60 AS 'cycle',10 AS 'time',70 AS 'total' UNION
+SELECT 2500 AS 'lmin',3200 AS 'lmax',60 AS 'cycle',10 AS 'time',70 AS 'total'      
+) AS T;
+ 
+
+ INSERT INTO `ict_rmr_2matrix` (`sub_product_id`, `table_parts`, `operation`, `machine_id`, `od_min`, `od_max`,
+`length_min`, `length_max`, `cycle_time_per_pc`, `loading_unloading_time`, `total_cycle_time`, `created_at`, `updated_at`)
+SELECT 29 as `sub_product_id`, 2 as `table_parts`, 22 as `operation`, NULL as `machine_id`, 
+75.1 as `od_min`, 100 as `od_max`, lmin AS `length_min`, lmax AS `length_max`, cycle AS `cycle_time_per_pc`, time AS `loading_unloading_time`, total AS `total_cycle_time`, NOW(),NOW()
+FROM
+(
+SELECT 400 AS 'lmin',1100 AS 'lmax',65 AS 'cycle',10 AS 'time',75 AS 'total' UNION
+SELECT 1100 AS 'lmin',1700 AS 'lmax',65 AS 'cycle',10 AS 'time',75 AS 'total' UNION
+SELECT 1700 AS 'lmin',2000 AS 'lmax',65 AS 'cycle',10 AS 'time',75 AS 'total' UNION
+SELECT 2000 AS 'lmin',2500 AS 'lmax',65 AS 'cycle',10 AS 'time',75 AS 'total' UNION
+SELECT 2500 AS 'lmin',3200 AS 'lmax',65 AS 'cycle',10 AS 'time',75 AS 'total'       
+) AS T;
+
+
+ INSERT INTO `ict_rmr_2matrix` (`sub_product_id`, `table_parts`, `operation`, `machine_id`, `od_min`, `od_max`,
+`length_min`, `length_max`, `cycle_time_per_pc`, `loading_unloading_time`, `total_cycle_time`, `created_at`, `updated_at`)
+SELECT 29 as `sub_product_id`, 2 as `table_parts`, 22 as `operation`, NULL as `machine_id`, 
+100.1 as `od_min`, 150 as `od_max`, lmin AS `length_min`, lmax AS `length_max`, cycle AS `cycle_time_per_pc`, time AS `loading_unloading_time`, total AS `total_cycle_time`, NOW(),NOW()
+FROM
+(
+SELECT 400 AS 'lmin',1100 AS 'lmax',70 AS 'cycle',10 AS 'time',80 AS 'total' UNION
+SELECT 1100 AS 'lmin',1700 AS 'lmax',70 AS 'cycle',10 AS 'time',80 AS 'total' UNION
+SELECT 1700 AS 'lmin',2000 AS 'lmax',70 AS 'cycle',10 AS 'time',80 AS 'total' UNION
+SELECT 2000 AS 'lmin',2500 AS 'lmax',70 AS 'cycle',10 AS 'time',80 AS 'total' UNION
+SELECT 2500 AS 'lmin',3200 AS 'lmax',70 AS 'cycle',10 AS 'time',80 AS 'total'        
+) AS T;
+
+
+ INSERT INTO `ict_rmr_2matrix` (`sub_product_id`, `table_parts`, `operation`, `machine_id`, `od_min`, `od_max`,
+`length_min`, `length_max`, `cycle_time_per_pc`, `loading_unloading_time`, `total_cycle_time`, `created_at`, `updated_at`)
+SELECT 29 as `sub_product_id`, 2 as `table_parts`, 22 as `operation`, NULL as `machine_id`, 
+150.1 as `od_min`, 200 as `od_max`, lmin AS `length_min`, lmax AS `length_max`, cycle AS `cycle_time_per_pc`, time AS `loading_unloading_time`, total AS `total_cycle_time`, NOW(),NOW()
+FROM
+(
+SELECT 400 AS 'lmin',1100 AS 'lmax',75 AS 'cycle',10 AS 'time',85 AS 'total' UNION
+SELECT 1100 AS 'lmin',1700 AS 'lmax',75 AS 'cycle',10 AS 'time',85 AS 'total' UNION
+SELECT 1700 AS 'lmin',2000 AS 'lmax',75 AS 'cycle',10 AS 'time',85 AS 'total' UNION
+SELECT 2000 AS 'lmin',2500 AS 'lmax',75 AS 'cycle',10 AS 'time',85 AS 'total' UNION
+SELECT 2500 AS 'lmin',3200 AS 'lmax',75 AS 'cycle',10 AS 'time',85 AS 'total'  
+) AS T;
+
+
+ INSERT INTO `ict_rmr_2matrix` (`sub_product_id`, `table_parts`, `operation`, `machine_id`, `od_min`, `od_max`,
+`length_min`, `length_max`, `cycle_time_per_pc`, `loading_unloading_time`, `total_cycle_time`, `created_at`, `updated_at`)
+SELECT 29 as `sub_product_id`, 2 as `table_parts`, 22 as `operation`, NULL as `machine_id`, 
+200.1 as `od_min`, 250 as `od_max`, lmin AS `length_min`, lmax AS `length_max`, cycle AS `cycle_time_per_pc`, time AS `loading_unloading_time`, total AS `total_cycle_time`, NOW(),NOW()
+FROM
+(
+SELECT 400 AS 'lmin',1100 AS 'lmax',80 AS 'cycle',10 AS 'time',90 AS 'total' UNION
+SELECT 1100 AS 'lmin',1700 AS 'lmax',80 AS 'cycle',10 AS 'time',90 AS 'total' UNION
+SELECT 1700 AS 'lmin',2000 AS 'lmax',80 AS 'cycle',10 AS 'time',90 AS 'total' UNION
+SELECT 2000 AS 'lmin',2500 AS 'lmax',80 AS 'cycle',10 AS 'time',90 AS 'total' UNION
+SELECT 2500 AS 'lmin',3200 AS 'lmax',80 AS 'cycle',10 AS 'time',90 AS 'total'  
+) AS T;
+
+
+ INSERT INTO `ict_rmr_2matrix` (`sub_product_id`, `table_parts`, `operation`, `machine_id`, `od_min`, `od_max`,
+`length_min`, `length_max`, `cycle_time_per_pc`, `loading_unloading_time`, `total_cycle_time`, `created_at`, `updated_at`)
+SELECT 29 as `sub_product_id`, 2 as `table_parts`, 22 as `operation`, NULL as `machine_id`, 
+250.1 as `od_min`, 300 as `od_max`, lmin AS `length_min`, lmax AS `length_max`, cycle AS `cycle_time_per_pc`, time AS `loading_unloading_time`, total AS `total_cycle_time`, NOW(),NOW()
+FROM
+(
+SELECT 400 AS 'lmin',1100 AS 'lmax',85 AS 'cycle',10 AS 'time',95 AS 'total' UNION
+SELECT 1100 AS 'lmin',1700 AS 'lmax',85 AS 'cycle',10 AS 'time',95 AS 'total' UNION
+SELECT 1700 AS 'lmin',2000 AS 'lmax',85 AS 'cycle',10 AS 'time',95 AS 'total' UNION
+SELECT 2000 AS 'lmin',2500 AS 'lmax',85 AS 'cycle',10 AS 'time',95 AS 'total' UNION
+SELECT 2500 AS 'lmin',3200 AS 'lmax',85 AS 'cycle',10 AS 'time',95 AS 'total'  
+) AS T;
