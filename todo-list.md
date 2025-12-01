@@ -225,9 +225,8 @@ FROM ict_rmr_2matrix
 WHERE  `sub_product_id` = 29 AND `operation` = 13 ;
  
 
- // == Grinding-1
+// == Grinding-1
 
-  
 INSERT INTO `ict_rmr_2matrix` (`sub_product_id`, `table_parts`, `operation`, `machine_id`, `od_min`, `od_max`,
 `length_min`, `length_max`, `cycle_time_per_pc`, `loading_unloading_time`, `total_cycle_time`, `created_at`, `updated_at`)
 SELECT 29 as `sub_product_id`, 2 as `table_parts`, 22 as `operation`, NULL as `machine_id`, 

@@ -32,7 +32,8 @@ class QRCodeController extends Controller
         $operations   = OperationMaster::find($id);
         $operator     = User::find($id);
         $machines     = MachineMaster::find($id);
-        $products     = SubProduct::with('product')->find($id);
+        // $products     = SubProduct::with('product')->find($id);
+        $products     = ProductMasters::find($id);
 
         if ($type   ==   'Operations') {
             $qrCode = $operations->operation_qr_code;
@@ -64,7 +65,8 @@ class QRCodeController extends Controller
         $operations   = OperationMaster::find($id);
         $operator     = User::find($id);
         $machines     = MachineMaster::find($id);
-        $products     = SubProduct::with('product')->find($id);
+        $products     = ProductMasters::find($id);
+        // $products     = SubProduct::with('product')->find($id);
 
         if ($type    ==   'Operations') {
             $qrCode  =  $operations->operation_qr_code;
@@ -145,12 +147,12 @@ class QRCodeController extends Controller
         if ($type   ==   'Product') {
             $qrCode = $products->product_qr_code;
             $id     = $products->id;
-
+ 
             deleteImage($qrCode);
 
             // == Generate the QR code 
             $result = Builder::create()
-                ->data($products->id)
+                ->data($id)
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();

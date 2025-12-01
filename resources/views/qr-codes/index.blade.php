@@ -206,7 +206,6 @@
                                         </div>
 
                                         {{-- ==== Machine listing ==== --}}
-
                                         <div id="Machine" class="tabcontent" style="display: none;">
                                             <table class="table rounded-3">
                                                 <thead>
@@ -287,7 +286,6 @@
                                         </div>
 
                                         {{-- ==== Product listing ==== --}}
-
                                         <div id="Products" class="tabcontent" style="display: none;">
                                             <table class="table rounded-3">
                                                 <thead>
@@ -310,8 +308,8 @@
                                                                     <span
                                                                         class="table-square-icon bg-F0F5F6 rounded-3 showModal"
                                                                         data-bs-toggle="modal"
-                                                                        data-id="{{ $product->id }}"
-                                                                        data-bs-target="#exampleModal" data-type="Machine"
+                                                                        data-id="{{ $product->product->id }}"
+                                                                        data-bs-target="#exampleModal" data-type="Product"
                                                                         style="cursor: pointer">
                                                                         <img width="30" height="30"
                                                                             viewBox="0 0 12 12" fill="none"
@@ -390,7 +388,7 @@
                                             </div>
                                         </div>
 
-                                        {{-- ==== Operations Listing ==== --}}
+                                        {{-- ==== GenericQR Listing ==== --}}
 
                                         <div id="GenericQR" class="tabcontent" style="display: none;">
                                             <div class="card border-0 rounded-3 mb-1">
@@ -645,7 +643,7 @@
             var type = $(this).attr("data-type");
             var btnType = $(this).attr("btn-type");
 
-            alert(btnType);
+            // alert(btnType);
 
             if (btnType == 'delete') {
                 var url = "{{ route('admin.delete-qr-card') }}";
@@ -654,7 +652,7 @@
             } else if (btnType == 'regenerate') {
                 var url = "{{ route('admin.regenerate-qr-card') }}";
             }
-
+ 
             $.ajax({
                 url: url,
                 type: "GET",

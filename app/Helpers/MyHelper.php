@@ -831,10 +831,13 @@ class MyHelper
 
         $parameter1 = $getData->parameter1_label;
         $parameter2 = $getData->parameter2_label;
-
+ 
         $getSoId = ErpSalesOrder::find($so_id);
         $so_id = $getSoId->so_id;
 
+        $parameter1 = trim(strip_tags($parameter1));
+        $parameter2 = trim(strip_tags($parameter2));
+ 
         // Parameter 1 For RMR
         $salesOrderProduct = SalesOrderProduct::where(['so_id' => $so_id, 'product_id' => $so_pid, 'sub_product_id' => $so_spid])->first();
 
@@ -846,29 +849,64 @@ class MyHelper
             return $getData->fixed_ICT;
         }
 
-        if ($getData->operation_type === "Manual_ICT" || $getData->operation_type === "Manual") {
+        // if ($getData->operation_type === "Manual_ICT" || $getData->operation_type === "ManualIn") {
+        if ($getData->operation_type === "Manual_ICT") {
             return $salesOrderProductOperatonDetails->cycle_time;
         }
 
         if ($getData->operation_type === "NA") {
             return 'NA';
         }
-
-        // print_r($parameter1); 
-        // print_r($parameter2); 
-
-        // exit;
-
-        if ($parameter1 === "Outer Diameter" && $parameter2 === "Total Length") {
+ 
+        if (   ($parameter1 === "Outer Diameter" && $parameter2 === "Total Length") 
+            || ($parameter1 === "Blade Thickness" && $parameter2 === "Blade Length") 
+            || ($parameter1 === "Blade Length" && $parameter2 === "Blade Width") 
+            || ($parameter1 === "Counter Size" && $parameter2 === "Counter Depth") 
+            || ($parameter1 === "Elliptical Hole size" && $parameter2 === "Blade Thickness") 
+            || ($parameter1 === "Elliptical Counter size" && $parameter2 === "Counter Depth") 
+            || ($parameter1 === "Keyway size" && $parameter2 === "Blade Thickness") 
+            || ($parameter1 === "Blade Radius" && $parameter2 === "Blade Thickness") 
+            || ($parameter1 === "Blade Thickness & Center Radius" && $parameter2 === "Blade Length") 
+            || ($parameter1 === "Hole Size" && $parameter2 === "Blade Thickness") 
+            || ($parameter1 === "Blade Width" && $parameter2 === "Blade Length") 
+            || ($parameter1 === "Blade Width" && $parameter2 === "Blade Thickness") 
+            
+            
+            ) {
 
             $getVal = $salesOrderProduct->size1;
             $getVal2 = $salesOrderProduct->size3;
-
+ 
             if ($getData->operation_type === "ManualIn") {
                 $getVal = $salesOrderProductOperatonDetails->cycle_time;
                 $getVal2 = $salesOrderProductOperatonDetails->cycle_time_value2;
             }
 
+            if ($so_spid == 29 && in_array($operationid, [3, 4, 5, 6, 7, 8, 9])) {
+ 
+                $kw_size1 = $salesOrderProduct->kw_size1;
+
+                $cycleTime = DB::table('ict_keyway_operations')
+                    ->where('keyway_width_min', '<=', $kw_size1)
+                    ->where('keyway_width_max', '>=', $kw_size1)
+                    ->where('thickness_min', '<=', $getVal)
+                    ->where('thickness_max', '>=', $getVal)
+                    ->where('operation', $operationid)->where('table_parts', '1')
+                    ->value('cycle_time_minutes'); // gets the single value 1
+
+                $cycleTime1 = $cycleTime;
+
+                $cycleTime2 = DB::table('ict_keyway_operations')
+                    ->where('keyway_width_min', '<=', $kw_size1)
+                    ->where('keyway_width_max', '>=', $kw_size1)
+                    ->where('thickness_min', '<=', $getVal2)
+                    ->where('thickness_max', '>=', $getVal2)
+                    ->where('operation', $operationid)->where('table_parts', '2')
+                    ->value('cycle_time_minutes'); // gets the single value 2
+ 
+                return ($cycleTime1 + $cycleTime2);
+            }
+ 
             $cycleTime = DB::table('ict_rmr_2matrix')
                 ->where('od_min', '<=', $getVal)
                 ->where('od_max', '>=', $getVal)
@@ -880,7 +918,7 @@ class MyHelper
                 ->where('sub_product_id', $so_spid)
                 ->where('table_parts', '1')
                 ->value('total_cycle_time'); // gets the single value
-
+ 
             if ((in_array($so_spid, [1, 2, 3, 12, 13]) && in_array($operationid, [30, 31]))
                 || (in_array($so_spid, [4, 5, 6, 26]) && in_array($operationid, [30, 21]))
                 || (in_array($so_spid, [7, 8, 9, 10, 11]) && in_array($operationid, [30, 23]))
@@ -890,6 +928,7 @@ class MyHelper
                 || (in_array($so_spid, [22]) && in_array($operationid, [24, 33]))
                 || (in_array($so_spid, [23]) && in_array($operationid, [21]))
                 || (in_array($so_spid, [24]) && in_array($operationid, [24]))
+                || (in_array($so_spid, [29]) && in_array($operationid, [2, 10, 11, 12, 13, 14, 15, 16, 17, 18, 22, 23, 24, 25, 26, 27, 28, 38, 39]))
             ) {
 
                 $cycleTime2 = DB::table('ict_rmr_2matrix')

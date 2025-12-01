@@ -41,6 +41,8 @@ class Kernel extends HttpKernel
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
+       
+
     ];
 
     /**
@@ -63,7 +65,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'sanctum.headers' => \App\Http\Middleware\CheckSanctumHeaders::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
-
+        'no_cache' => \App\Http\Middleware\NoCache::class,
     ];
 
 }

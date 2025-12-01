@@ -1323,10 +1323,11 @@ class SalesOrderController extends Controller
             // 9️⃣ Get ideal cycle time (helper)
             // ---------------------------------
             $ict = 'NA';
+
             try {
                 if ($so_details->industry === 'Tooling') {
                     $ict = \App\Helpers\MyHelper::getCycleTimeForTooling($operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
-                } elseif ($so_details->industry === 'RMR') {
+                } elseif ($so_details->industry === 'RMR') { //echo 'here';
                     $ict = \App\Helpers\MyHelper::getCycleTimeForRMR($operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
                 } elseif ($so_details->industry === 'TMR') {
                     $ict = \App\Helpers\MyHelper::getCycleTimeForTMR($operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id, $pass_id);
@@ -1334,6 +1335,11 @@ class SalesOrderController extends Controller
             } catch (\Exception $e) {
                 Log::error('operation_start - helper failed', ['message' => $e->getMessage()]);
             }
+
+
+            // print_r('ictttt===='.$ict); 
+            // exit;
+
 
             // -------------------------------
             // 🔟 Create Tracking Record

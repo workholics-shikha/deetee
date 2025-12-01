@@ -104,6 +104,7 @@
             </td>
         </tr>
     @endforeach
+
 @elseif($activeTab == 'products')
     @php $i=0; @endphp
     @foreach ($data as $product)
@@ -112,7 +113,7 @@
             <th scope="row">
                 <div class="d-flex align-items-center">
                     <span class="table-square-icon bg-F0F5F6 rounded-3 showModal" data-bs-toggle="modal"
-                        data-id="{{ $product->id }}" data-bs-target="#exampleModal" data-type="Machine"
+                        data-id="{{ $product->product->id }}" data-bs-target="#exampleModal" data-type="Product"
                         style="cursor: pointer">
                         <img width="30" height="30" viewBox="0 0 12 12" fill="none"
                             src="{{ $product->product->product_qr_code }}" alt="QR Code">

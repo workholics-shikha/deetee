@@ -58,7 +58,8 @@ Route::get('admin/printPassSheet/{id}', [SalesOrderController::class, 'printPass
 
 Route::post('admin/resend/submit',  [AdminLoginController::class, 'resendRequest'])->name('admin.resend.submit');
 
-Route::middleware(['auth'])->group(function () {
+// Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'no_cache'])->group(function () {
 
     Route::get('admin/profile',   [DashboardController::class, 'profile'])->name('admin.profile');
 
