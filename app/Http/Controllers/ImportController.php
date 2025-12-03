@@ -431,17 +431,6 @@ class ImportController extends Controller
         $subProducts = SalesOrderProduct::get();
         if (!empty($subProducts)) {
             foreach ($subProducts as $products) {
-                /* $result = Builder::create()
-                    ->data($products->id . ';Product')
-                    ->size(300) // Set size in pixels
-                    ->margin(10) // Set margin in pixels
-                    ->build();
-
-                $qr_code_name = $products->cpoitemid . '-' . time() . '.png';
-                $path = 'so-product-qrcodes/' . $qr_code_name; // unique filename
-
-                Storage::disk('public')->put($path, $result->getString());
-                SalesOrderProduct::where('id', $products->id)->update(['so_product_qr_code' => $qr_code_name]); */
 
                 $product = ProductMasters::where(['id' => $products->product_id])
                     ->first(['id', 'product_flow', 'cycle_flow']);
@@ -553,7 +542,7 @@ class ImportController extends Controller
                 ->build();
 
             // Clean and lowercase the filename
-            $machine_name = $machine->machine ?? 'machine-' . $machine_id;
+            $machine_name = $machine->machine ?? 'machine-' . $machines->id;
             $safeName = Str::slug(strtolower($machine_name), '-');
             $fileName = $safeName . '-' . time() . '.png';
             $path = 'machine-qrcodes/' . $fileName; // relative to 'storage/app/public'

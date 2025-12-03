@@ -140,9 +140,7 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
     });
 
     Route::group(['middleware' => ['auth', 'permission:operations']], function () {
-
-        Route::get('admin/operations', [OperationsController::class, 'index'])->name('admin.operations');
-        Route::get('admin/cycles', [OperationsController::class, 'cycles'])->name('admin.operations.cycles');
+        Route::get('admin/operations', [OperationsController::class, 'index'])->name('admin.operations'); 
     });
 
     Route::get('admin/operator-details/{id}', [UserController::class, 'details'])->name('admin.operator-details');
