@@ -111,8 +111,7 @@
                                     <h6 class="text-445B64 fs-14 me-2">Operations</h6>
                                     <div class="">
                                         @foreach ($operations as $operation)
-                                            <button
-                                                class="btn btn-skyBlue btn-sm mb-2 rounded-2">{{ $operation->operation->operation_name }}</button>
+                                            <button class="btn btn-skyBlue btn-sm mb-2 rounded-2">{{ $operation->operation->operation_name }}</button>
                                             &nbsp;
                                         @endforeach
                                     </div>
@@ -312,7 +311,8 @@
                                                     <thead>
                                                         <tr>
                                                             <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> SO No. </th>
-                                                            <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Date </th>
+                                                            <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Start Date </th>
+                                                            <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> End Date </th>
                                                             <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Process </th>
                                                             <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Duration </th>
                                                             <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Quantity </th>
@@ -340,13 +340,20 @@
                                                                     </td>
                                                                     <td scope="row" class="p-3">
                                                                         <div class="">
+                                                                            <h6 class="text-445B64 mb-0 fw-medium"> {{ \Carbon\Carbon::parse($history->start_date)->format('Y-m-d') }} </h6>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td scope="row" class="p-3">
+                                                                        <div class="">
                                                                             <h6 class="text-445B64 mb-0 fw-medium"> {{ \Carbon\Carbon::parse($history->end_date)->format('Y-m-d') }} </h6>
                                                                         </div>
                                                                     </td>
                                                                     <td class="text-445B64 p-3">
                                                                         {{ $history->operation->operation_name }}</td>
                                                                     <td class="text-445B64 p-3">
-                                                                       {{ round(($history->time_taken_minutes) / 60, 2) }} Mins
+                                                                       {{ round(($history->time_taken_minutes) / 60, 2) }} in Mins 
+                                                                       <br>
+                                                                         {{  (($history->time_taken_minutes)  ) }} in Seconds
                                                                     </td>
                                                                     <td class="text-445B64 p-3">
                                                                         {{ $history->total_quantity_processed }} </td>

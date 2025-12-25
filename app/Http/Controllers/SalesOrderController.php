@@ -45,31 +45,7 @@ class SalesOrderController extends Controller
             'pagination' => (string) $data->links(),
         ]);
     }
-
-    public function so_details($id)
-    {
-        $data = ErpSalesOrder::findOrFail($id);
-        $soId = $data->so_id;
-
-        // Check and update products in single query
-        $itemsExist = SalesOrderProduct::where('so_id', $soId)->exists();
-
-        if ($itemsExist) {
-            updateSubProductDetails($soId);
-        } else {
-            addSubProductDetails($soId);
-        }
-
-        // Eager load all required data in single queries
-        $items = SalesOrderProduct::where('so_id', $soId)
-            ->with(['item', 'product'])
-            ->get();
-
-        $subProducts = SOProductOperationDetails::where('so_id', $soId)->get();
-
-        return view('sales-order.details', compact('data', 'items', 'subProducts'));
-    }
-
+ 
     public function route_card_preview(Request $request)
     {
         $data = SalesOrderProduct::find($request->id);
@@ -127,18 +103,6 @@ class SalesOrderController extends Controller
         }
         $so_no = $saleOrder->so_no;
         return view('sales-order.sub-product-modal', compact('data', 'so_no', 'subProducts'));
-    }
-
-    public function pass_sheet($sop_id)
-    {
-        $data = SalesOrderProduct::find($sop_id);
-        $so = ErpSalesOrder::where('so_id', $data->so_id)->first(['so_no', 'id', 'so_group']);
-        $subProductName = SubProduct::where('id', $data->sub_product_id)->value('sub_product_name');
-        $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
-        if ($pass_sheet->isEmpty()) {
-            $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
-        }
-        return view('sales-order.pass-sheet', compact('data', 'so', 'subProductName', 'pass_sheet', 'sop_id'));
     }
 
     public function getOperationDetails($id, $so_id)
@@ -558,4 +522,41 @@ class SalesOrderController extends Controller
     public function getOperationReviewList($id){
          return DB::table('rc_review')->where('so_track_id', $id)->get();
     }
+ 
+    public function pass_sheet($sop_id)
+    {
+        $data = SalesOrderProduct::find($sop_id);
+        $so = ErpSalesOrder::where('so_id', $data->so_id)->first(['so_no', 'id', 'so_group']);
+        $subProductName = SubProduct::where('id', $data->sub_product_id)->value('sub_product_name');
+        $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
+        if ($pass_sheet->isEmpty()) {
+            $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
+        }
+        return view('sales-order.pass-sheet', compact('data', 'so', 'subProductName', 'pass_sheet', 'sop_id'));
+    }
+ 
+    public function so_details($id)
+    {
+        $data = ErpSalesOrder::findOrFail($id);
+        $soId = $data->so_id;
+
+        // Check and update products in single query
+        $itemsExist = SalesOrderProduct::where('so_id', $soId)->exists();
+
+        if ($itemsExist) {
+            updateSubProductDetails($soId);
+        } else {
+            addSubProductDetails($soId);
+        }
+
+        // Eager load all required data in single queries
+        $items = SalesOrderProduct::where('so_id', $soId)
+            ->with(['product'])
+            ->get();
+
+        $subProducts = SOProductOperationDetails::where('so_id', $soId)->get();
+
+        return view('sales-order.details', compact('data', 'items', 'subProducts'));
+    }
+
 }

@@ -188,9 +188,7 @@ AND table = subproduct_wise_operation
 AND table = ict_keyway_operations    
 
  on live  **/
-
-
-
+ 
 INSERT INTO ict_rmr_2matrix 
 (
     sub_product_id,
@@ -309,3 +307,9 @@ SELECT 1700 AS 'lmin',2000 AS 'lmax',85 AS 'cycle',10 AS 'time',95 AS 'total' UN
 SELECT 2000 AS 'lmin',2500 AS 'lmax',85 AS 'cycle',10 AS 'time',95 AS 'total' UNION
 SELECT 2500 AS 'lmin',3200 AS 'lmax',85 AS 'cycle',10 AS 'time',95 AS 'total'  
 ) AS T;
+
+//===15/12/25
+CREATE INDEX idx_erp_sales_orders_created_at ON erp_sales_orders (created_at);
+
+//------------------------------------------------------------------------------------------------
+https://whatsappshayari.com/deetee/admin/machine-details/2?from_date=2025-11-01&to_date=2025-12-27

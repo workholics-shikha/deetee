@@ -360,8 +360,7 @@ if (!function_exists('addPassSheetDetails')) {
                         'size3'         => $item['size3'],
                         'qty'           => $item['qty'],
                         'material'      => $item['material'],
-                        'hardness'      => $item['hardness'],
-                        'fin_wt'        => $item['fin_wt'],
+                        'hardness'      => $item['hardness'], 
                         'bs1_dia'       => $item['bs1_dia'], // for calculation
                         'bs1_depth'     => $item['bs1_depth'],  // for calculation
                         'bs1_bore'      => $item['bs1_bore'],

@@ -14,9 +14,9 @@ class MachineController extends Controller
     {
 
         $count['totalMachines'] = MachineMaster::count();
-        $count['machinesInWorking'] = MachineMaster::where('machine_status','in-working')->count();
+        $count['machinesInWorking'] = MachineMaster::where('machine_status', 'in-working')->count();
         $count['unavailableMachines'] = MachineMaster::whereIn('machine_status', ['maintenance', 'breakdown'])->count();
-        
+
         $search = $request->input('search');
         $data = MachineMaster::query()
             ->when($search, function ($query, $search) {
@@ -281,6 +281,7 @@ class MachineController extends Controller
 
         return view('machine.details', compact('machine', 'operations', 'soHistory', 'breakdowntime', 'machineActualRunTime', 'machineDowntime', 'count7Days', 'utilization', 'oeeRuntime', 'downtime', 'dayCount', 'labels'));
     }
+
     public function details(Request $request, $id)
     {
         // === Date Filters ===
@@ -311,7 +312,7 @@ class MachineController extends Controller
         $machine = MachineMaster::find($id);
         $operations = MachineWiseOperation::with('operation')->where('machine_id', $id)->get();
         $breakdowntime = MachineHealthMonitoring::where('master_id', $id)->whereBetween('start_date_time', [$fromDate, $toDate])->get();
- 
+
         // === Base Query ===
         $baseQuery = SalesOrderTracking::query()
             ->where('machine_id', $id)
@@ -319,7 +320,7 @@ class MachineController extends Controller
             ->where('roll_status', 'completed');
 
         // === SO History (detail view) ===
-        $soHistory = (clone $baseQuery)
+        $query = (clone $baseQuery)
             ->select(
                 'so_id',
                 'operation_id',
@@ -328,12 +329,22 @@ class MachineController extends Controller
                 DB::raw('SUM(time_taken) as time_taken_minutes'),
                 DB::raw('COUNT(quantity_processed) as total_quantity_processed')
             )
-            ->with(['operation:id,operation_name', 'soProduct:so_id,so_no'])
-            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [
+                $fromDate->toDateString(),
+                $toDate->toDateString()
+            ])
             ->groupBy('so_id', 'operation_id')
-            ->orderBy('end_date', 'DESC')
+            ->orderBy('end_date', 'DESC');
+
+        // 🔍 PRINT SQL
+        // dd($query->toSql(), $query->getBindings());
+
+        // ▶ Execute AFTER debugging
+        $soHistory = $query
+            ->with(['operation:id,operation_name', 'soProduct:so_id,so_no'])
             ->get();
- 
+
+
         // === Machine Actual Run Time ===
         $machineActualRunTime = SalesOrderTracking::where('machine_id', $id)
             ->whereBetween('start_date_time', [$fromDate, $toDate])
@@ -359,7 +370,7 @@ class MachineController extends Controller
             $labels[] = $key;
             $dates[$key] = 0;
         }
- 
+
         $data = (clone $baseQuery)
             ->select(
                 'so_id',
