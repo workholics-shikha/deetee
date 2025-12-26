@@ -597,6 +597,7 @@ class UserController extends Controller
                 'machine_id',
                 'so_product_id',
                 'sub_product_id',
+                'pass_id',
                 DB::raw('MIN(start_date_time) as start_date'),
                 DB::raw('MAX(end_date_time) as end_date'),
                 DB::raw('SUM(time_taken) as time_taken_minutes'),
@@ -610,7 +611,7 @@ class UserController extends Controller
                 'subProduct:id,sub_product_name'
             ])
             ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
-            ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id') // ✅ added missing groupBys
+            ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id', 'pass_id') // ✅ added missing groupBys
             ->get();
 
         // === Production Graph (last 7 days) ===

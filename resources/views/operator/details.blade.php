@@ -240,6 +240,9 @@
                                                                 <td class="text-445B64 p-3">
                                                                     {{ $history->subProduct->sub_product_name }} </td>
                                                                 <td class="text-445B64 p-3">
+                                                                    {{ optional($history->pass_id)->pass_id ?? '-' }} </td>
+
+                                                                <td class="text-445B64 p-3">
                                                                     {{ $history->operation->operation_name }}</td>
                                                                 <td class="text-445B64 p-3">
                                                                     {{ round($history->time_taken_minutes / 60, 2) }} Mins

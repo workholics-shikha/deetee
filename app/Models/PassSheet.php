@@ -1,9 +1,7 @@
 <?php
 
 namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Model; 
 
 class PassSheet extends Model
 {
@@ -11,6 +9,8 @@ class PassSheet extends Model
     protected $table = 'pass_sheets'; // Optional if using default naming
 
     protected $fillable = [
+        'so_id',
+        'subproduct_id',
         'cpoitemid',
         'sr_no',
         'pass_no',

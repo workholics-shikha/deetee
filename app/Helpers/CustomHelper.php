@@ -350,6 +350,8 @@ if (!function_exists('addPassSheetDetails')) {
                 foreach ($passNos as $passNo) {
 
                     PassSheet::insert([
+                        'so_id'         => $item['so_id'],
+                        'subproduct_id' => $item['subproduct_id'],
                         'cpoitemid'     => $item['cpoitemid'],
                         'sr_no'         => $item['sr_no'],
                         'pass_no'       => $passNo,
@@ -360,7 +362,7 @@ if (!function_exists('addPassSheetDetails')) {
                         'size3'         => $item['size3'],
                         'qty'           => $item['qty'],
                         'material'      => $item['material'],
-                        'hardness'      => $item['hardness'], 
+                        'hardness'      => $item['hardness'],
                         'bs1_dia'       => $item['bs1_dia'], // for calculation
                         'bs1_depth'     => $item['bs1_depth'],  // for calculation
                         'bs1_bore'      => $item['bs1_bore'],
@@ -393,7 +395,7 @@ if (!function_exists('addPassSheetDetails')) {
             Storage::disk('public')->put($path, $result->getString());
 
             // Update the machine record with the QR code path
-            PassSheet::where('id', $sheet->id)->update(['pass_sheet_qr_code' => $name]);
+            PassSheet::where('id', $sheet->id)->update([ 'pass_sheet_qr_code' => $name, 'so_id' => $item['so_id'], 'subproduct_id' => $item['subproduct_id'] ]);
         }
     }
 }

@@ -1444,16 +1444,14 @@ class SalesOrderController extends Controller
             ], 500);
         }
     }
-
-    
-
+ 
     public function sales_order_details(Request $request)
     {
-        /** Expected input: so_id:86, machine_id:1, so_product_id:349 */
+        /** Expected input: so_id:86, machine_id:1, so_product_id:349 **/
         $machine_id = $request->input('machine_id');
         $so_product_id = $request->input('so_product_id');
 
-        // Fetch SO Product details ====
+        // ==== Fetch SO Product details ====
         $so_product_details = SalesOrderProduct::select(
             'id',
             'so_id',

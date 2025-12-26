@@ -11,7 +11,7 @@ class SubProductOperationController extends Controller
     
     public function route_card_details($id, $pass_no = null)
     {
-        $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code')->where('id', $pass_no)->first();
+        $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3')->where('id', $pass_no)->first();
         $data = SalesOrderProduct::find($id); // details of that product by id
         $so = ErpSalesOrder::where('so_id', $data->so_id)->first(['so_no', 'id', 'so_unitid']); // get industry, so no & so id
         $subProductName = SubProduct::where('id', $data->sub_product_id)->value('sub_product_name'); // sub product name

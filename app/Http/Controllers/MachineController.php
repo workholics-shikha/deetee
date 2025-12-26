@@ -323,7 +323,8 @@ class MachineController extends Controller
         $query = (clone $baseQuery)
             ->select(
                 'so_id',
-                'operation_id',
+                'operation_id', 
+                'so_product_id', 'sub_product_id', 'pass_id',
                 DB::raw('MIN(start_date_time) as start_date'),
                 DB::raw('MAX(end_date_time) as end_date'),
                 DB::raw('SUM(time_taken) as time_taken_minutes'),
@@ -333,7 +334,7 @@ class MachineController extends Controller
                 $fromDate->toDateString(),
                 $toDate->toDateString()
             ])
-            ->groupBy('so_id', 'operation_id')
+            ->groupBy('so_id', 'operation_id', 'so_product_id', 'sub_product_id', 'pass_id')
             ->orderBy('end_date', 'DESC');
 
         // 🔍 PRINT SQL

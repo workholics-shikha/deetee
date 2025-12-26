@@ -528,7 +528,9 @@ class SalesOrderController extends Controller
         $data = SalesOrderProduct::find($sop_id);
         $so = ErpSalesOrder::where('so_id', $data->so_id)->first(['so_no', 'id', 'so_group']);
         $subProductName = SubProduct::where('id', $data->sub_product_id)->value('sub_product_name');
+        
         $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
+
         if ($pass_sheet->isEmpty()) {
             $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
         }

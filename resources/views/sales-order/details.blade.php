@@ -181,7 +181,9 @@
                                                             <div class="mb-4">
                                                                 <h6 class="text-445B64"> {{ $sizeVals[0] }} </h6>
                                                                 <h6 class="text-0D161A fw-semibold">
-                                                                  {{ !empty($item['size1']) ? $item['size1'] : '-' }} </h6>
+
+                                                                     {{ !empty($item['size1']) ? $item['size1'] : '-' }} </h6>
+
                                                             </div>
                                                         </div>
 
@@ -201,7 +203,9 @@
                                                             <div class="mb-4">
                                                                 <h6 class="text-445B64"> {{ $sizeVals[1] }}</h6>
                                                                 <h6 class="text-0D161A fw-semibold">
-                                                                    {{ !empty($item['size2']) ? $item['size2'] : '-' }}
+
+                                                                     {{ !empty($item['size2']) ? $item['size2'] : '-' }}
+
                                                                 </h6>
                                                             </div>
                                                         </div>
@@ -222,7 +226,9 @@
                                                             <div class="mb-4">
                                                                 <h6 class="text-445B64"> {{ $sizeVals[2] }} </h6>
                                                                 <h6 class="text-0D161A fw-semibold">
+
                                                                      {{ !empty($item['size3']) ? $item['size3'] : '-' }}
+
                                                                 </h6>
                                                             </div>
                                                         </div>
@@ -278,8 +284,7 @@
                                                         @else
                                                             <div class="col-8 col-md-8">
                                                     @endif
-
-                                                    {{-- <div class="col-12 col-md-6"> --}}
+ 
                                                     <button
                                                         class="btn bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100 py-3"
                                                         {{ $btnDisable }}>

@@ -212,3 +212,4 @@ Route::get('qrGenerateSoProduct', [ImportController::class, 'qrGenerateSoProduct
 Route::get('copyOperationPngInSOPDetails', [ImportController::class, 'copyOperationPngInSOPDetails'])->name('copyOperationPngInSOPDetails');
 Route::get('generateNewQrCodes', [ImportController::class, 'generateNewQrCodes'])->name('generateNewQrCodes');
 Route::get('generateNewQrCodes2', [ImportController::class, 'generateNewQrCodes2'])->name('generateNewQrCodes2');
+Route::get('addPassSheetDetails', [ImportController::class, 'addPassSheetDetails'])->name('addPassSheetDetails');

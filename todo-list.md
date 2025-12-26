@@ -313,3 +313,14 @@ CREATE INDEX idx_erp_sales_orders_created_at ON erp_sales_orders (created_at);
 
 //------------------------------------------------------------------------------------------------
 https://whatsappshayari.com/deetee/admin/machine-details/2?from_date=2025-11-01&to_date=2025-12-27
+
+// ============ 26-12-2025 ============ 
+
+ALTER TABLE `pass_sheets` ADD `so_id` BIGINT NULL DEFAULT NULL AFTER `id`;
+ALTER TABLE `pass_sheets` ADD `subproduct_id` BIGINT NULL DEFAULT NULL AFTER `so_id`;
+
+UPDATE `machine_master` SET `machine` = 'Premeto – I' WHERE `machine_master`.`id` = 23;
+INSERT INTO `machine_master` (`id`, `unit_number`, `unit_name`, `machine`, `machine_image`, `machine_type`, `section`, `sub_section`, `machine_qr_code`, `machine_status`, `operator_id`, `tracking_id`, `created_at`, `updated_at`) VALUES (NULL, '2', 'RMR', 'Premeto – II', NULL, 'Cylindrical Grinding', 'Production', 'Grinding', 'premeto-1763386655.png', 'active', '296', '4937', '2025-04-17 11:24:10', '2025-12-19 19:29:08');
+
+INSERT INTO `machine_wise_operations` (`id`, `machine_id`, `operation_id`, `created_at`, `updated_at`) VALUES (NULL, '152', '21', NULL, NULL), (NULL, '152', '22', NULL, NULL), (NULL, '152', '152', NULL, NULL), (NULL, '152', '24', NULL, NULL), (NULL, '152', '25', NULL, NULL), (NULL, '152', '26', NULL, NULL), (NULL, '152', '27', NULL, NULL), (NULL, '152', '28', NULL, NULL);
+

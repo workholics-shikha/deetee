@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ErpSalesOrder, IctMaterial, MachineMaster, ProductMasters, SubProduct, OperationMaster, Role, SalesOrderProduct, SOProductOperationDetails, User};
+use App\Models\{ErpSalesOrder, PassSheet, MachineMaster, ProductMasters, SubProduct, OperationMaster, Role, SalesOrderProduct, SOProductOperationDetails, User};
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{DB, Storage, File};
@@ -133,8 +133,8 @@ class ImportController extends Controller
     {
         $request->validate(['user_csv_file' => 'required|mimes:csv,txt']);
 
-        $file  = $request->file('user_csv_file');
-        $data  = array_map('str_getcsv', file($file->getRealPath()));
+        $file = $request->file('user_csv_file');
+        $data = array_map('str_getcsv', file($file->getRealPath()));
 
         //== Optional: skip header if needed ==//
         foreach (array_slice($data, 1) as $row) {
@@ -595,4 +595,79 @@ class ImportController extends Controller
             }
         }
     }
+
+    function addPassSheetDetails()
+    {
+
+      $subProducts = SalesOrderProduct::where('measureunit', 'SET')
+        ->whereNotNull('sub_product_id')
+        ->get();
+ 
+       foreach ($subProducts as $details) {
+ 
+        $erp_response = callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $details->cpoitemid);
+        $itemjson = $erp_response->json();
+
+        if (!empty($itemjson)) {
+            foreach ($itemjson as $item) {
+
+                $passNos = splitPassNo($item['pass_no']);
+
+                foreach ($passNos as $passNo) {
+
+                    PassSheet::insert([
+                        'so_id'         => $details->so_id,
+                        'subproduct_pid' => $details->id,
+                        'subproduct_id' => $details->sub_product_id,
+                        'cpoitemid'     => $item['cpoitemid'],
+                        'sr_no'         => $item['sr_no'],
+                        'pass_no'       => $passNo,
+                        'mrk_pass_no'   => $item['mrk_pass_no'],
+                        'drawing_no'    => $item['drawing_no'],
+                        'size1'         => $item['size1'],
+                        'size2'         => $item['size2'],
+                        'size3'         => $item['size3'],
+                        'qty'           => $item['qty'],
+                        'material'      => $item['material'],
+                        'hardness'      => $item['hardness'],
+                        'bs1_dia'       => $item['bs1_dia'], // for calculation
+                        'bs1_depth'     => $item['bs1_depth'], // for calculation
+                        'bs1_bore'      => $item['bs1_bore'],
+                        'bs2_dia'       => $item['bs2_dia'],
+                        'bs2_depth'     => $item['bs2_depth'],
+                        'remarks'       => $item['remarks'],
+                        'revisioncount' => $item['revisioncount'],
+                        'created_at'    => now(),
+                        'updated_at'    => now(), 
+                    ]);
+                }
+            }
+        }
+    }
+
+        // Generate the QR code
+        $passSheet = PassSheet::whereNull('pass_sheet_qr_code')->get();
+
+        if(!empty($passSheet)) {
+            foreach ($passSheet as $sheet) {
+                $result = Builder::create()
+                    ->data($sheet->id . ';PassScan')
+                    ->size(300) // Set size in pixels
+                    ->margin(10) // Set margin in pixels
+                    ->build();
+
+                $name = $sheet->id . '-' . time() . '.png';
+
+                // Path where you want to save the QR code image
+                $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+
+                // Save the QR code image to storage (public disk)
+                Storage::disk('public')->put($path, $result->getString());
+
+                // Update the machine record with the QR code path
+                PassSheet::where('id', $sheet->id)->update([ 'pass_sheet_qr_code' => $name ]);
+            }
+        }  
+    }
+    
 }

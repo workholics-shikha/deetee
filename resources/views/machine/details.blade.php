@@ -309,8 +309,11 @@
                                             <div class="table-responsive">
                                                 <table class="table rounded-3 mb-0">
                                                     <thead>
-                                                        <tr>
+                                                        <tr> 
                                                             <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> SO No. </th>
+                                                            <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Product </th>
+                                                            <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Sub-Product </th>
+                                                            <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Pass Item </th>
                                                             <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Start Date </th>
                                                             <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> End Date </th>
                                                             <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Process </th>
@@ -338,6 +341,13 @@
                                                                             <h6 class="text-445B64 mb-0"> {{ $history->soProduct->so_no }} </h6>
                                                                         </div>
                                                                     </td>
+ 
+                                                                    <td class="text-445B64 p-3"> {{ optional($history->product)->product_modified_name ?? '-' }} </td>
+                                                                    
+                                                                    <td class="text-445B64 p-3"> {{ $history->subProduct->sub_product_name }} </td>
+
+                                                                    <td class="text-445B64 p-3"> {{ optional($history->pass)->pass_no ?? '-' }} </td>
+ 
                                                                     <td scope="row" class="p-3">
                                                                         <div class="">
                                                                             <h6 class="text-445B64 mb-0 fw-medium"> {{ \Carbon\Carbon::parse($history->start_date)->format('Y-m-d') }} </h6>

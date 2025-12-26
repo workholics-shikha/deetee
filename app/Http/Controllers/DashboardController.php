@@ -215,8 +215,7 @@ class DashboardController extends Controller
             $labels[] = $key;
             $defaultMap[$key] = 0;
         }
-
-        //   DB::enableQueryLog();   
+  
         // SIMPLE COUNT APPROACH
         $productionData = SOProductOperationDetails::query()
             ->join('erp_sales_orders as eso', 'sales_order_product_operation_details.so_id', '=', 'eso.so_id')
@@ -234,10 +233,7 @@ class DashboardController extends Controller
             ->map(function ($items) {
                 return $items->count();
             });
-
-        // DEBUG: Check what's in productionData
-       // print_r($productionData); exit;
-
+ 
         $mappedProduction = [];
         foreach ($productionData as $rawDate => $count) { // Changed $total to $count
             $key = Carbon::parse($rawDate)->format('d M');
@@ -247,9 +243,6 @@ class DashboardController extends Controller
         }
 
         $production = array_values(array_replace($defaultMap, $mappedProduction));
-
-        // print_r($production);
-        // exit;
 
         // Step 3: Downtime Data
         $downtimeDataQuery = MachineHealthMonitoring::query()

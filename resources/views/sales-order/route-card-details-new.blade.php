@@ -112,17 +112,17 @@
 
                                 <div class="col-12 col-md-4 col-xl-3 col-xxl-2 mb-3">
                                     <h6 class="text-445B64 mb-1"> {{ $sizeVals[0] }} </h6>
-                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($data->size1) ? $data->size1 : '-' }}
+                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($pass_sheet->size1) ? $pass_sheet->size1 : '-' }}
                                     </h6>
                                 </div>
                                 <div class="col-12 col-md-4 col-xl-3 col-xxl-2 mb-3">
                                     <h6 class="text-445B64 mb-1"> {{ $sizeVals[1] }} </h6>
-                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($data->size2) ? $data->size2 : '-' }}
+                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($pass_sheet->size2) ? $pass_sheet->size2 : '-' }}
                                     </h6>
                                 </div>
                                 <div class="col-12 col-md-4 col-xl-3 col-xxl-2 mb-3">
                                     <h6 class="text-445B64 mb-1"> {{ $sizeVals[2] }} </h6>
-                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($data->size3) ? $data->size3 : '-' }}
+                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($pass_sheet->size3) ? $pass_sheet->size3 : '-' }}
                                     </h6>
                                 </div>
 
