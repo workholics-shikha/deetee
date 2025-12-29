@@ -231,6 +231,7 @@
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">Group </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">Product </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">Sub-Product </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3">Pass Item </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
                                                             Size1</th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
@@ -275,6 +276,7 @@
                                                                     {{ $completionTracking->product_name }} </td>
                                                                 <td class="text-445B64 p-3">
                                                                     {{ $completionTracking->sub_product_name }} </td>
+                                                                <td> {{ optional($completionTracking->pass)->pass_no ?? '-' }} </td>
                                                                 <td class="text-445B64 p-3"> {{ $sizeVals[0] ?? '' }}:
                                                                     {{ !empty($completionTracking->salesorderProducts->size1) ? $completionTracking->salesorderProducts->size1 : '-' }}
                                                                 </td>
@@ -320,7 +322,7 @@
                                 <div class="row align-items-center">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="m-2">
-                                            <h6 class="text-445B64 fw-semibold mb-0">SO Roll Tracking</h6>
+                                            <h6 class="text-445B64 fw-semibold mb-0"> SO Roll Tracking </h6>
                                         </div>
                                     </div>
                                 </div>
@@ -339,6 +341,7 @@
                                                         <th scope="col" class="text-6C7D83 py-2 px-3">Product</th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">Sub
                                                             Product</th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-center"> Pass Item </th>    
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
                                                             Size1</th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
@@ -385,6 +388,9 @@
                                                                     <td class="text-445B64 p-3 text-center">
                                                                         {{ $rollTracking->subProduct->sub_product_name }}
                                                                     </td>
+                                                                    <td class="text-445B64 p-3 text-center">
+                                                                        {{ optional($rollTracking->pass)->pass_no ?? '-' }}
+                                                                    </td>
                                                                     <td class="text-445B64 p-3"> {{ $sizeVals[0] ?? '' }}:
                                                                         {{ !empty($rollTracking->salesorderProducts->size1) ? $rollTracking->salesorderProducts->size1 : '-' }}
                                                                     </td>
@@ -401,9 +407,7 @@
 
                                                                     @php
                                                                         $ideal = $rollTracking->ideal_cycle_time;
-                                                                        $qty =
-                                                                            $rollTracking->total_quantity_processed ??
-                                                                            0;
+                                                                        $qty = $rollTracking->total_quantity_processed ?? 0;
 
                                                                         // Only multiply when ideal_cycle_time is NOT "NA" and NOT null
                                                                         $idealTotal =

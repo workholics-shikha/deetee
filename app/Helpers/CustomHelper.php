@@ -346,12 +346,13 @@ if (!function_exists('addPassSheetDetails')) {
             foreach ($itemjson as $item) {
 
                 $passNos = splitPassNo($item['pass_no']);
+                $sop = SalesOrderProduct::where(['cpoitemid'=>$sop_id])->first();
 
                 foreach ($passNos as $passNo) {
 
                     PassSheet::insert([
-                        'so_id'         => $item['so_id'],
-                        'subproduct_id' => $item['subproduct_id'],
+                        'so_id'         => $sop->so_id,
+                        'subproduct_id' => $sop->sub_product_id,
                         'cpoitemid'     => $item['cpoitemid'],
                         'sr_no'         => $item['sr_no'],
                         'pass_no'       => $passNo,
@@ -364,7 +365,7 @@ if (!function_exists('addPassSheetDetails')) {
                         'material'      => $item['material'],
                         'hardness'      => $item['hardness'],
                         'bs1_dia'       => $item['bs1_dia'], // for calculation
-                        'bs1_depth'     => $item['bs1_depth'],  // for calculation
+                        'bs1_depth'     => $item['bs1_depth'], // for calculation
                         'bs1_bore'      => $item['bs1_bore'],
                         'bs2_dia'       => $item['bs2_dia'],
                         'bs2_depth'     => $item['bs2_depth'],
@@ -395,7 +396,7 @@ if (!function_exists('addPassSheetDetails')) {
             Storage::disk('public')->put($path, $result->getString());
 
             // Update the machine record with the QR code path
-            PassSheet::where('id', $sheet->id)->update([ 'pass_sheet_qr_code' => $name, 'so_id' => $item['so_id'], 'subproduct_id' => $item['subproduct_id'] ]);
+            PassSheet::where('id', $sheet->id)->update([ 'pass_sheet_qr_code' => $name, 'so_id' => $sop->so_id, 'subproduct_id' => $sop->sub_product_id ]);
         }
     }
 }

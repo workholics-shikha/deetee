@@ -180,10 +180,7 @@
                                                             </div>
                                                             <div class="mb-4">
                                                                 <h6 class="text-445B64"> {{ $sizeVals[0] }} </h6>
-                                                                <h6 class="text-0D161A fw-semibold">
-
-                                                                     {{ !empty($item['size1']) ? $item['size1'] : '-' }} </h6>
-
+                                                                <h6 class="text-0D161A fw-semibold"> {{ !empty($item['size1']) ? $item['size1'] : '-' }} </h6>
                                                             </div>
                                                         </div>
 

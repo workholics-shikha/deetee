@@ -582,14 +582,13 @@ class UserController extends Controller
         $plannedRuntime = 1350 * $dayCount; // in minutes
         $idealRuntime = 1440 * $dayCount; // in minutes
 
-        // === Base Query ===
+        // ========= Base Query =========
         $baseQuery = SalesOrderTracking::query()
             ->where('operator_id', $id)
             ->whereNotNull('end_date_time')
             ->where('roll_status', 'completed');
 
-        // === SO History (detail view) ===
-        // === SO History (detail view) ===
+        // ========= SO History (detail view) ========= 
         $soHistory = (clone $baseQuery)
             ->select(
                 'so_id',
@@ -614,6 +613,8 @@ class UserController extends Controller
             ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id', 'pass_id') // ✅ added missing groupBys
             ->get();
 
+         // echo "<pre>"; print_r($soHistory->toArray()); exit;
+
         // === Production Graph (last 7 days) ===
         // Step 1: build date range
         $period = CarbonPeriod::create($startOfDay, $toDate);
@@ -625,13 +626,7 @@ class UserController extends Controller
             $dates[$key] = 0;
         }
 
-        // Step 2: fetch data
-        // $data = (clone $baseQuery)
-        //     ->selectRaw('DATE(end_date_time) as raw_date, SUM(quantity_processed) as total')
-        //     ->whereBetween(DB::raw('DATE(end_date_time)'), [$startOfDay->toDateString(), $toDate->toDateString()])
-        //     ->groupBy(DB::raw('DATE(end_date_time)'))
-        //     ->pluck('total', 'raw_date')
-        //     ->toArray();
+        // Step 2: fetch data 
         $data = (clone $baseQuery)
             ->select(
                 'so_id',
@@ -668,4 +663,5 @@ class UserController extends Controller
             'labels'
         ));
     }
+
 }

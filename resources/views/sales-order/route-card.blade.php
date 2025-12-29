@@ -75,14 +75,13 @@
     <div class="pdf-container page">
         <!-- Header Section -->
         <div class="pdf-header p-3">
-            <div class="logo">
-                <img src="{{asset('assets/images/pdfLogo.png')}}" alt="" class="me-2">
-                DeeTee Industries Pvt. Ltd.
-            </div>
+             <div class="logo">
+                <img src="{{asset('assets/images/pdfLogo.png')}}" alt="" class="me-2"> DeeTee Industries Pvt. Ltd.
+             </div>
            @if(isset($data->so_unitname) && $data->so_unitname != '')
-            <div class="unit">
+             <div class="unit">
                 <h6 class=""> {{ $data->so_unitname }} </h6>
-            </div>
+             </div>
            @endif 
         </div>
 
@@ -116,39 +115,79 @@
                         </tr>
                     </table>
                 </td>
+            </tr> 
+              @php
+                    $parts = explode('-', $saleOrder->so_no);
+                    $group = implode('-', array_slice($parts, 4));
+                    $sizeVals = getSizeValue($group); 
+              @endphp
+
+            <tr class="">
+                <td class="">
+                    <table>
+                        <tr>
+                            <td class="" style="border: none; vertical-align: top;">
+                                <p class="" style="margin-bottom: 0;"> {{ $sizeVals[0] }}:</p>
+                                <h6 class="" style="font-weight: 600;"> {{ !empty($data->size1) ? $data->size1 : '-' }} </h6>
+                            </td>
+                            <td class="" style="border: none; text-align: center;">
+                                <p class="" style="margin-bottom: 0;">{{ $sizeVals[1] }}:</p>
+                                <h6 class="" style="font-weight: 600;"> {{ !empty($data->size2) ? $data->size2 : '-' }} </h6>  
+                            </td>
+                             <td class="" style="border: none; text-align: right;">
+                                <p class="" style="margin-bottom: 0;">{{ $sizeVals[2] }}:</p>
+                                <h6 class="" style="font-weight: 600;"> {{ !empty($data->size3) ? $data->size3 : '-' }} </h6>  
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="">
+                    <table>
+                        <tr>
+                            <td class="" style="border: none; vertical-align: top;">
+                                <p class="" style="margin-bottom: 0;">Quantity:</p>
+                                <h6 class="" style="font-weight: 600;"> {{ $data->soquantity }} </h6>  
+                            </td>
+                            <td class="" style="border: none; text-align: center;">
+                                 <p class="" style="margin-bottom: 0;">Hardness:</p>
+                                <h6 class="" style="font-weight: 600;"> {{ $data->hardness }} </h6>  
+                            </td>
+                             <td class="" style="border: none; text-align: right;">
+                                <p class="" style="margin-bottom: 0;">Material:</p>
+                                <h6 class="" style="font-weight: 600;"> {{ $data->material }} </h6>  
+                            </td>
+                        </tr>
+                    </table>
+                </td>
             </tr>
         </table>
 
         <!-- Table Section -->
         <table>
-            <thead>
-                <tr>
-                    <th colspan="4">Operations</th>
-                </tr>
-            </thead>
+            <thead> <tr> <th colspan="4">Operations</th> </tr> </thead>
             <input type="hidden" id="searchInput" data-id="{{ $data->id }}" search-url="http://localhost/deetee/admin/route-card-preview" value="">
             <tbody id="myTableBody">
                   <input type="hidden" id="searchInput" data-id="{{ $data->id }}" search-url="http://localhost/deetee/admin/route-card-preview" value="">
-                        @php $i = 0; @endphp
-                            @foreach($getOperationList as $operation)
-                                @if($i % 4 == 0)
-                                    <tr>
-                                @endif
-                                <td style="text-align:center;">
-                                    <img width="130" height="130" src="{{ $operation->operation_qr_code }}" >    
-                                    <p class="m-2">{{ $operation->operation_name }}</p>
-                                </td>
-                                @php $i++; @endphp
-                                @if($i % 4 == 0)
-                                    </tr>
-                                @endif
-                                @if($i % 12 == 0)
-                                    <div style="page-break-after: always;" style="height:100px"></div>
-                                @endif
-                            @endforeach
-                            @if($i % 4 != 0)
+                    @php $i = 0; @endphp
+                        @foreach($getOperationList as $operation)
+                            @if($i % 4 == 0)
+                                <tr>
+                            @endif
+                            <td style="text-align:center;">
+                                <img width="130" height="130" src="{{ $operation->operation_qr_code }}" >    
+                                <p class="m-2">{{ $operation->operation_name }}</p>
+                            </td>
+                            @php $i++; @endphp
+                            @if($i % 4 == 0)
                                 </tr>
                             @endif
+                            @if($i % 12 == 0)
+                                <div style="page-break-after: always;" style="height:100px"></div>
+                            @endif
+                        @endforeach
+                        @if($i % 4 != 0)
+                            </tr>
+                        @endif
             </tbody>
         </table>
 

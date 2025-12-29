@@ -94,6 +94,7 @@ class ReportsController extends Controller
                 'operation_id',
                 'so_product_id',
                 'sub_product_id',
+                'pass_id',
                 DB::raw('MIN(start_date_time) as start_date'),
                 DB::raw('MAX(end_date_time) as end_date'),
                 DB::raw('SUM(time_taken) as time_taken_minutes'),
@@ -115,7 +116,7 @@ class ReportsController extends Controller
                     ->where('st.roll_status', 'completed')
                     ->groupBy('st.so_id', 'st.operation_id', 'st.so_product_id', 'st.sub_product_id');
             })
-            ->groupBy('so_id', 'ideal_cycle_time', 'operation_id', 'so_product_id', 'sub_product_id', DB::raw('DATE(end_date_time)'))
+            ->groupBy('so_id', 'ideal_cycle_time', 'operation_id', 'so_product_id', 'sub_product_id', DB::raw('DATE(end_date_time)'), 'pass_id')
             ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')
              ->limit(45) ->get();
             // ->paginate(10)->appends($request->all());
@@ -127,6 +128,7 @@ class ReportsController extends Controller
                 'sales_order_trackings.so_id',
                 'so_product_id',
                 'sub_product_id',
+                'pass_id',
                 DB::raw('MIN(start_date_time) as start_date'),
                 DB::raw('MAX(end_date_time) as end_date'),
                 DB::raw("COUNT(DISTINCT CASE WHEN roll_status = 'completed' THEN quantity_processed END) as completed_quantity_count"),
@@ -137,11 +139,10 @@ class ReportsController extends Controller
                 'salesorderProducts:so_id,size1,size2,size3,soquantity'
             ])
             ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
-            ->groupBy('so_id', 'so_product_id', 'sub_product_id')
+            ->groupBy('so_id', 'so_product_id', 'sub_product_id', 'pass_id')
             ->orderBy(DB::raw('DATE(MAX(end_date_time))'), 'DESC')
-           // ->paginate(10)->appends($request->all());
-           ->limit(45)
-         ->get();
+            ->limit(45)
+            ->get();
 
         // ========= Tab 4 - Production Overview =========
         $completedSub = DB::table('sales_order_product_operation_details')
