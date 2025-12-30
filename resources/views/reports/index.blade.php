@@ -238,13 +238,18 @@
                                                             Size2</th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
                                                             Size3</th>
+ 
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-left">
+                                                            Hardness</th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-left">
+                                                            Material</th>
+
                                                         <th scope="col" class="text-6C7D83 py-2 px-3"> SO <br> Quanity
                                                         </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3"> SO <br> Start
                                                             <br> Date
                                                         </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3">Quantity <br>
-                                                            Produced </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3">Quantity <br> Produced </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -286,6 +291,14 @@
                                                                 <td class="text-445B64 p-3"> {{ $sizeVals[2] ?? '' }}:
                                                                     {{ !empty($completionTracking->salesorderProducts->size3) ? $completionTracking->salesorderProducts->size3 : '-' }}
                                                                 </td>
+
+                                                                <td class="text-445B64 p-3">
+                                                                    {{ $completionTracking->salesorderProducts->hardness }}
+                                                                </td>
+                                                                 <td class="text-445B64 p-3">
+                                                                    {{ $completionTracking->salesorderProducts->material }}
+                                                                </td>
+
                                                                 <td class="text-445B64 p-3">
                                                                     {{ $completionTracking->salesorderProducts->soquantity }}
                                                                 </td>
@@ -342,12 +355,20 @@
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">Sub
                                                             Product</th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center"> Pass Item </th>    
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-left">
                                                             Size1</th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-left">
                                                             Size2</th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-left">
                                                             Size3</th>
+ 
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-left">
+                                                            Quantity</th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
+                                                            Hardness</th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
+                                                            Material</th>
+                                                            
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
                                                             Process</th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 text-center">
@@ -392,26 +413,35 @@
                                                                         {{ optional($rollTracking->pass)->pass_no ?? '-' }}
                                                                     </td>
                                                                     <td class="text-445B64 p-3"> {{ $sizeVals[0] ?? '' }}:
-                                                                        {{ !empty($rollTracking->salesorderProducts->size1) ? $rollTracking->salesorderProducts->size1 : '-' }}
-                                                                    </td>
+                                                                        {{ !empty($rollTracking->salesorderProducts->size1) ? $rollTracking->salesorderProducts->size1 : '-' }} </td>
+                                                                   
                                                                     <td class="text-445B64 p-3"> {{ $sizeVals[1] ?? '' }}:
-                                                                        {{ !empty($rollTracking->salesorderProducts->size2) ? $rollTracking->salesorderProducts->size2 : '-' }}
-                                                                    </td>
+                                                                        {{ !empty($rollTracking->salesorderProducts->size2) ? $rollTracking->salesorderProducts->size2 : '-' }} </td>
+                                                                   
                                                                     <td class="text-445B64 p-3"> {{ $sizeVals[2] ?? '' }}:
-                                                                        {{ !empty($rollTracking->salesorderProducts->size3) ? $rollTracking->salesorderProducts->size3 : '-' }}
-                                                                    </td>
+                                                                        {{ !empty($rollTracking->salesorderProducts->size3) ? $rollTracking->salesorderProducts->size3 : '-' }} </td>
+                                                                    
                                                                     <td class="text-445B64 p-3 text-center">
-                                                                        {{ $rollTracking->operation->operation_name }}</td>
+                                                                        {{ $rollTracking->salesorderProducts->soquantity }} </td>
+                                                                    
                                                                     <td class="text-445B64 p-3 text-center">
-                                                                        {{ $rollTracking->total_quantity_processed }}</td>
+                                                                        {{ $rollTracking->salesorderProducts->hardness }} </td>
+                                                                    
+                                                                    <td class="text-445B64 p-3 text-center">
+                                                                        {{ $rollTracking->salesorderProducts->material }} </td>    
+                                                                        
+                                                                    <td class="text-445B64 p-3 text-center">
+                                                                        {{ $rollTracking->operation->operation_name }} </td>
+
+                                                                    <td class="text-445B64 p-3 text-center">
+                                                                        {{ $rollTracking->total_quantity_processed }} </td>
 
                                                                     @php
                                                                         $ideal = $rollTracking->ideal_cycle_time;
                                                                         $qty = $rollTracking->total_quantity_processed ?? 0;
 
                                                                         // Only multiply when ideal_cycle_time is NOT "NA" and NOT null
-                                                                        $idealTotal =
-                                                                            $ideal !== 'NA' && !is_null($ideal)
+                                                                        $idealTotal = $ideal !== 'NA' && !is_null($ideal)
                                                                                 ? $ideal * $qty
                                                                                 : 'NA';
                                                                     @endphp

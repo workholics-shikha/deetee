@@ -94,7 +94,7 @@ class ReportsController extends Controller
                 'operation_id',
                 'so_product_id',
                 'sub_product_id',
-                'pass_id',
+                'pass_id', 
                 DB::raw('MIN(start_date_time) as start_date'),
                 DB::raw('MAX(end_date_time) as end_date'),
                 DB::raw('SUM(time_taken) as time_taken_minutes'),
@@ -108,7 +108,7 @@ class ReportsController extends Controller
                 'machine:id,machine',
                 'product:id,product_modified_name',
                 'subProduct:id,sub_product_name',
-                'salesorderProducts:so_id,size1,size2,size3'
+                'salesorderProducts:so_id,size1,size2,size3,hardness,material,soquantity'
             ])
             ->whereIn('sales_order_trackings.so_id', function ($query) {
                 $query->select('st.so_id')
@@ -136,7 +136,7 @@ class ReportsController extends Controller
                 DB::raw('MAX(sp.sub_product_name) as sub_product_name')
             )->with([
                 'soProduct:so_id,so_no,so_group,so_date',
-                'salesorderProducts:so_id,size1,size2,size3,soquantity'
+                'salesorderProducts:so_id,size1,size2,size3,soquantity,hardness,material'
             ])
             ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
             ->groupBy('so_id', 'so_product_id', 'sub_product_id', 'pass_id')

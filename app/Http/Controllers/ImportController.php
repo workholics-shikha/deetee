@@ -467,7 +467,51 @@ class ImportController extends Controller
 
     public function generateNewQrCodes()
     {
-        
+        // for Machines
+        $machines = DB::table('machine_master')->get();
+        foreach ($machines as $machine) {
+            // Generate the QR code
+            $result = Builder::create()
+                ->data('MAC' . $machine->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+
+            // Clean and lowercase the filename
+            $machine_name = $machine->machine ?? 'machine-' . $machines->id;
+            $safeName = Str::slug(strtolower($machine_name), '-');
+            $fileName = $safeName . '-' . time() . '.png';
+            $path = 'machine-qrcodes/' . $fileName; // relative to 'storage/app/public'
+
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+            // Update the machine record with the QR code path
+            DB::table('machine_master')
+                ->where('id', $machine->id)
+                ->update(['machine_qr_code' => $fileName]);
+        }
+        //========== end - Machines
+        exit;
+          // Operations
+        $operations = DB::table('operation_masters')->get();
+        foreach ($operations as $operation) {
+
+            // Generate the QR code
+            $result = Builder::create()
+                ->data('OPN' . $operation->id)
+                ->size(300) // Set size in pixels
+                ->margin(10) // Set margin in pixels
+                ->build();
+            $name = $operation->id . '-' . time() . '.png';
+            // Path where you want to save the QR code image
+            $path = 'operation-qr-codes/' . $name; // unique filename
+            // Save the QR code image to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+            // Update the machine record with the QR code path
+            DB::table('operation_masters')->where('id', $operation->id)->update(['operation_qr_code' => $name]);
+        }
+        //========== end - Operations
+         
         // for Sales Order
         $erpSalesOrder = ErpSalesOrder::get();
         foreach ($erpSalesOrder as $salesOrder) {
@@ -531,53 +575,36 @@ class ImportController extends Controller
             DB::table('users')->where('id', $user->id)->update(['user_qr_code' => $nameQR]);
         }
         //========== end - Users/Operators
-        // for Machines
-        $machines = DB::table('machine_master')->get();
-        foreach ($machines as $machine) {
-            // Generate the QR code
-            $result = Builder::create()
-                ->data('MAC' . $machine->id)
-                ->size(300) // Set size in pixels
-                ->margin(10) // Set margin in pixels
-                ->build();
-
-            // Clean and lowercase the filename
-            $machine_name = $machine->machine ?? 'machine-' . $machines->id;
-            $safeName = Str::slug(strtolower($machine_name), '-');
-            $fileName = $safeName . '-' . time() . '.png';
-            $path = 'machine-qrcodes/' . $fileName; // relative to 'storage/app/public'
-
-            // Save the QR code image to storage (public disk)
-            Storage::disk('public')->put($path, $result->getString());
-            // Update the machine record with the QR code path
-            DB::table('machine_master')
-                ->where('id', $machine->id)
-                ->update(['machine_qr_code' => $name]);
-        }
-        //========== end - Machines
-        // Operations
-        $operations = DB::table('operation_masters')->get();
-        foreach ($operations as $operation) {
-
-            // Generate the QR code
-            $result = Builder::create()
-                ->data('OPN' . $operation->id)
-                ->size(300) // Set size in pixels
-                ->margin(10) // Set margin in pixels
-                ->build();
-            $name = $operation->id . '-' . time() . '.png';
-            // Path where you want to save the QR code image
-            $path = 'operation-qr-codes/' . $name; // unique filename
-            // Save the QR code image to storage (public disk)
-            Storage::disk('public')->put($path, $result->getString());
-            // Update the machine record with the QR code path
-            DB::table('operation_masters')->where('id', $operation->id)->update(['operation_qr_code' => $name]);
-        }
-        //========== end - Operations
+       
+      
     }
 
     public function generateNewQrCodes2()
     {
+        // Generate the QR code
+        $passSheet = PassSheet::whereNull('pass_sheet_qr_code')->get();
+
+        if(!empty($passSheet)) {
+            foreach ($passSheet as $sheet) {
+                $result = Builder::create()
+                    ->data($sheet->id . ';PassScan')
+                    ->size(300) // Set size in pixels
+                    ->margin(10) // Set margin in pixels
+                    ->build();
+
+                $name = $sheet->id . '-' . time() . '.png';
+
+                // Path where you want to save the QR code image
+                $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+
+                // Save the QR code image to storage (public disk)
+                Storage::disk('public')->put($path, $result->getString());
+
+                // Update the machine record with the QR code path
+                PassSheet::where('id', $sheet->id)->update([ 'pass_sheet_qr_code' => $name ]);
+            }
+        }  
+ 
         $subProducts = SalesOrderProduct::get();
         if (!empty($subProducts)) {
             foreach ($subProducts as $products) {

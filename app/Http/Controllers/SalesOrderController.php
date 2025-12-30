@@ -55,6 +55,24 @@ class SalesOrderController extends Controller
         return view('sales-order.route-card', compact('data', 'saleOrder', 'getOperationList'));
     }
 
+    public function product_list_sheet_preview(Request $request)
+    {
+        $saleOrder = ErpSalesOrder::where('so_id', $request->id)->first();
+        $data = SalesOrderProduct::where('so_id', $request->id)->get();
+       
+        return view('sales-order.product-list-sheet', compact('data', 'saleOrder' ));
+    }
+
+    public function printProductList($id)
+    {
+        $container['saleOrder'] = ErpSalesOrder::where('so_id', $id)->first();
+        $container['data'] = SalesOrderProduct::where('so_id', $id)->get();
+
+        $container['title'] = 'Printable PDF';
+        $pdf = Pdf::setOptions(['isPhpEnabled' => true, 'isRemoteEnabled' => true])->loadView('sales-order.pdf.product-list-sheet-print', $container);
+        return $pdf->stream('document.pdf');
+    }
+
     public function printPreview($id)
     {
         $container['data'] = SalesOrderProduct::find($id);

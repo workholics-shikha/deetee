@@ -52,6 +52,8 @@ Route::post('admin/check/email',    [AdminLoginController::class, 'checkEmail'])
 
 Route::get('thankyou',              [AdminLoginController::class, 'thankyou'])->name('thankyou');
 
+Route::get('admin/printProductList/{id}', [SalesOrderController::class, 'printProductList'])->name('printProductList');
+
 Route::get('admin/pdf-document/{id}', [SalesOrderController::class, 'printPreview'])->name('printPdf');
 
 Route::get('admin/printPassSheet/{id}', [SalesOrderController::class, 'printPassSheet'])->name('printPassSheet');
@@ -85,6 +87,8 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
         Route::get('admin/pass-sheet/{id}',          [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');
 
         Route::get('admin/route-card-preview',       [SalesOrderController::class, 'route_card_preview'])->name('admin.route-card-preview');
+
+        Route::get('admin/product-list-sheet-preview', [SalesOrderController::class, 'product_list_sheet_preview'])->name('admin.product-list-sheet-preview');
 
         Route::get('admin/pass-sheet-preview',       [SalesOrderController::class, 'pass_sheet_preview'])->name('admin.pass-sheet-preview');
 
