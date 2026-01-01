@@ -89,7 +89,7 @@
     <div class="pdf-container page">
     
         <!-- Table Section -->
-         <input type="hidden" id="searchInput" data-id="{{ $data->id }}" search-url="http://localhost/deetee/admin/route-card-preview" value="">
+         <input type="hidden" id="searchInput" data-id="{{ $data->id }}" >
             
         <table width="100%" cellspacing="0" cellpadding="5" style="border-collapse: collapse;">
             <tbody id="myTableBody">

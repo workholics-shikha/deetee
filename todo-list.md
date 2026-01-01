@@ -324,3 +324,11 @@ INSERT INTO `machine_master` (`id`, `unit_number`, `unit_name`, `machine`, `mach
 
 INSERT INTO `machine_wise_operations` (`id`, `machine_id`, `operation_id`, `created_at`, `updated_at`) VALUES (NULL, '152', '21', NULL, NULL), (NULL, '152', '22', NULL, NULL), (NULL, '152', '152', NULL, NULL), (NULL, '152', '24', NULL, NULL), (NULL, '152', '25', NULL, NULL), (NULL, '152', '26', NULL, NULL), (NULL, '152', '27', NULL, NULL), (NULL, '152', '28', NULL, NULL);
 
+ // ===================== 31-12-2025 // =====================
+
+DELETE FROM subproduct_wise_operation WHERE `subproduct_wise_operation`.`id` = 640;
+DELETE FROM subproduct_wise_operation WHERE `subproduct_wise_operation`.`id` = 632;
+
+INSERT INTO `subproduct_wise_operation` (`id`, `product_master_id`, `subproduct_id`, `operation_id`, `operation_name`, `sub_operations`, `unit`, `parameter1_label`, `parameter1_value`, `parameter2_label`, `parameter2_value`, `parameter1_value_set`, `parameter2_value_set`, `operation_type`, `fixed_ICT`, `created_at`, `updated_at`, `operation_availabilty`) VALUES (NULL, '2', '5', '22', 'Grinding-1', 'Bore Semi-final & Final Grinding of coupling <br> Both side journal final & Berral semi final grinding only of roll.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1'), (NULL, '2', '5', '23', 'Grinding-2', 'Berral grinding with coupling <br> Journal Dia & Facing grinding - Both Side.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1');
+ 
+INSERT INTO `subproduct_wise_operation` (`id`, `product_master_id`, `subproduct_id`, `operation_id`, `operation_name`, `sub_operations`, `unit`, `parameter1_label`, `parameter1_value`, `parameter2_label`, `parameter2_value`, `parameter1_value_set`, `parameter2_value_set`, `operation_type`, `fixed_ICT`, `created_at`, `updated_at`, `operation_availabilty`) VALUES (NULL, '2', '6', '22', 'Grinding-1', 'Bore Semi-final & Final Grinding of coupling <br> Both side journal final & Berral semi final grinding only of roll.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1'), (NULL, '2', '6', '23', 'Grinding-2', 'Berral grinding with coupling <br> Journal Dia & Facing grinding - Both Side.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1');

@@ -73,6 +73,10 @@
 
 <body>
     <div class="pdf-container page">
+
+        <!-- Table Section -->
+        <input type="hidden" id="searchInput" data-id="{{ $saleOrder->so_id }}" >
+
         <!-- Header Section -->
         <div class="pdf-header p-3">
             <div class="logo">
@@ -142,10 +146,14 @@
                             <table>
                                 <tr>
                                     <td class="" style="border: none; vertical-align: top;">
-                                        <p class="" style="margin-bottom: 0;">Product Name:</p>
+                                        <p class="" style="margin-bottom: 0;"> Product Name: <br> Sub Product Name: </p> 
+                                        {{-- <p class="" style="margin-bottom: 0;"></p>  --}}
                                     </td>
                                     <td class="" style="border: none; text-align: right;">
-                                        <h6 class="" style="font-weight: 600;"> {{ $details->item_name }}  </h6>
+                                        <h6 class="" style="font-weight: 600;"> {{ $details->item_name }} <br> 
+                                        @if (!is_null($details->sub_product_id))
+                                                            {{ getSubProductname($details->sub_product_id) }}
+                                                            @endif  </h6>
                                     </td>
                                 </tr>
                             </table>

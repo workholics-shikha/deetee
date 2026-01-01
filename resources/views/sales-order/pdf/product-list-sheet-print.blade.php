@@ -7,223 +7,206 @@
     <title> Product list-Route Card </title>
     <style>
         .pdf-container {
-            width: 100%;
             max-width: 800px;
             margin: auto;
             padding: 20px;
             border: 1px solid #ccc;
             background-color: #fff;
+        }
 
-            .pdf-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 2px solid #000;
-                border: 1px solid black;
-                padding: 15px;
-            }
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #000;
+            border: 1px solid black;
+            padding: 15px;
+        }
 
-            .pdf-header .logo {
-                font-size: 24px;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-            }
+        .pdf-header .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
 
-            .pdf-header .unit {
-                font-size: 16px;
-                text-align: right;
-            }
+        .pdf-header .unit {
+            font-size: 16px;
+            text-align: right;
+        }
 
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
+        .details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
 
-            table th,
-            table td {
-                border: 1px solid #000;
-                text-align: left;
-                padding: 8px;
-            }
+        .details .info {
+            flex: 1;
+        }
 
-            table th {
-                background-color: #f5f5f5;
-            }
+        .details .qr {
+            flex: 1;
+            text-align: right;
+        }
 
-            .footer {
-                text-align: center;
-                margin-top: 20px;
-                font-size: 12px;
-                color: #555;
-            }
+        .qr img {
+            height: 80px;
+            width: 80px;
+        }
 
-            .page {
-                width: 210mm;
-                height: 297mm;
-                padding: 20mm;
-                margin: 0 auto;
-                background-color: #fff;
-                box-sizing: border-box;
-                page-break-after: always;
-            }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #000;
+            text-align: left;
+            padding: 8px;
+        }
+
+        table th {
+            background-color: #f5f5f5;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
         }
     </style>
 </head>
 
 <body>
     <div class="pdf-container page">
-        <!-- Header Section -->
-        <div class="pdf-header p-3">
-            <div class="logo">
-                <img src="{{asset('assets/images/pdfLogo.png')}}" alt="" class="me-2"> DeeTee Industries Pvt. Ltd.
-            </div>
-            @if(isset($data->so_unitname) && $data->so_unitname != '')
-            <div class="unit">
-                <h6 class=""> {{ $data->so_unitname }} </h6>
-            </div>
-            @endif
-        </div>
 
-        <!-- SO No. and Product Table -->
-        <table class="so-details">
-            <tr class="">
-                <td class="">
-                    <table>
-                        <tr>
-                            <td class="" style="border: none; vertical-align: top;">
-                                <p class="" style="margin-bottom: 0;">SO No:</p>
-                            </td>
-                            <td class="" style="border: none; text-align: right;">
-                                <h6 class="" style="font-weight: 600;"> {{ $saleOrder->so_no }} </h6>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-                <td class="">
-                    <table>
-                        <tr>
-                            <td class="" style="border: none; vertical-align: top;">
-                                <p class="mt-4" style="margin-bottom: 0;">SO No:</p>
-                            </td>
-                            <td class="" style="border: none; text-align: right;">
-                                <img src="{{$saleOrder->so_qr_code}}" alt="QR Code" style="width: 80px; height: 80px;">
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
+        @foreach($data->chunk(3) as $chunk)
+        @php $rowCount = 0; @endphp
 
-        </table>
+        <table width="100%" cellspacing="0" cellpadding="8" style="border-collapse: collapse;">
+            <tbody>
 
-        <!-- Table Section -->
-        <table>
-            <thead>
+                {{-- HEADER --}}
                 <tr>
-                    <th colspan="4">Product Details</th>
+                    <td colspan="6" style="border:1px solid #000;">
+                        <div style="display:flex; align-items:center;">
+                            <img src="{{ asset('assets/images/pdfLogo.png') }}" height="30">
+                            <strong style="margin-left:10px;">DeeTee Industries Pvt. Ltd.</strong>
+                        </div>
+
+                    </td>
                 </tr>
-            </thead>
 
-            <tbody id="myTableBody">
+                <tr>
+                    <td colspan="2" style="border:1px solid #000; border-right:none; vertical-align:top;">
+                        <p>SO No: <strong>{{ $saleOrder->so_no }}</strong></p>
+                    </td>
 
-                <table class="so-details">
+                    <td style="border:none; border-right:none; vertical-align:top;"></td>
+                    <td style="border:none; border-right:none; vertical-align:top;"></td>
+                    <td style="border:none; border-right:none; vertical-align:top;">
+                        <strong> SO QR:</strong>
+                    </td>
+                    <td style="border:1px solid #000; border-left:none; text-align:center;">
+                        <img src="{{ $saleOrder->so_qr_code }}" width="80">
+                    </td>
 
-                    @php
-                        $parts = explode('-', $saleOrder->so_no);
-                        $group = implode('-', array_slice($parts, 4));
-                        $sizeVals = getSizeValue($group);
-                    @endphp
+                </tr>
 
-                    @if(!empty($data))
-                    @foreach ($data as $details)
+                @php
+                $parts = explode('-', $saleOrder->so_no);
+                $group = implode('-', array_slice($parts, 4));
+                $sizeVals = getSizeValue($group);
+                @endphp
 
-                    <tr class="">
-                        <td class="">
-                            <table>
-                                <tr>
-                                    <td class="" style="border: none; vertical-align: top;">
-                                        <p class="" style="margin-bottom: 0;">Product Name:</p>
-                                    </td>
-                                    <td class="" style="border: none; text-align: right;">
-                                        <h6 class="" style="font-weight: 600;"> {{ $details->item_name }}  </h6>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                        <td class="">
-                            <table>
-                                <tr>
-                                    <td class="" style="border: none; vertical-align: top;">
-                                        <p class="mt-4" style="margin-bottom: 0;">Product QR:</p>
-                                    </td>
-                                    <td class="" style="border: none; text-align: right;">
-                                        <img src="{{$details->so_product_qr_code}}" alt="QR Code" style="width: 80px; height: 80px;">
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                     
-                    <tr class="">
-                        <td class="">
-                            <table>
-                                <tr>
-                                    <td class="" style="border: none; vertical-align: top;">
-                                        <p class="" style="margin-bottom: 0;">{{ $sizeVals[0] }}:</p>
-                                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size1) ?
-                                            $details->size1 : '-' }} </h6>
-                                    </td>
-                                    <td class="" style="border: none; text-align: center;">
-                                        <p class="" style="margin-bottom: 0;">{{ $sizeVals[1] }}:</p>
-                                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size1) ?
-                                            $details->size1 : '-' }} </h6>
-                                    </td>
-                                    <td class="" style="border: none; text-align: right;">
-                                        <p class="" style="margin-bottom: 0;">{{ $sizeVals[2] }}:</p>
-                                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size1) ?
-                                            $details->size1 : '-' }} </h6>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                        <td class="">
-                            <table>
-                                <tr>
-                                    <td class="" style="border: none; vertical-align: top;">
-                                        <p class="" style="margin-bottom: 0;">Quantity:</p>
-                                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->soquantity) ?
-                                            $details->soquantity : '-' }} </h6>
-                                    </td>
-                                    <td class="" style="border: none; text-align: center;">
-                                        <p class="" style="margin-bottom: 0;">Hardness:</p>
-                                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->hardness) ?
-                                            $details->hardness : '-' }} </h6>
-                                    </td>
-                                    <td class="" style="border: none; text-align: right;">
-                                        <p class="" style="margin-bottom: 0;">Material:</p>
-                                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->material) ?
-                                            $details->material : '-' }} </h6>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
+                <tr>
+                    <th colspan="6" style="border:1px solid #000; text-align:left;">
+                        Product details
+                    </th>
+                </tr>
+                @foreach ($chunk as $details)
 
-                    @endforeach
-                    @endif
+                <tr>
+                    <td colspan="2" style="border:1px solid #000; border-right:none; vertical-align:top;">
+                        <p>Product Name:</p>
+                    </td>
 
-                </table>
+                    <td style="border:1px solid #000; border-left:none; text-align:center;">
+                        <strong> {{ $details->item_name }} </strong>
+                    </td>
 
-                <div style="page-break-after: always;" style="height:100px"></div>
+                    <td colspan="2" style="border:1px solid #000; border-right:none; vertical-align:top;">
+                        <strong> Product QR:</strong>
+                    </td>
+
+                    <td style="border:1px solid #000; border-left:none; text-align:center;">
+                        <img src="{{$details->so_product_qr_code}}" width="80">
+                    </td>
+                </tr>
+
+                <tr class="">
+                    <td class="" style="border:1px solid #000; border-right:none; vertical-align:top;">
+                        <p class="" style="margin-bottom: 0;">{{ $sizeVals[0] }} </p>
+                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size1) ?
+                            $details->size1 : '-' }} </h6>
+                    </td>
+                    <td class="" style="border: none; text-align: center;">
+                        <p class="" style="margin-bottom: 0;">{{ $sizeVals[1] }} </p>
+                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size1) ?
+                            $details->size1 : '-' }} </h6>
+                    </td>
+                    <td class="" style="border: none; text-align: right;">
+                        <p class="" style="margin-bottom: 0;">{{ $sizeVals[2] }} </p>
+                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size1) ?
+                            $details->size1 : '-' }} </h6>
+                    </td>
+
+                    <td class="" style="border: none; vertical-align: top;">
+                        <p class="" style="margin-bottom: 0;">Quantity </p>
+                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->soquantity) ?
+                            $details->soquantity : '-' }} </h6>
+                    </td>
+                    <td class="" style="border: none; text-align: center;">
+                        <p class="" style="margin-bottom: 0;">Hardness </p>
+                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->hardness) ?
+                            $details->hardness : '-' }} </h6>
+                    </td>
+                    <td class="" style="border:1px solid #000; border-left:none; text-align:center;">
+                        <p class="" style="margin-bottom: 0;">Material </p>
+                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->material) ?
+                            $details->material : '-' }} </h6>
+                    </td>
+
+                </tr>
+                @endforeach
 
             </tbody>
         </table>
+
+        @if(!$loop->last)
+        
+        <div style="page-break-after: always;"></div>
+        @endif
+
+        @endforeach
 
         <!-- Footer -->
         <div class="footer d-flex flex-column align-items-center flex-wrap align-content-stretch">
             Generated Document
         </div>
+
     </div>
+    <script type="text/php">
+        if (isset($pdf)) {
+        $pdf->page_script('
+            $font = $fontMetrics->get_font("Helvetica", "normal");
+            $pdf->text(270, 820, "Page " . $PAGE_NUM . " of " . $PAGE_COUNT, $font, 10);
+        ');
+    }
+</script>
 </body>
 
 </html>
