@@ -19,27 +19,7 @@ class SubProductOperationController extends Controller
 
         return view('sales-order.route-card-details-new', compact('data', 'so', 'getOperationList', 'subProductName', 'pass_sheet'));
     }
-
-    public function route_card_operation_details($id, Request $request)
-    {
-        $so = ErpSalesOrder::where('id', $id)->first(['id', 'so_no', 'so_id']);
-
-        $pass_id = $request->pass_id;
-        $operation_id = $request->operation_id; // primary id of subproduct_wise_operation
-        $sprd_id = $request->sprd_id; // sales_order_products 's promary id
-
-        $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code')->where('id', $pass_id)->first();
-        $data = SalesOrderProduct::find($sprd_id); // details of SO product
-        $getOperationList = SOProductOperationDetails::where(['so_id' => $so->so_id, 'sales_order_product_id' => $sprd_id, 'product_id' => $data->product_id, 'sub_product_id' => $data->sub_product_id])->first();
-
-        $getDataFromSubPwise = SubproductWiseOperation::find($operation_id);
-        $getOperationData = SalesOrderTracking::where(['operation_id' => $getDataFromSubPwise->operation_id, 'so_id' => $so->so_id, 'pass_id' => $pass_id, 'so_pid_primary' => $sprd_id])->orderBy('quantity_processed')->get();
-
-        $subProductName = SubProduct::where('id', $getOperationList->sub_product_id)->value('sub_product_name');
-
-        return view('sales-order.route-card-operation-details', compact('so', 'getDataFromSubPwise', 'subProductName', 'data', 'getOperationData', 'pass_sheet', 'getOperationList'));
-    }
-  
+ 
     public function route_card_operation_cycletime(Request $request)
     {
         $operations = $request->get('operations');
@@ -114,5 +94,26 @@ class SubProductOperationController extends Controller
             'message' => 'Route Card Locked Successfully.',
         ]);
     }
+ 
+    public function route_card_operation_details($id, Request $request)
+    {
+        $so = ErpSalesOrder::where('id', $id)->first(['id', 'so_no', 'so_id']);
+
+        $pass_id = $request->pass_id;
+        $operation_id = $request->operation_id; // primary id of subproduct_wise_operation
+        $sprd_id = $request->sprd_id; // sales_order_products 's promary id
+
+        $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code')->where('id', $pass_id)->first();
+        $data = SalesOrderProduct::find($sprd_id); // details of SO product
+        $getOperationList = SOProductOperationDetails::where(['so_id' => $so->so_id, 'sales_order_product_id' => $sprd_id, 'product_id' => $data->product_id, 'sub_product_id' => $data->sub_product_id])->first();
+
+        $getDataFromSubPwise = SubproductWiseOperation::find($operation_id);
+        $getOperationData = SalesOrderTracking::where(['operation_id' => $getDataFromSubPwise->operation_id, 'so_id' => $so->so_id, 'pass_id' => $pass_id, 'so_pid_primary' => $sprd_id])->orderBy('quantity_processed')->get();
+
+        $subProductName = SubProduct::where('id', $getOperationList->sub_product_id)->value('sub_product_name');
+
+        return view('sales-order.route-card-operation-details', compact('so', 'getDataFromSubPwise', 'subProductName', 'data', 'getOperationData', 'pass_sheet', 'getOperationList'));
+    }
+
 
 }

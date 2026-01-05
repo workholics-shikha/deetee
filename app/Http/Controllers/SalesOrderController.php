@@ -148,7 +148,9 @@ class SalesOrderController extends Controller
 
         $typeOfProduct = $salesOrderProduct->measureunit;      // e.g. SET / NOS
         if ($typeOfProduct === 'SET') {
-            addPassSheetDetails($salesOrderProduct->cpoitemid);
+            // if not added only 
+            $checkPass = PassSheet::where([ 'so_id' => $salesOrderProduct->so_id, 'subproduct_id' => $so_pid])->find('id');
+            if(empty($checkPass)){ addPassSheetDetails($salesOrderProduct->cpoitemid); }
         }
 
         $order = ErpSalesOrder::where('so_id', $salesOrderProduct->so_id)->first(['so_no', 'id']);
@@ -191,7 +193,7 @@ class SalesOrderController extends Controller
                 'operation_stage'   => $op->sub_operations,
                 'operation_qr_code' => $opMaster->operation_qr_code ?? '',
                 'operation_status' => $opMaster->parameter_input ?? '',
-                'qty' => $salesOrderProduct->soquantity,        // ← set only on create
+                'qty' => $salesOrderProduct->soquantity, // ← set only on create
                 'processed_qty' => json_encode($processedQtyRows),
             ];
 
@@ -228,7 +230,7 @@ class SalesOrderController extends Controller
         $rows = [];
 
         if ($type === 'SET') {
-            $passSheets = PassSheet::where('cpoitemid', $sop->cpoitemid)->pluck('id');
+            $passSheets = PassSheet::where(['cpoitemid' => $sop->cpoitemid, 'so_id' => $sop->so_id, 'subproduct_id' => $sop->sub_product_id])->pluck('id');
 
             if ($passSheets->isEmpty()) {
                 throw new \RuntimeException('No pass sheets found for SET product.');
@@ -257,119 +259,7 @@ class SalesOrderController extends Controller
         }
         return $rows;
     }
-
-    public function operationReview111(Request $request)
-    {
-        try {
-            // Validate the request
-            $validated = $request->validate([
-                'routecardid' => 'required|integer',
-                'odid' => 'required|integer',
-                'type' => 'required|string',
-                'reviewText' => 'required|string|max:1000', // Note: using reviewText to match your form field name
-            ]);
-
-            // print_r($request->all()); exit;
-
-            $trackingId = $request->odid;
-
-            $review = SalesOrderTracking::where('id', $trackingId)->first();
-            $review->roll_status = $reviewType =  $request->type;
-            $review->comment = $reviewText = $request->reviewText;
-            $review->save();
-
-            //=======================
-            $trackingDetails = SalesOrderTracking::where('id', $trackingId)->first();
-            $so_product_id = $trackingDetails->so_pid_primary;
-            $pass_id = $trackingDetails->pass_id ?? 0;
-            $current_roll = $trackingDetails->quantity_processed;
-            $operator_id = $trackingDetails->operator_id;
-            $so_product_details = SalesOrderProduct::select('id', 'so_id', 'poquantity', 'sub_product_id', 'product_id', 'measureunit')
-                ->find($so_product_id);
-
-            // -------------------------------
-            // 12️⃣ Update operation detail JSON
-            // -------------------------------
-            $operationDetails = SOProductOperationDetails::where([
-                'so_id' => $trackingDetails->so_id,
-                'sales_order_product_id' => $so_product_id,
-                'product_id' => $so_product_details->product_id,
-                'sub_product_id' => $so_product_details->sub_product_id,
-                'operation_id' => $trackingDetails->operation_id
-            ])->first(['id', 'processed_qty', 'qty']);
-
-            if ($operationDetails && $operationDetails->processed_qty) {
-                $processedQty = json_decode($operationDetails->processed_qty, true);
-
-                $updated = false;
-
-                foreach ($processedQty as $item) {
-
-                    $item['pass_sheet_id'] = $item['pass_sheet_id'] ?? 0;
-                    $item['quantity']      = $item['quantity'] ?? 0;
-
-                    $itemPassId = (int) $item['pass_sheet_id'];
-                    $itemQty    = (int) $item['quantity'];
-                    print_r($itemQty);
-                    echo "<br>";
-                    print_r($current_roll);
-                    echo "<br>";
-                    if ($pass_id > 0) {
-                        if ($itemPassId == (int) $pass_id && $itemQty == (int) $current_roll) {
-                            $item['status']     = $reviewType;
-                            $item['updated_by'] = $operator_id;
-                            $updated = true;
-                            break;
-                        }
-                    } else {
-                        if ($itemQty == (int) $current_roll) {
-                            $item['status']     = $reviewType;
-                            $item['updated_by'] = $operator_id;
-                            $updated = true;
-                            break;
-                        }
-                    }
-                }
-                unset($item); // ✅ Important to unbind the reference
-                $allCompleted = collect($processedQty)->every(fn($item) => strtolower($item['status']) === $reviewType);
-
-                print_r($reviewType);
-                echo "<br>";
-                print_r($allCompleted);
-                echo "<br>";
-                print_r($processedQty);
-                exit;
-
-                if ($updated) {
-                    $operationDetails->processed_qty = json_encode($processedQty);
-                    $operationDetails->save();
-                    Log::info('operation_start - updated processed_qty', ['operation_detail_id' => $operationDetails->id]);
-                }
-
-                DB::table('rc_review')->insert(['so_track_id' => $trackingId, 'review_for' => $reviewType, 'review' => $reviewText, 'review_by' => auth()->id() ?? 0]);
-            }
-            //=======================
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Review added successfully!'
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Server error: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
+ 
     public function operationReview(Request $request)
     {
         try {

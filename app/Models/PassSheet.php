@@ -30,7 +30,8 @@ class PassSheet extends Model
         'bs2_depth',
         'remarks',
         'revisioncount',
-        'pass_sheet_qr_code'
+        'pass_sheet_qr_code',
+        'subproduct_pid'
     ];
  
     public function getPassSheetQrCodeAttribute($value)

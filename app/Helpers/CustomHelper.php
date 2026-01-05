@@ -343,7 +343,7 @@ if (!function_exists('addPassSheetDetails')) {
         $itemjson = $erp_response->json();
 
         if (!empty($itemjson)) {
-            foreach ($itemjson as $item) {
+            foreach ($itemjson as $item) { 
 
                 $passNos = splitPassNo($item['pass_no']);
                 $sop = SalesOrderProduct::where(['cpoitemid'=>$sop_id])->first();
@@ -352,6 +352,7 @@ if (!function_exists('addPassSheetDetails')) {
 
                     PassSheet::insert([
                         'so_id'         => $sop->so_id,
+                        'subproduct_pid' => $sop->id,
                         'subproduct_id' => $sop->sub_product_id,
                         'cpoitemid'     => $item['cpoitemid'],
                         'sr_no'         => $item['sr_no'],
