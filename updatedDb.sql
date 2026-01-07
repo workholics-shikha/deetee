@@ -179,3 +179,158 @@ ALTER TABLE `deetee_prod`.`ideal_cycle_time_parent` MODIFY `id` int(11) NOT NULL
 SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';
 
 INSERT INTO `deetee_prod`.`ideal_cycle_time_parent`(`id`, `sub_product_id`, `operation_id`, `machine_id`) SELECT `id`, `sub_product_id`, `operation_id`, `machine_id` FROM `deetee`.`ideal_cycle_time_parent`;
+
+-- // ==== 06012026
+
+INSERT INTO subproduct_wise_operation (
+    subproduct_id,
+    product_master_id,
+    s_no,
+    operation_id,
+    operation_name,
+    sub_operations,unit,parameter1_label,parameter1_value,parameter2_label,parameter2_value,parameter1_value_set,parameter2_value_set,operation_type,fixed_ICT,
+    created_at,
+    updated_at
+)
+SELECT
+    m.new_subproduct_id,
+    m.new_product_master_id,
+    s.s_no,
+    s.operation_id,
+    s.operation_name,
+    s.sub_operations,s.unit,s.parameter1_label,s.parameter1_value,s.parameter2_label,s.parameter2_value,s.parameter1_value_set,s.parameter2_value_set,s.operation_type,s.fixed_ICT,
+    NOW(),
+    NOW()
+FROM subproduct_wise_operation s
+JOIN (
+    SELECT 35 AS new_subproduct_id, 22 AS new_product_master_id UNION ALL
+    SELECT 36, 23 UNION ALL
+    SELECT 37, 24 UNION ALL
+    SELECT 38, 25 UNION ALL
+    SELECT 39, 26 UNION ALL
+    SELECT 40, 27 UNION ALL
+    SELECT 41, 28 UNION ALL
+    SELECT 42, 29
+) m
+WHERE s.subproduct_id = 34;
+
+-- // ===================================
+
+INSERT INTO ict_thickness (
+    machine_id,    thickness,    cycle_time,    operation
+)
+SELECT
+    ic.machine_id,    ic.thickness,    ic.cycle_time,    120 AS operation
+    FROM ict_thickness ic
+WHERE ic.operation = 61;
+
+
+ INSERT INTO ict_cnc_blanking 
+ ( machine_id, thickness_min, thickness_max, vertical_min, vertical_max, cycle_time, operation) 
+ SELECT ic.machine_id, ic.thickness_min, ic.thickness_max, ic.vertical_min, ic.vertical_max, ic.cycle_time, 122 AS operation
+ FROM ict_cnc_blanking ic 
+ WHERE ic.operation = 63;
+
+  INSERT INTO ict_cnc_blanking 
+ ( machine_id, thickness_min, thickness_max, vertical_min, vertical_max, cycle_time, operation) 
+ SELECT ic.machine_id, ic.thickness_min, ic.thickness_max, ic.vertical_min, ic.vertical_max, ic.cycle_time, 123 AS operation
+ FROM ict_cnc_blanking ic 
+ WHERE ic.operation = 65;
+
+  INSERT INTO ict_bearing_seat 
+ ( machine_id, seat_size, seat_depth, cycle_time, operation) 
+ SELECT ic.machine_id, ic.seat_size, ic.seat_depth, ic.cycle_time, 119 AS operation
+ FROM ict_bearing_seat ic 
+ WHERE ic.operation = 68;
+
+   INSERT INTO ict_cnc_blanking 
+ ( machine_id, thickness_min, thickness_max, vertical_min, vertical_max, cycle_time, operation) 
+ SELECT ic.machine_id, ic.thickness_min, ic.thickness_max, ic.vertical_min, ic.vertical_max, ic.cycle_time, 129 AS operation
+ FROM ict_cnc_blanking ic
+ WHERE ic.operation = 70; 
+ 
+ 
+ INSERT INTO ict_cnc_blanking 
+ ( machine_id, thickness_min, thickness_max, vertical_min, vertical_max, cycle_time, operation) 
+ SELECT ic.machine_id, ic.thickness_min, ic.thickness_max, ic.vertical_min, ic.vertical_max, ic.cycle_time, 132 AS operation
+ FROM ict_cnc_blanking ic
+ WHERE ic.operation = 72;
+
+INSERT INTO ict_thickness (
+    machine_id, thickness, cycle_time, operation
+)
+SELECT
+    ic.machine_id, ic.thickness, ic.cycle_time, 133 AS operation
+    FROM ict_thickness ic
+WHERE ic.operation = 73;
+
+-- //=========================
+
+INSERT INTO `ict_thickness` (`id`, `sub_product_id`, `operation`, `machine_id`, `thickness`, `cycle_time`, `created_at`, `updated_at`) 
+VALUES 
+(NULL, NULL, '136', NULL, '0-50', '18', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '136', NULL, '51-100', '35', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '136', NULL, '101-200', '70', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '136', NULL, '201-300', '105', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '136', NULL, '301-400', '140', '2018-04-25 11:17:00', '2018-04-25 11:17:00');
+
+INSERT INTO `ict_thickness` (`id`, `sub_product_id`, `operation`, `machine_id`, `thickness`, `cycle_time`, `created_at`, `updated_at`) 
+VALUES 
+(NULL, NULL, '137', NULL, '0-50', '18', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '137', NULL, '51-100', '35', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '137', NULL, '101-200', '70', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '137', NULL, '201-300', '105', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '137', NULL, '301-400', '140', '2018-04-25 11:17:00', '2018-04-25 11:17:00');
+
+INSERT INTO `ict_thickness` (`id`, `sub_product_id`, `operation`, `machine_id`, `thickness`, `cycle_time`, `created_at`, `updated_at`) 
+VALUES 
+(NULL, NULL, '138', NULL, '0-50', '18', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '138', NULL, '51-100', '35', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '138', NULL, '101-200', '70', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '138', NULL, '201-300', '105', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '138', NULL, '301-400', '140', '2018-04-25 11:17:00', '2018-04-25 11:17:00');
+ 
+INSERT INTO `ict_thickness` (`id`, `sub_product_id`, `operation`, `machine_id`, `thickness`, `cycle_time`, `created_at`, `updated_at`) 
+VALUES 
+(NULL, NULL, '139', NULL, '0-50', '18', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '139', NULL, '51-100', '35', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '139', NULL, '101-200', '70', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '139', NULL, '201-300', '105', '2018-04-25 11:17:00', '2018-04-25 11:17:00'), 
+(NULL, NULL, '139', NULL, '301-400', '140', '2018-04-25 11:17:00', '2018-04-25 11:17:00');
+
+-- ============================
+
+INSERT INTO `ict_bearing_seat` (`id`, `machine_id`, `operation`, `seat_size`, `seat_depth`, `cycle_time`, `created_at`, `updated_at`) VALUES 
+(NULL, '0', '140', '0-40', '0-20', '45', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '41-50', '0-20', '45', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '51-60', '0-20', '50', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '61-70', '21-25', '50', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '71-80', '21-25', '60', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '81-90', '21-25', '60', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '91-100', '21-25', '75', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '101-110', '21-25', '75', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '111-120', '26-30', '75', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '121-130', '26-30', '90', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '131-140', '31-35', '90', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '141-150', '31-35', '90', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '151-175', '36-40', '120', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '176-200', '36-40', '120', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '201-225', '41-50', '150', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '140', '226-250', '41-50', '150', '2018-04-25 05:47:00', '2018-04-25 05:47:00'),
+
+(NULL, '0', '141', '0-40', '0-20', '45', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '41-50', '0-20', '45', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '51-60', '0-20', '50', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '61-70', '21-25', '50', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '71-80', '21-25', '60', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '81-90', '21-25', '60', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '91-100', '21-25', '75', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '101-110', '21-25', '75', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '111-120', '26-30', '75', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '121-130', '26-30', '90', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '131-140', '31-35', '90', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '141-150', '31-35', '90', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '151-175', '36-40', '120', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '176-200', '36-40', '120', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '201-225', '41-50', '150', '2018-04-25 05:47:00', '2018-04-25 05:47:00'), 
+(NULL, '0', '141', '226-250', '41-50', '150', '2018-04-25 05:47:00', '2018-04-25 05:47:00');

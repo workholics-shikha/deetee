@@ -17,7 +17,7 @@ class RouteCardController extends Controller
     {
         $product = SubproductWiseOperation::with(['product', 'sub_product'])->where('subproduct_id', $id)->first();
         $subProductName = $product->sub_product->sub_product_name ?? 'N/A';
-        // $operations = SubproductWiseOperation::with('operations')->where('subproduct_id', $id)->get();
+       
         $operations = SubproductWiseOperation::with('operations')
             ->where('subproduct_id', $id)
             ->orderByRaw("CASE WHEN s_no IS NULL OR s_no = '' THEN 1 ELSE 0 END")

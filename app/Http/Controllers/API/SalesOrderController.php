@@ -51,7 +51,7 @@ class SalesOrderController extends Controller
                 'role_name'     => $userData->roleName->name ?? null, // safely access role name
                 'unit'          => $userData->unit ?? null, // safely access role name
                 'unit_no'       => $userData->unit_name ?? null, // safely access role name
-                'username'          => $userData->username ?? null, // safely access role name
+                'username'      => $userData->username ?? null, // safely access role name
             ];
         }
 
@@ -59,7 +59,7 @@ class SalesOrderController extends Controller
 
         $so_product_details = ErpSalesOrder::select('id', 'so_no', 'so_id')
             ->with(['soProducts' => function ($query) {
-                $query->select('id', 'so_id', 'sub_product_id', 'item_name', 'poquantity as quantity', 'measureunit');
+                $query->select('id', 'so_id', 'sub_product_id', 'item_name', 'soquantity as quantity', 'measureunit', 'size1', 'size2', 'size3', 'material', 'hardness');
             }])
             ->find($so_primary_id);
 
@@ -71,7 +71,7 @@ class SalesOrderController extends Controller
             'item_name',
             'description',
             'measureunit',
-            'poquantity as quantity',
+            'soquantity as quantity',
             'operation1',
 
         )->find($so_product_id);
@@ -1396,7 +1396,7 @@ class SalesOrderController extends Controller
         }
 
         if ($so_product_details->measureunit === 'SET') {
-            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code')->where('cpoitemid', $so_product_details->cpoitemid)->get();
+            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3', 'material', 'hardness', 'qty')->where('cpoitemid', $so_product_details->cpoitemid)->get();
             $so_product_details->pass_sheet = $pass_sheet;
         } else {
             $so_product_details->pass_sheet = null;

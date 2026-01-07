@@ -6,13 +6,18 @@
                     <img width="40" height="40" viewBox="0 0 12 12" fill="none"
                         src="{{ $machine->machine_qr_code }}" alt="Machine">
                 </span>
-                <span class="ps-2"> <a class="text-0D161A fw-semibold mb-0 text-decoration-none"> <strong>
+                <span class="ps-2"> <a class="text-0D161A fw-semibold mb-0 text-decoration-none"> <strong>  {{ $machine->id }} -
                             {{ $machine->machine }}</strong> <br /> <span class="text-445B64" style="font-size: 12px">
                             {{ $machine->section }}</span></a>
                 </span>
             </div>
         </th>
-
+        <td class="p-3">
+            {{-- {{ $machine->operations->operation_name }}  --}}
+            @foreach ($machine->operations as $operation)
+                <small> {{$operation->id.'-'. $operation->operation_name}} </small>,<br> @if (!$loop->last) @endif
+            @endforeach
+        </td>
         <td class="p-3">{{ $machine->machine_type }} </td>
         <td class="p-3">{{ $machine->unit_name }}</td>
         <td class="p-3">{{ $machine->sub_section }}</td>
@@ -34,8 +39,9 @@
                 style="width: 20px; height: 20px" />
         </td>
         <td> <a class="rounded-pill" type="submit"
-                href="{{ route('admin.machine-details', ['id' => $machine->id]) }}">View
-                Details</a> <button type="button" class="btn generateQR" data-bs-toggle="modal" data-bs-target="#QRgenerateModal" data-type="Operator" data-id="{{ $machine->id }}"> View PDF </button> </td>
+                href="{{ route('admin.machine-details', ['id' => $machine->id]) }}">View Details</a>
+                <br>
+                <button type="button" class="btn generateQR" data-bs-toggle="modal" data-bs-target="#QRgenerateModal" data-type="Operator" data-id="{{ $machine->id }}"> View PDF </button> </td>
     </tr>
 @empty
     <tr>
