@@ -426,6 +426,8 @@ class MyHelper
         $getSoId = ErpSalesOrder::find($so_id);
         $so_id = $getSoId->so_id;
 
+        // print_r($parameter1); exit;
+
         // Parameter 1 For RMR
         $salesOrderProduct = SalesOrderProduct::where(['so_id' => $so_id, 'product_id' => $so_pid, 'sub_product_id' => $so_spid])->first();
 
@@ -585,7 +587,7 @@ class MyHelper
                     ->value('cycle_time'); // gets the single value
 
                 return $cycleTime;
-            }
+            } 
         }
 
         // CNC Blanking - 4
@@ -724,7 +726,7 @@ class MyHelper
             $gotVal = (($getVal - $getVal2) / 2);
             $cycleTime = 0;
 
-            if (in_array($operationid, [61, 62])) {
+            if (in_array($operationid, [61, 62, 120])) {
                 $thicknessRecords = DB::table('ict_thickness')
                     ->select('cycle_time', 'thickness')
                     ->where('operation', $operationid)
@@ -742,6 +744,10 @@ class MyHelper
                 if ($thicknessRecord) {
                     return $thicknessRecord->cycle_time;
                 }
+             } else if (in_array($operationid, [125, 126])) {
+
+                $cycleTime = 1234566;
+                return $cycleTime;
             }
         }
 
@@ -750,7 +756,7 @@ class MyHelper
 
             $thickness = $size3; // parameter1_value
             $bore = $size2;
-            if (in_array($operationid, [63, 64, 65, 66])) {
+            if (in_array($operationid, [63, 64, 65, 66, 122])) {
                 $cycleTime = DB::table('ict_cnc_blanking')
                     ->where('thickness_min', '<=', $thickness)
                     ->where('thickness_max', '>=', $thickness)
@@ -831,13 +837,13 @@ class MyHelper
 
         $parameter1 = $getData->parameter1_label;
         $parameter2 = $getData->parameter2_label;
- 
+
         $getSoId = ErpSalesOrder::find($so_id);
         $so_id = $getSoId->so_id;
 
         $parameter1 = trim(strip_tags($parameter1));
         $parameter2 = trim(strip_tags($parameter2));
- 
+
         // Parameter 1 For RMR
         $salesOrderProduct = SalesOrderProduct::where(['so_id' => $so_id, 'product_id' => $so_pid, 'sub_product_id' => $so_spid])->first();
 
@@ -857,33 +863,33 @@ class MyHelper
         if ($getData->operation_type === "NA") {
             return 'NA';
         }
- 
-        if (   ($parameter1 === "Outer Diameter" && $parameter2 === "Total Length") 
-            || ($parameter1 === "Blade Thickness" && $parameter2 === "Blade Length") 
-            || ($parameter1 === "Blade Length" && $parameter2 === "Blade Width") 
-            || ($parameter1 === "Counter Size" && $parameter2 === "Counter Depth") 
-            || ($parameter1 === "Elliptical Hole size" && $parameter2 === "Blade Thickness") 
-            || ($parameter1 === "Elliptical Counter size" && $parameter2 === "Counter Depth") 
-            || ($parameter1 === "Keyway size" && $parameter2 === "Blade Thickness") 
-            || ($parameter1 === "Blade Radius" && $parameter2 === "Blade Thickness") 
-            || ($parameter1 === "Blade Thickness & Center Radius" && $parameter2 === "Blade Length") 
-            || ($parameter1 === "Hole Size" && $parameter2 === "Blade Thickness") 
-            || ($parameter1 === "Blade Width" && $parameter2 === "Blade Length") 
-            || ($parameter1 === "Blade Width" && $parameter2 === "Blade Thickness") 
-            
-            
-            ) {
+
+        if (($parameter1 === "Outer Diameter" && $parameter2 === "Total Length")
+            || ($parameter1 === "Blade Thickness" && $parameter2 === "Blade Length")
+            || ($parameter1 === "Blade Length" && $parameter2 === "Blade Width")
+            || ($parameter1 === "Counter Size" && $parameter2 === "Counter Depth")
+            || ($parameter1 === "Elliptical Hole size" && $parameter2 === "Blade Thickness")
+            || ($parameter1 === "Elliptical Counter size" && $parameter2 === "Counter Depth")
+            || ($parameter1 === "Keyway size" && $parameter2 === "Blade Thickness")
+            || ($parameter1 === "Blade Radius" && $parameter2 === "Blade Thickness")
+            || ($parameter1 === "Blade Thickness & Center Radius" && $parameter2 === "Blade Length")
+            || ($parameter1 === "Hole Size" && $parameter2 === "Blade Thickness")
+            || ($parameter1 === "Blade Width" && $parameter2 === "Blade Length")
+            || ($parameter1 === "Blade Width" && $parameter2 === "Blade Thickness")
+
+
+        ) {
 
             $getVal = $salesOrderProduct->size1;
             $getVal2 = $salesOrderProduct->size3;
- 
+
             if ($getData->operation_type === "ManualIn") {
                 $getVal = $salesOrderProductOperatonDetails->cycle_time;
                 $getVal2 = $salesOrderProductOperatonDetails->cycle_time_value2;
             }
 
             if ($so_spid == 29 && in_array($operationid, [3, 4, 5, 6, 7, 8, 9])) {
- 
+
                 $kw_size1 = $salesOrderProduct->kw_size1;
 
                 $cycleTime = DB::table('ict_keyway_operations')
@@ -903,10 +909,10 @@ class MyHelper
                     ->where('thickness_max', '>=', $getVal2)
                     ->where('operation', $operationid)->where('table_parts', '2')
                     ->value('cycle_time_minutes'); // gets the single value 2
- 
+
                 return ($cycleTime1 + $cycleTime2);
             }
- 
+
             $cycleTime = DB::table('ict_rmr_2matrix')
                 ->where('od_min', '<=', $getVal)
                 ->where('od_max', '>=', $getVal)
@@ -918,7 +924,7 @@ class MyHelper
                 ->where('sub_product_id', $so_spid)
                 ->where('table_parts', '1')
                 ->value('total_cycle_time'); // gets the single value
- 
+
             if ((in_array($so_spid, [1, 2, 3, 12, 13]) && in_array($operationid, [30, 31]))
                 || (in_array($so_spid, [4, 5, 6, 26]) && in_array($operationid, [30, 21]))
                 || (in_array($so_spid, [7, 8, 9, 10, 11]) && in_array($operationid, [30, 23]))

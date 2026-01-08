@@ -44,7 +44,7 @@ class OperationsController extends Controller
         return view('operations.list', $container);
     }
 
-    public function index(Request $request)
+    public function index2(Request $request)
     {
         $search = $request->input('search');
         $page   = $request->input('page', 1);
@@ -53,7 +53,7 @@ class OperationsController extends Controller
 
         $operations = Cache::remember($cacheKey, 300, function () use ($search) {
             return OperationMaster::with('machines')
-                ->where('unit', 'TMR') // be strict if possible
+                // ->where('unit', 'TMR') // be strict if possible
                 ->when($search, function ($query, $search) {
                     $query->where(function ($q) use ($search) {
                         $q->where('operation_name', 'like', "%{$search}%")
@@ -75,4 +75,40 @@ class OperationsController extends Controller
         return view('operations.list', $container);
     }
 
+
+    public function index(Request $request)
+    {
+        $search = trim($request->input('search', ''));
+        $page   = (int) $request->input('page', 1);
+
+        $cacheKey = "operations_tmr:"
+            . md5($search) // normalize search
+            . ":page:{$page}";
+
+        $operations = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($search) {
+
+            return OperationMaster::with('machines')
+                ->when($search !== '', function ($query) use ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('operation_name', 'like', "%{$search}%")
+                            ->orWhere('matrix', 'like', "%{$search}%");
+                    });
+                })
+                ->paginate(PAGE_NO);
+        });
+
+        $container = [
+            'records'       => $operations,
+            'totalrecords'  => $operations->total(),
+        ];
+
+        if ($request->ajax()) {
+            $container['html'] = view('admin/snippets/operations', $container)->render();
+            $container['pagination'] = (string) $operations->links();
+
+            return response()->json($container);
+        }
+
+        return view('operations.list', $container);
+    }
 }

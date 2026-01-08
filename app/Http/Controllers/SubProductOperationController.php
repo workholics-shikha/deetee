@@ -8,18 +8,22 @@ use Illuminate\Http\Request;
 
 class SubProductOperationController extends Controller
 {
-    
+
     public function route_card_details($id, $pass_no = null)
     {
         $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3')->where('id', $pass_no)->first();
         $data = SalesOrderProduct::find($id); // details of that product by id
         $so = ErpSalesOrder::where('so_id', $data->so_id)->first(['so_no', 'id', 'so_unitid']); // get industry, so no & so id
         $subProductName = SubProduct::where('id', $data->sub_product_id)->value('sub_product_name'); // sub product name
-        $getOperationList = SubproductWiseOperation::where(['subproduct_id' => $data->sub_product_id, 'product_master_id' => $data->product_id])->with('operationData')->get(); // operation list for product
+        $getOperationList = SubproductWiseOperation::with('operationData')
+            ->where(['subproduct_id' => $data->sub_product_id, 'product_master_id' => $data->product_id])
+            ->orderByRaw("CASE WHEN s_no IS NULL OR s_no = '' THEN 1 ELSE 0 END")
+            ->orderBy('s_no')
+            ->get();
 
         return view('sales-order.route-card-details-new', compact('data', 'so', 'getOperationList', 'subProductName', 'pass_sheet'));
     }
- 
+
     public function route_card_operation_cycletime(Request $request)
     {
         $operations = $request->get('operations');
@@ -51,7 +55,7 @@ class SubProductOperationController extends Controller
                 if (in_array($operationType, ["ManualIn", "Manual_ICT"]) && !empty($cycleTime)) {
                     $soOpTable = SOProductOperationDetails::where([
                         'operation_id' => $opId,
-                        'sales_order_product_id' => $salesOrderProduct->id ,
+                        'sales_order_product_id' => $salesOrderProduct->id,
                         'so_id' => $salesOrderProduct->so_id,
                         'product_id' => $salesOrderProduct->product_id,
                         'sub_product_id' => $salesOrderProduct->sub_product_id
@@ -94,7 +98,7 @@ class SubProductOperationController extends Controller
             'message' => 'Route Card Locked Successfully.',
         ]);
     }
- 
+
     public function route_card_operation_details($id, Request $request)
     {
         $so = ErpSalesOrder::where('id', $id)->first(['id', 'so_no', 'so_id']);
@@ -114,6 +118,4 @@ class SubProductOperationController extends Controller
 
         return view('sales-order.route-card-operation-details', compact('so', 'getDataFromSubPwise', 'subProductName', 'data', 'getOperationData', 'pass_sheet', 'getOperationList'));
     }
-
-
 }
