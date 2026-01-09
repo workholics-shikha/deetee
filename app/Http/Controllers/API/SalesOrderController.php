@@ -1031,6 +1031,14 @@ class SalesOrderController extends Controller
                 $so_id = $request->so_id;
                 $so_details = ErpSalesOrder::find($so_id);
 
+                
+        $parts = explode('-', $so_details->so_no);
+        $group = implode('-', array_slice($parts, 4));
+        $sizeVals = getSizeValue($group);
+        $so_product_details['size1_label'] = $sizeVals[0];
+        $so_product_details['size2_label'] = $sizeVals[1];
+        $so_product_details['size3_label'] = $sizeVals[2];
+
                 $ict = 'NA';
 
                 try {
@@ -1057,14 +1065,7 @@ class SalesOrderController extends Controller
                 ];
             }
         }
-
-        $parts = explode('-', $so_details->so_no);
-        $group = implode('-', array_slice($parts, 4));
-        $sizeVals = getSizeValue($group);
-        $so_product_details['size1_label'] = $sizeVals[0];
-        $so_product_details['size2_label'] = $sizeVals[1];
-        $so_product_details['size3_label'] = $sizeVals[2];
-
+ 
         return response()->json([
             'status' => true,
             'message' => 'Product details',

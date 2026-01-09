@@ -727,8 +727,7 @@ if (!function_exists('getParamFirstValueNew')) {
         }
 
         $operation = OperationMaster::find($op_id);
-        $soo = SOProductOperationDetails::where(['sales_order_product_id' => $p_id, 'operation_id' => $op_id])->first();
-        // $sop = SalesOrderProduct::where(['so_id' => $soo->so_id, 'sub_product_id' => $soo->sub_product_id])->value('measureunit');
+        $soo = SOProductOperationDetails::where(['sales_order_product_id' => $p_id, 'operation_id' => $op_id])->first(); 
 
         if (!$operation || !$soo) {
             return 'NA';
@@ -837,13 +836,7 @@ if (!function_exists('getParamFirstValueNew')) {
 
         //  TMR
         if ($operation->unit === 'TMR') {
-
-            $size1 = $data->size1;
-            $size2 = $data->size2;
-            $size3 = $data->size3;
-            $bs1_dia = $data->bs1_blankdia;
-            $bs1_depth = $data->bs1_depthdia;
-
+ 
             if ($data->measureunit == 'SET') {
 
                 if (!empty($passId)) {
@@ -853,12 +846,7 @@ if (!function_exists('getParamFirstValueNew')) {
                 }
 
                 $passDetails = PassSheet::find($passId);
-
-                $size1 = $passDetails->size1;
-                $size2 = $passDetails->size2;
-                $size3 = $passDetails->size3;
-                $bs1_dia = $passDetails->bs1_dia;
-                $bs1_depth = $passDetails->bs1_depth;
+ 
             }
 
             $material = ['Cutting'];
@@ -877,10 +865,12 @@ if (!function_exists('getParamFirstValueNew')) {
                 $getVal = $data->material;
             }
 
-            $size3_ops = ['U Drilling', 'Round Keyway Milling', 'Bore Turning With Under Cut-Single Side', 'Bore Turning Both Side', 'Bore Grinding Both Side', 'Keyway Wirecut', 'Rib Thickness/ Boss OD-Both side', 'Final OD Final Angle', 'Bevel Grinding', 'Final OD, Final Angle', 'Bore Grinding with Under Cut-Single Side'];
+            // $size3_ops = ['U Drilling', 'Round Keyway Milling', 'Bore Turning With Under Cut - Single Side-1', 'Bore Turning With Under Cut - Single Side-2', 'Bore Turning Both Side', 'Bore Grinding Both Side', 'Keyway Wirecut', 'Rib Thickness/ Boss OD-Both side', 'Final OD Final Angle', 'Bevel Grinding', 'Final OD, Final Angle', 'Bore Grinding with Under Cut - Single Side-1', 'Bore Grinding with Under Cut - Single Side-2'];
+
+            $size3_ops = ['CNC Blanking-1', 'Plain Bore Turning Both Side', 'Plain Bore Turning with Under Cut-Single Side', 'Bore Turning with Keyway-Both Side', 'Bore Turning with Keyway & Under Cut-Single Side', 'Plain Bore Turning + Thickness Turning Single Side-1', 'Plain Bore Turning + Thickness Turning Single Side-2', 'Plain Bore Turning with Under Cut - Single Side-1', 'Plain Bore Turning with Under Cut - Single Side-2', 'Plain Bore Turning with Under Cut + Thickness Turning Single Side-1', 'Plain Bore Turning with Under Cut + Thickness Turning Single Side-2', 'Bore Turning with Keyway & Under Cut-Single Side-1', 'Bore Turning with Keyway & Under Cut-Single Side-2'];
 
             $other = ['Keyway Slotting', ''];
-            $bs1 = ['Bearing Seat-Single Side-2', 'Bearing Seat-Single Side', 'Bearing Seat-Single Side-1'];
+            $bs1 = ['Bearing Seat-Single Side-1', 'Bearing Seat-Single Side-2', 'Bearing Seat + Thickness Turning Single Side-1', 'Bearing Seat + Thickness Turning Single Side-2'];
 
             $erpFormula = ['CNC Blanking-2', 'CNC Blanking-3', 'Thickness Turning-Single Side',];
 
@@ -980,9 +970,9 @@ if (!function_exists('getParamSecondValueNew')) {
 
             $size1_ops = ['Cutting'];
             $size2_ops = ['Bore Turning With Under Cut-Single Side', 'Bore Turning Both Side', 'Bore Grinding Both Side', 'Bore Grinding with Under Cut-Single Side'];
-            $size3_ops = ['CNC Blanking-1', 'Plain Bore Turning Both Side', 'Plain Bore Turning with Under Cut-Single Side', 'Bore Turning with Keyway-Both Side', 'Bore Turning with Keyway & Under Cut-Single Side'];
+            $size3_ops = ['CNC Blanking-1', 'Plain Bore Turning Both Side', 'Plain Bore Turning with Under Cut-Single Side', 'Bore Turning with Keyway-Both Side', 'Bore Turning with Keyway & Under Cut-Single Side', 'Plain Bore Turning + Thickness Turning Single Side-1', 'Plain Bore Turning + Thickness Turning Single Side-2', 'Plain Bore Turning with Under Cut - Single Side-1', 'Plain Bore Turning with Under Cut - Single Side-2', 'Plain Bore Turning with Under Cut + Thickness Turning Single Side-1', 'Plain Bore Turning with Under Cut + Thickness Turning Single Side-2', 'Bore Turning with Keyway & Under Cut-Single Side-1', 'Bore Turning with Keyway & Under Cut-Single Side-2'];
             $kw_size1 = ['Round Keyway Milling'];
-            $bs1 = ['Bearing Seat-Single Side', 'Bearing Seat-Single Side-2'];
+            $bs1 = ['Bearing Seat-Single Side-1', 'Bearing Seat-Single Side-2', 'Bearing Seat + Thickness Turning Single Side-1', 'Bearing Seat + Thickness Turning Single Side-2'];
             $NA_ops = ['U Drilling', ''];
 
             if (in_array($op_name, $size1_ops)) {

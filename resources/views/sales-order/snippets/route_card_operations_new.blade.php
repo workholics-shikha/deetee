@@ -67,7 +67,7 @@
                                             style="text-decoration:none;" title="view details"
                                             href="{{ route('admin.route-card-operation-details', $so->id) }}?operation_id={{ $operation->id }}&pass_id={{ $pass_sheet->id }}&sprd_id={{ $data->id }}">
                                             <i class="fa-solid fa-eye text-445B64"></i> </a>
-                                    @else
+                                     @else
                                         <a class="accordion-button table-checkbox bg-white mx-auto text-637381"
                                             style="text-decoration:none;" title="view details"
                                             href="{{ route('admin.route-card-operation-details', ['id' => $so->id, 'operation_id' => $operation->id, 'sprd_id' => $data->id]) }}">
@@ -194,20 +194,14 @@
                                         <div class="col-md-6"> Not available </div>
                                     </div>
                                 @endif
-
                             </td>
-
                             <td class="" style="width: 10%;"> </td>
-
                             <td class="" style="width: 20%;">
                                 <div class="cycleTime"> </div>
                             </td>
                         </tr>
-
                     </table>
-
                 </h2>
-
             </div>
         </td>
     </tr>

@@ -99,7 +99,7 @@
                                 <thead>
                                     <tr>
                                         <th scope="col" style="text-align:left; width:20px;"> Pass item</th>
-                                        <th scope="col" style="text-align:center; width:20px;"> Mark Pass number</th>
+                                        <th scope="col" style="text-align:center; width:20px;"> Pass number</th>
                                         <th scope="col" style="text-align:center; width:20px;"> OD </th>
                                         <th scope="col" style="text-align:center; width:20px;"> ID </th>
                                         <th scope="col" style="text-align:center; width:20px;"> Thickness </th>
