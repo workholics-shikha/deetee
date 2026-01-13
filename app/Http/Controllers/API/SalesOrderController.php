@@ -59,13 +59,33 @@ class SalesOrderController extends Controller
 
         $so_product_details = ErpSalesOrder::select('id', 'so_no', 'so_id')
             ->with(['soProducts' => function ($query) {
-                $query->select('id', 'so_id', 'sub_product_id', 'item_name', 'soquantity as quantity', 'measureunit');
+                $query->select(
+                    'id',
+                    'so_id',
+                    'sub_product_id',
+                    'item_name',
+                    'soquantity as quantity',
+                    'measureunit',
+                    'size1',
+                    'size2',
+                    'size3',
+                    'material',
+                    'hardness'
+                )->where('soquantity', '!=', 0);
             }])
-            ->find($so_primary_id);
+            ->where('id', $so_primary_id)
+            ->first();
+
 
         $parts = explode('-', $so_product_details->so_no);
         $group = implode('-', array_slice($parts, 4));
         $sizeVals = getSizeValue($group);
+
+        foreach ($so_product_details->soProducts as $product) {
+            $product->size1_label = $sizeVals[0] ?? null;
+            $product->size2_label = $sizeVals[1] ?? null;
+            $product->size3_label = $sizeVals[2] ?? null;
+        }
 
         $product_details = SalesOrderProduct::select(
             'id',
@@ -82,8 +102,9 @@ class SalesOrderController extends Controller
             'size3',
             'material',
             'hardness'
-
-        )->find($so_product_id);
+        )->where('soquantity', '!=', 0)
+            ->where('id', $so_product_id)
+            ->first();
 
         if (!$so_product_details || !$product_details) {
             return response()->json([
@@ -106,144 +127,6 @@ class SalesOrderController extends Controller
             'status'  => false,
             'message' => 'Unauthorized'
         ], 401);
-    }
-
-    public function operation_stop(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|integer|exists:sales_order_trackings,id',
-            'reason' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validation Error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $id = $request->input('id');
-        $reason = $request->input('reason');
-
-        $getData = SalesOrderTracking::find($id);
-
-        if (!empty($getData)) {
-            if ($getData->reason == 'completed' || $getData->roll_status == 'completed') {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Operation is already completed.',
-                    'data' => null
-                ], 404);
-            }
-
-            if (!empty($getData->start_date_time) && !empty($getData->end_date_time)) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Operation is completed.',
-                    'data' => null
-                ], 404);
-            }
-        }
-
-        $start = new DateTime($getData->start_date_time);
-        $end = new DateTime(); // gets current date & time
-
-        $durationInSeconds = $end->getTimestamp() - $start->getTimestamp();
-
-        $data = [
-            'reason'        => $reason,
-            'roll_status'   => 'pending',
-            'end_date_time' => $end->format('Y-m-d H:i:s'),
-            'time_taken'    => $durationInSeconds,
-            'updated_at' => date('Y-m-d h:i:s'),
-        ];
-
-        SalesOrderTracking::where('id', $id)->update($data);
-
-        // machine free update
-        MachineMaster::where('id', $getData->machine_id)->update(['machine_status' => 'active']);
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Operation stopped successfully',
-        ], 200);
-    }
-
-    public function fetch_operation_details(Request $request)
-    {
-        // Validate input
-        $validator = Validator::make($request->all(), [
-            'so_product_id' => 'required|integer|exists:sales_order_products,id',
-            'pass_id'       => 'nullable|integer',
-            'current_roll_no' => 'required|integer',
-            'operation_id'  => 'required|integer|exists:operation_masters,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation Error',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
-
-        // Get inputs 
-        $so_product_id = $request->input('so_product_id');
-        $pass_id =  $request->input('pass_id');
-        $operation_id = $request->input('operation_id');
-        $roll_no = $request->input('current_roll_no');
-
-        $so_product_details = SalesOrderProduct::select('id', 'so_id', 'sub_product_id', 'product_id')->find($so_product_id);
-        $mdata = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id, 'product_id' => $so_product_details->product_id, 'sub_product_id' => $so_product_details->sub_product_id, 'operation_id' => $operation_id])->first();
-
-        if (empty($mdata)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'operation details not found',
-                'data' => ['details' => []]
-            ], 404);
-        }
-
-        // Fetch operation tracking data
-        $getData = SalesOrderTracking::where([
-            'so_product_id' => $mdata->product_id,
-            'sub_product_id' => $mdata->sub_product_id,
-            'pass_id' => is_numeric($pass_id) ? (int) $pass_id : null,
-            'operation_id' => $operation_id,
-            'quantity_processed' => $roll_no,
-            'so_id' => $mdata->so_id,
-            'so_pid_primary' => $mdata->sales_order_product_id
-        ])->orderBy('id', 'desc')->get();
-
-        if ($getData->isEmpty()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No details found',
-                'data' => ['details' => []]
-            ], 404);
-        }
-
-        // Modify time_taken to formatted H M S
-        foreach ($getData as $datum) {
-            if (is_numeric($datum->time_taken)) {
-                $seconds = (int) $datum->time_taken;
-
-                $hours   = floor($seconds / 3600);
-                $minutes = floor(($seconds % 3600) / 60);
-                $remainingSeconds = $seconds % 60;
-
-                $datum->time_taken_formatted = "{$hours}h {$minutes}m {$remainingSeconds}s";
-            } else {
-                $datum->time_taken_formatted = '0h 0m 0s';
-            }
-        }
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Operation details',
-            'data'    => ['details' => $getData]
-        ], 200);
     }
 
     public function scan_process(Request $request)
@@ -282,51 +165,6 @@ class SalesOrderController extends Controller
         $data['so_id']         = $mdata->so_id;
         $data['operation_id']  = $mdata->operation_id;
         $data['operation_name'] = $mdata->operation_name;
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'QR code details',
-            'data'    => $data
-        ], 200);
-    }
-
-    public function scan_pass_qr(Request $request)
-    {
-        // Validate input
-        $validator = Validator::make($request->all(), [
-            'so_product_id' => 'required|integer|exists:sales_order_products,id',
-            'pass_id' => 'required|integer|exists:pass_sheets,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation Error',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
-
-        $so_product_id = $request->input('so_product_id');
-        $pass_id       = $request->input('pass_id');
-
-        $sopdata = SalesOrderProduct::find($so_product_id);
-
-        $mdata = PassSheet::where(['id' => $pass_id, 'cpoitemid' => $sopdata->cpoitemid])->first();
-
-        $data  = [];
-
-        if (!$mdata || !$sopdata) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'No details found',
-                'data'    => []
-            ], 404);
-        }
-
-        $data['so_product_id'] =  $sopdata->id;
-        $data['so_id']         =  $sopdata->so_id;
-        $data['pass_id']       =  $mdata->id;
-        $data['pass_no']       = $mdata->pass_no;
 
         return response()->json([
             'status'  => true,
@@ -631,7 +469,7 @@ class SalesOrderController extends Controller
                 $itemQty = (int)($item['quantity'] ?? 0);
                 $itemStatus = strtolower($item['status'] ?? '');
 
-                if ($itemStatus === 'in-progress') {
+                if ($itemStatus === 'partial') {
                     if ($pass_id > 0) {
                         if ($itemPassId === (int)$pass_id && $itemQty === (int)$current_roll_no) {
                             $item['status'] = 'completed';
@@ -911,14 +749,14 @@ class SalesOrderController extends Controller
                     $itemQty    = (int) $item['quantity'];
 
                     if ($pass_id > 0) {
-                        if ($item['status'] === 'not-started' && $itemPassId === (int) $pass_id && $itemQty === (int) $current_roll) {
+                        if (($item['status'] === 'not-started' || $item['status'] === 'partial') && $itemPassId === (int) $pass_id && $itemQty === (int) $current_roll) {
                             $item['status'] = 'in-progress';
                             $item['updated_by'] = $operator_id;
                             $updated = true;
                             break;
                         }
                     } else {
-                        if ($item['status'] === 'not-started' && $itemQty === (int) $current_roll) {
+                        if (($item['status'] === 'not-started' || $item['status'] === 'partial') && $itemQty === (int) $current_roll) {
                             $item['status'] = 'in-progress';
                             $item['updated_by'] = $operator_id;
                             $updated = true;
@@ -947,133 +785,6 @@ class SalesOrderController extends Controller
                 'message' => 'Internal Server Error: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    public function sales_order_details(Request $request)
-    {
-        /** Expected input: so_id:86, machine_id:1, so_product_id:349 **/
-        $machine_id = $request->input('machine_id');
-        $so_product_id = $request->input('so_product_id');
-        $pass_id = $request->input('pass_id');
-
-        // ==== Fetch SO Product details ====
-        $so_product_details = SalesOrderProduct::select(
-            'id',
-            'so_id', 
-            'drawingno',
-            'sub_product_id',
-            'item_name',
-            'description',
-            'measureunit',
-            'poquantity as quantity',
-            'operation1',
-            'operation2',
-            'operation3',
-            'cpoitemid',
-            'size1',
-            'size2',
-            'size3',
-            'material',
-            'hardness',
-            'product_id',
-            'sub_product_id'
-        )->find($so_product_id);
-
-        if (!$so_product_details) {
-            return response()->json([
-                'status' => false,
-                'message' => 'SO Product not found'
-            ], 404);
-        }
-
-        if ($so_product_details->sub_product_id == null) {
-            return response()->json([
-                'status' => false,
-                'message' => 'SO Sub Product not found'
-            ], 404);
-        }
-
-        if ($so_product_details->measureunit === 'SET') {
-
-            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3', 'material', 'hardness', 'qty')->where('cpoitemid', $so_product_details->cpoitemid)->get();
-            $so_product_details->pass_sheet = $pass_sheet;
-        } else {
-            $so_product_details->pass_sheet = null;
-        }
-
-        // Get allowed operation IDs for the product
-        $operationIds = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id])
-            ->pluck('operation_id')->toArray();
-
-        $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
-
-        $getDetails = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
-
-        $operations = [];
-
-        if (!empty($getDetails)) {
-            foreach ($getDetails as $details) {
-
-                $completedCount = 0;
-
-                if ($getDetails) {
-                    $processedQty = json_decode($details->processed_qty, true);
-                    foreach ($processedQty as $item) {
-                        if (isset($item['status']) && $item['status'] === 'completed') {
-                            $completedCount++;
-                        }
-                    }
-                }
-
-                // ---------------------------------
-                // 9️⃣ Get ideal cycle time (helper)
-                // ---------------------------------
-                $so_id = $request->so_id;
-                $so_details = ErpSalesOrder::find($so_id);
-
-                
-        $parts = explode('-', $so_details->so_no);
-        $group = implode('-', array_slice($parts, 4));
-        $sizeVals = getSizeValue($group);
-        $so_product_details['size1_label'] = $sizeVals[0];
-        $so_product_details['size2_label'] = $sizeVals[1];
-        $so_product_details['size3_label'] = $sizeVals[2];
-
-                $ict = 'NA';
-
-                try {
-                    if ($so_details->industry === 'Tooling') {
-                        $ict = \App\Helpers\MyHelper::getCycleTimeForTooling($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
-                    } elseif ($so_details->industry === 'RMR') {
-                        $ict = \App\Helpers\MyHelper::getCycleTimeForRMR($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
-                    } elseif ($so_details->industry === 'TMR') { //echo "helllo--------";
-
-                        $ict = \App\Helpers\MyHelper::getCycleTimeForTMR($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id, $pass_id ?? '');
-
-                        // print_r($ict); exit;
-                    }
-                } catch (\Exception $e) {
-                    Log::error('operation_start - helper failed', ['message' => $e->getMessage()]);
-                }
-
-                $operations[] = [
-                    'id'               => $details->id,
-                    'operation_id'     => $details->operation_id,
-                    'operation_name'   => $details->operation_name ?? null,
-                    'completed_roll'   => $completedCount,
-                    'ideal_cycle_time' => $ict
-                ];
-            }
-        }
- 
-        return response()->json([
-            'status' => true,
-            'message' => 'Product details',
-            'data' => [
-                'so_details' => $so_product_details,
-                'operations' => $operations,
-            ]
-        ], 200);
     }
 
     public function get_processed_rolls(Request $request)
@@ -1163,4 +874,694 @@ class SalesOrderController extends Controller
             ]
         ]);
     }
+
+    public function operation_stop(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|exists:sales_order_trackings,id',
+            'reason' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation Error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $userData = Auth::user();
+        $userData->load('roleName');
+        $operator_id = $userData->id;
+
+        $id = $request->input('id');
+        $reason = $request->input('reason');
+        $getData = SalesOrderTracking::find($id);
+
+        if (!empty($getData)) {
+
+            // check operator
+            if ($getData->operator_id != $operator_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "You can’t stop an operation started by another operator.",
+                    'data' => null
+                ], 404);
+            }
+
+            if ($getData->reason == 'completed' || $getData->roll_status == 'completed') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Operation is already completed.',
+                    'data' => null
+                ], 404);
+            }
+
+            if (!empty($getData->start_date_time) && !empty($getData->end_date_time)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Operation is completed.',
+                    'data' => null
+                ], 404);
+            }
+        }
+
+        $start = new DateTime($getData->start_date_time);
+        $end = new DateTime(); // gets current date & time
+
+        $durationInSeconds = $end->getTimestamp() - $start->getTimestamp();
+
+        $data = [
+            'reason'        => $reason,
+            'roll_status'   => 'pending',
+            'end_date_time' => $end->format('Y-m-d H:i:s'),
+            'time_taken'    => $durationInSeconds,
+            'updated_at' => date('Y-m-d h:i:s'),
+        ];
+
+        SalesOrderTracking::where('id', $id)->update($data);
+
+        // machine free update
+        MachineMaster::where('id', $getData->machine_id)->update(['machine_status' => 'active']);
+
+        // -------------------------------
+        // Update operation detail JSON
+        // -------------------------------
+
+        $operationDetails = SOProductOperationDetails::where([
+            'so_id' => $getData->so_id,
+            'sales_order_product_id' => $getData->so_pid_primary,
+            'sub_product_id' => $getData->sub_product_id,
+            'operation_id' => $getData->operation_id
+        ])
+            //        $sql = $query->toSql();
+            // $bindings = $query->getBindings();
+
+            // dd($sql, $bindings);
+            //         exit;
+            ->first(['id', 'processed_qty', 'qty']);
+
+        $pass_id = $getData->pass_id ?? 0;
+        $current_roll = $getData->quantity_processed;
+
+        // echo "<pre>"; print_r($operationDetails); exit;
+
+        if ($operationDetails && $operationDetails->processed_qty) {    //   echo "hellooo"; exit;
+            $processedQty = json_decode($operationDetails->processed_qty, true);
+            if (!is_array($processedQty)) {
+                $processedQty = [];
+            }
+
+            $updated = false;
+
+            foreach ($processedQty as &$item) {
+                $item['pass_sheet_id'] = $item['pass_sheet_id'] ?? 0;
+                $item['quantity'] = $item['quantity'] ?? 0;
+                $item['status'] = $item['status'] ?? 'in-progress';
+
+                $itemPassId = (int) $item['pass_sheet_id'];
+                $itemQty    = (int) $item['quantity'];
+
+                if ($pass_id > 0) {
+                    if ($item['status'] === 'in-progress' && $itemPassId === (int) $pass_id && $itemQty === (int) $current_roll) {
+                        $item['status'] = 'partial';
+                        $item['updated_by'] = $operator_id;
+                        $updated = true;
+                        break;
+                    }
+                } else {
+                    if ($item['status'] === 'in-progress' && $itemQty === (int) $current_roll) {
+                        $item['status'] = 'partial';
+                        $item['updated_by'] = $operator_id;
+                        $updated = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($updated) {
+                $operationDetails->processed_qty = json_encode($processedQty);
+                $operationDetails->save();
+            }
+        }
+
+        // ================
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Operation stopped successfully',
+        ], 200);
+    }
+
+    public function sales_order_details_old(Request $request)
+    {
+        /** Expected input: so_id:86, machine_id:1, so_product_id:349 **/
+        $machine_id = $request->input('machine_id');
+        $so_product_id = $request->input('so_product_id');
+        $pass_id = $request->input('pass_id');
+
+        // ==== Fetch SO Product details ====
+        $so_product_details = SalesOrderProduct::select(
+            'id',
+            'so_id',
+            'drawingno',
+            'sub_product_id',
+            'item_name',
+            'description',
+            'measureunit',
+            'soquantity as quantity',
+            'operation1',
+            'operation2',
+            'operation3',
+            'cpoitemid',
+            'size1',
+            'size2',
+            'size3',
+            'material',
+            'hardness',
+            'product_id',
+            'sub_product_id'
+        )->where('soquantity', '!=', '0')->find($so_product_id);
+
+        if (!$so_product_details) {
+            return response()->json([
+                'status' => false,
+                'message' => 'SO Product not found'
+            ], 404);
+        }
+
+        if ($so_product_details->sub_product_id == null) {
+            return response()->json([
+                'status' => false,
+                'message' => 'SO Sub Product not found'
+            ], 404);
+        }
+
+        if ($so_product_details->measureunit === 'SET') {
+
+            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3', 'material', 'hardness', 'qty')->where('cpoitemid', $so_product_details->cpoitemid)->get();
+            $so_product_details->pass_sheet = $pass_sheet;
+        } else {
+            $so_product_details->pass_sheet = null;
+        }
+
+        // Get allowed operation IDs for the product
+        $operationIds = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id])
+            ->pluck('operation_id')->toArray();
+
+        $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
+
+        $getDetails = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
+
+        $operations = [];
+
+        if (!empty($getDetails)) {
+            foreach ($getDetails as $details) {
+
+                $completedCount = 0;
+
+                if ($getDetails) {
+                    $processedQty = json_decode($details->processed_qty, true);
+                    foreach ($processedQty as $item) {
+                        if (isset($item['status']) && $item['status'] === 'completed') {
+                            $completedCount++;
+                        }
+                    }
+                }
+
+                // ---------------------------------
+                // 9️⃣ Get ideal cycle time (helper)
+                // ---------------------------------
+                $so_id = $request->so_id;
+                $so_details = ErpSalesOrder::find($so_id);
+
+
+                $parts = explode('-', $so_details->so_no);
+                $group = implode('-', array_slice($parts, 4));
+                $sizeVals = getSizeValue($group);
+                $so_product_details['size1_label'] = $sizeVals[0];
+                $so_product_details['size2_label'] = $sizeVals[1];
+                $so_product_details['size3_label'] = $sizeVals[2];
+
+                $ict = 'NA';
+
+                try {
+                    if ($so_details->industry === 'Tooling') {
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForTooling($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
+                    } elseif ($so_details->industry === 'RMR') {
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForRMR($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
+                    } elseif ($so_details->industry === 'TMR') { //echo "helllo--------";
+
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForTMR($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id, $pass_id ?? '');
+                    }
+                } catch (\Exception $e) {
+                    Log::error('operation_start - helper failed', ['message' => $e->getMessage()]);
+                }
+
+                $operations[] = [
+                    'id'               => $details->id,
+                    'operation_id'     => $details->operation_id,
+                    'operation_name'   => $details->operation_name ?? null,
+                    'completed_roll'   => $completedCount,
+                    'ideal_cycle_time' => $ict
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Product details',
+            'data' => [
+                'so_details' => $so_product_details,
+                'operations' => $operations,
+            ]
+        ], 200);
+    }
+
+    public function sales_order_details(Request $request)
+    {
+        /** Expected input: so_id:86, machine_id:1, so_product_id:349 **/
+        $machine_id = $request->input('machine_id');
+        $so_product_id = $request->input('so_product_id');
+        $pass_id = $request->input('pass_id');
+
+        // ==== Fetch SO Product details ====
+        $so_product_details = SalesOrderProduct::select(
+            'id',
+            'so_id',
+            'drawingno',
+            'sub_product_id',
+            'item_name',
+            'description',
+            'measureunit',
+            'soquantity as quantity',
+            'operation1',
+            'operation2',
+            'operation3',
+            'cpoitemid',
+            'size1',
+            'size2',
+            'size3',
+            'material',
+            'hardness',
+            'product_id',
+            'sub_product_id'
+        )->where('soquantity', '!=', '0')->find($so_product_id);
+
+        if (!$so_product_details) {
+            return response()->json([
+                'status' => false,
+                'message' => 'SO Product not found'
+            ], 404);
+        }
+
+        if ($so_product_details->sub_product_id == null) {
+            return response()->json([
+                'status' => false,
+                'message' => 'SO Sub Product not found'
+            ], 404);
+        }
+
+        if ($so_product_details->measureunit === 'SET') {
+
+            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3', 'material', 'hardness', 'qty')->where('cpoitemid', $so_product_details->cpoitemid)->get();
+            $so_product_details->pass_sheet = $pass_sheet;
+        } else {
+            $so_product_details->pass_sheet = null;
+        }
+
+        // Get allowed operation IDs for the product
+        $operationIds = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id])
+            ->pluck('operation_id')->toArray();
+
+        $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
+
+        $getDetails = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
+
+        $operations = [];
+
+        if (!empty($getDetails)) {
+            foreach ($getDetails as $details) {
+
+                $completedCount = 0;
+
+                if ($getDetails) {
+
+                    $processedQty = json_decode($details->processed_qty, true);
+
+                    if ($so_product_details->$so_product_details == 'NOS') {
+                        foreach ($processedQty as $item) {
+                            if (isset($item['status']) && $item['status'] === 'completed') {
+                                $completedCount++;
+                            }
+                        }
+                    } else {
+                        foreach ($processedQty as $item) {
+                            if (($item['status'] ?? null) === 'completed'
+                                && (int)($item['pass_sheet_id'] ?? 0) === (int)$pass_id
+                            ) {
+                                $completedCount++;
+                            }
+                        }
+                    }
+                }
+
+                // ---------------------------------
+                // 9️⃣ Get ideal cycle time (helper)
+                // ---------------------------------
+                $so_id = $request->so_id;
+                $so_details = ErpSalesOrder::find($so_id);
+
+
+                $parts = explode('-', $so_details->so_no);
+                $group = implode('-', array_slice($parts, 4));
+                $sizeVals = getSizeValue($group);
+                $so_product_details['size1_label'] = $sizeVals[0];
+                $so_product_details['size2_label'] = $sizeVals[1];
+                $so_product_details['size3_label'] = $sizeVals[2];
+
+                $ict = 'NA';
+
+                try {
+                    if ($so_details->industry === 'Tooling') {
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForTooling($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
+                    } elseif ($so_details->industry === 'RMR') {
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForRMR($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
+                    } elseif ($so_details->industry === 'TMR') {
+
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForTMR($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id, $pass_id ?? '');
+                    }
+                } catch (\Exception $e) {
+                    Log::error('operation_start - helper failed', ['message' => $e->getMessage()]);
+                }
+
+                $operations[] = [
+                    'id'               => $details->id,
+                    'operation_id'     => $details->operation_id,
+                    'operation_name'   => $details->operation_name ?? null,
+                    'completed_roll'   => $completedCount,
+                    'ideal_cycle_time' => $ict
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Product details',
+            'data' => [
+                'so_details' => $so_product_details,
+                'operations' => $operations,
+            ]
+        ], 200);
+    }
+    
+    public function scan_pass_qr(Request $request)
+    {
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'so_product_id' => 'required|integer|exists:sales_order_products,id',
+            'pass_id' => 'required|integer|exists:pass_sheets,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation Error',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $so_product_id = $request->input('so_product_id');
+        $pass_id       = $request->input('pass_id');
+        $so_id         = $request->input('so_id');
+        $machine_id    = $request->input('machine_id');
+        $sopdata = SalesOrderProduct::find($so_product_id);
+        $mdata = PassSheet::where(['id' => $pass_id, 'cpoitemid' => $sopdata->cpoitemid])->first();
+
+        $data  = [];
+
+        if (!$mdata || !$sopdata) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'No details found',
+                'data'    => []
+            ], 404);
+        }
+
+        // adding operations=
+
+        // Get allowed operation IDs for the product
+        $so_id = ErpSalesOrder::where('id',$so_id)->value('so_id'); 
+        $operationIds = SOProductOperationDetails::where(['so_id' => $so_id])
+            ->pluck('operation_id')->toArray();
+
+        $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
+   
+        $getDetails = SOProductOperationDetails::where(['so_id' => $so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
+
+        $operations = [];
+
+        if (!empty($getDetails)) {
+            foreach ($getDetails as $details) {
+
+                $completedCount = 0;
+
+                if ($getDetails) {
+
+                    $processedQty = json_decode($details->processed_qty, true);
+ 
+                        foreach ($processedQty as $item) {
+                            if (($item['status'] ?? null) === 'completed'
+                                && (int)($item['pass_sheet_id'] ?? 0) === (int)$pass_id
+                            ) {
+                                $completedCount++;
+                            }
+                        }
+                }
+
+                // ---------------------------------
+                // 9️⃣ Get ideal cycle time (helper)
+                // ---------------------------------
+                $so_id = $request->so_id;
+                $so_details = ErpSalesOrder::find($so_id);
+ 
+                $parts = explode('-', $so_details->so_no);
+                $group = implode('-', array_slice($parts, 4));
+                $sizeVals = getSizeValue($group);
+                $so_product_details['size1_label'] = $sizeVals[0];
+                $so_product_details['size2_label'] = $sizeVals[1];
+                $so_product_details['size3_label'] = $sizeVals[2];
+
+                $ict = 'NA';
+
+                /* try {
+                    if ($so_details->industry === 'Tooling') {
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForTooling($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
+                    } elseif ($so_details->industry === 'RMR') {
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForRMR($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
+                    } elseif ($so_details->industry === 'TMR') {
+
+                        $ict = \App\Helpers\MyHelper::getCycleTimeForTMR($details->operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id, $pass_id ?? '');
+                    }
+                } catch (\Exception $e) {
+                    Log::error('operation_start - helper failed', ['message' => $e->getMessage()]);
+                } */
+
+                $operations[] = [
+                    'id'               => $details->id,
+                    'operation_id'     => $details->operation_id,
+                    'operation_name'   => $details->operation_name ?? null,
+                    'completed_roll'   => $completedCount,
+                    'ideal_cycle_time' => $ict
+                ];
+            }
+        }
+
+        // ==================
+
+        $data['so_product_id'] =  $sopdata->id;
+        $data['so_id']         =  $sopdata->so_id;
+        $data['pass_id']       =  $mdata->id;
+        $data['pass_no']       =  $mdata->pass_no;
+        $data['operations']     =  $operations;
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'QR code details',
+            'data'    => $data
+        ], 200);
+    }
+
+    public function fetch_operation_details_old(Request $request)
+    {
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'so_product_id' => 'required|integer|exists:sales_order_products,id',
+            'pass_id'       => 'nullable|integer',
+            'current_roll_no' => 'required|integer',
+            'operation_id'  => 'required|integer|exists:operation_masters,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation Error',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        // Get inputs 
+        $so_product_id = $request->input('so_product_id');
+        $pass_id =  $request->input('pass_id');
+        $operation_id = $request->input('operation_id');
+        $roll_no = $request->input('current_roll_no');
+
+        $so_product_details = SalesOrderProduct::select('id', 'so_id', 'sub_product_id', 'product_id')->find($so_product_id);
+        $mdata = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id, 'product_id' => $so_product_details->product_id, 'sub_product_id' => $so_product_details->sub_product_id, 'operation_id' => $operation_id])->first();
+
+        if (empty($mdata)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'operation details not found',
+                'data' => ['details' => []]
+            ], 404);
+        }
+
+        // Fetch operation tracking data
+        $getData = SalesOrderTracking::where([
+            'so_product_id' => $mdata->product_id,
+            'sub_product_id' => $mdata->sub_product_id,
+            'pass_id' => is_numeric($pass_id) ? (int) $pass_id : null,
+            'operation_id' => $operation_id,
+            'quantity_processed' => $roll_no,
+            'so_id' => $mdata->so_id,
+            'so_pid_primary' => $mdata->sales_order_product_id
+        ])->orderBy('id', 'desc')->get();
+
+        if ($getData->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No details found',
+                'data' => ['details' => []]
+            ], 404);
+        }
+
+        // Modify time_taken to formatted H M S
+        foreach ($getData as $datum) {
+            if (is_numeric($datum->time_taken)) {
+                $seconds = (int) $datum->time_taken;
+
+                $hours   = floor($seconds / 3600);
+                $minutes = floor(($seconds % 3600) / 60);
+                $remainingSeconds = $seconds % 60;
+
+                $datum->time_taken_formatted = "{$hours}h {$minutes}m {$remainingSeconds}s";
+            } else {
+                $datum->time_taken_formatted = '0h 0m 0s';
+            }
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Operation details',
+            'data'    => ['details' => $getData]
+        ], 200);
+    }
+ 
+    public function fetch_operation_details(Request $request)
+    {
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'so_product_id' => 'required|integer|exists:sales_order_products,id',
+            'pass_id'       => 'nullable|integer',
+            'current_roll_no' => 'required|integer',
+            'operation_id'  => 'required|integer|exists:operation_masters,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation Error',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        // Get inputs 
+        $so_product_id = $request->input('so_product_id');
+        $pass_id =  $request->input('pass_id');
+        $operation_id = $request->input('operation_id');
+        $roll_no = $request->input('current_roll_no');
+
+        $so_product_details = SalesOrderProduct::select('id', 'so_id', 'sub_product_id', 'product_id')->find($so_product_id);
+        $mdata = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id, 'product_id' => $so_product_details->product_id, 'sub_product_id' => $so_product_details->sub_product_id, 'operation_id' => $operation_id])->first();
+
+        if (empty($mdata)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'operation details not found',
+                'data' => ['details' => []]
+            ], 404);
+        }
+
+        $userData = Auth::user()->load('roleName');
+ 
+        // Fetch operation tracking data
+        $getData = SalesOrderTracking::where([
+            'so_product_id' => $mdata->product_id,
+            'sub_product_id' => $mdata->sub_product_id,
+            'pass_id' => is_numeric($pass_id) ? (int) $pass_id : null,
+            'operation_id' => $operation_id,
+            'quantity_processed' => $roll_no,
+            'so_id' => $mdata->so_id,
+            'so_pid_primary' => $mdata->sales_order_product_id
+        ])->orderBy('id', 'desc')->get();
+
+        if ($getData->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No details found',
+                'data' => ['details' => []]
+            ], 404);
+        }
+
+        $getTrackingData = SalesOrderTracking::where([
+            'so_product_id' => $mdata->product_id,
+            'sub_product_id' => $mdata->sub_product_id,
+            'pass_id' => is_numeric($pass_id) ? (int) $pass_id : null,
+            'operation_id' => $operation_id,
+            'quantity_processed' => $roll_no,
+            'so_id' => $mdata->so_id,
+            'so_pid_primary' => $mdata->sales_order_product_id
+        ])->orderBy('id', 'desc')->first();
+
+        
+        if (!empty($getTrackingData->start_date_time) && empty($getTrackingData->end_date_time)) {
+            if($getTrackingData->operator_id != $userData->id) {
+                return response()->json(['status' => false, 'message' => 'Already in progress by another operator.'], 409);
+            }
+        }
+ 
+        // Modify time_taken to formatted H M S
+        foreach ($getData as $datum) {
+            if (is_numeric($datum->time_taken)) {
+                $seconds = (int) $datum->time_taken;
+
+                $hours   = floor($seconds / 3600);
+                $minutes = floor(($seconds % 3600) / 60);
+                $remainingSeconds = $seconds % 60;
+
+                $datum->time_taken_formatted = "{$hours}h {$minutes}m {$remainingSeconds}s";
+            } else {
+                $datum->time_taken_formatted = '0h 0m 0s';
+            }
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Operation details',
+            'data'    => ['details' => $getData]
+        ], 200);
+    }
+
+
 }

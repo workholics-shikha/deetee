@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ErpSalesOrder, PassSheet, MachineMaster, ProductMasters, SubProduct, OperationMaster, Role, SalesOrderProduct, SOProductOperationDetails, User};
+use App\Models\{ErpSalesOrder, PassSheet, MachineMaster, ProductMasters, SubProduct, OperationMaster, Role, SalesOrderProduct, SOProductOperationDetails, SubproductWiseOperation, User};
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{DB, Storage, File};
@@ -269,7 +269,7 @@ class ImportController extends Controller
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
- 
+
             // Clean and lowercase the filename
             $machine_name = $machine->machine ?? 'machine-' . $machine->id;
             $safeName = Str::slug(strtolower($machine_name), '-');
@@ -467,8 +467,8 @@ class ImportController extends Controller
 
     public function generateNewQrCodes()
     {
-       
-          // Operations
+
+        // Operations
         $operations = DB::table('operation_masters')->get();
         foreach ($operations as $operation) {
 
@@ -485,7 +485,8 @@ class ImportController extends Controller
             Storage::disk('public')->put($path, $result->getString());
             // Update the machine record with the QR code path
             DB::table('operation_masters')->where('id', $operation->id)->update(['operation_qr_code' => $name]);
-        }  exit;
+        }
+        exit;
         //========== end - Operations
 
         // for Machines
@@ -512,8 +513,8 @@ class ImportController extends Controller
                 ->update(['machine_qr_code' => $fileName]);
         }
         //========== end - Machines
-       
-         
+
+
         // for Sales Order
         $erpSalesOrder = ErpSalesOrder::get();
         foreach ($erpSalesOrder as $salesOrder) {
@@ -577,8 +578,7 @@ class ImportController extends Controller
             DB::table('users')->where('id', $user->id)->update(['user_qr_code' => $nameQR]);
         }
         //========== end - Users/Operators
-       
-      
+
     }
 
     public function generateNewQrCodes2()
@@ -586,7 +586,7 @@ class ImportController extends Controller
         // Generate the QR code
         $passSheet = PassSheet::whereNull('pass_sheet_qr_code')->get();
 
-        if(!empty($passSheet)) {
+        if (!empty($passSheet)) {
             foreach ($passSheet as $sheet) {
                 $result = Builder::create()
                     ->data($sheet->id . ';PassScan')
@@ -603,15 +603,15 @@ class ImportController extends Controller
                 Storage::disk('public')->put($path, $result->getString());
 
                 // Update the machine record with the QR code path
-                PassSheet::where('id', $sheet->id)->update([ 'pass_sheet_qr_code' => $name ]);
+                PassSheet::where('id', $sheet->id)->update(['pass_sheet_qr_code' => $name]);
             }
-        }  
- 
+        }
+
         $subProducts = SalesOrderProduct::get();
         if (!empty($subProducts)) {
             foreach ($subProducts as $products) {
                 $result = Builder::create()
-                    ->data('PRO'.$products->id)
+                    ->data('PRO' . $products->id)
                     ->size(300) // Set size in pixels
                     ->margin(10) // Set margin in pixels
                     ->build();
@@ -628,56 +628,56 @@ class ImportController extends Controller
     function addPassSheetDetails()
     {
 
-      $subProducts = SalesOrderProduct::where('measureunit', 'SET')
-        ->whereNotNull('sub_product_id')
-        ->get();
- 
-       foreach ($subProducts as $details) {
- 
-        $erp_response = callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $details->cpoitemid);
-        $itemjson = $erp_response->json();
+        $subProducts = SalesOrderProduct::where('measureunit', 'SET')
+            ->whereNotNull('sub_product_id')
+            ->get();
 
-        if (!empty($itemjson)) {
-            foreach ($itemjson as $item) {
+        foreach ($subProducts as $details) {
 
-                $passNos = splitPassNo($item['pass_no']);
+            $erp_response = callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $details->cpoitemid);
+            $itemjson = $erp_response->json();
 
-                foreach ($passNos as $passNo) {
+            if (!empty($itemjson)) {
+                foreach ($itemjson as $item) {
 
-                    PassSheet::insert([
-                        'so_id'         => $details->so_id,
-                        'subproduct_pid' => $details->id,
-                        'subproduct_id' => $details->sub_product_id,
-                        'cpoitemid'     => $item['cpoitemid'],
-                        'sr_no'         => $item['sr_no'],
-                        'pass_no'       => $passNo,
-                        'mrk_pass_no'   => $item['mrk_pass_no'],
-                        'drawing_no'    => $item['drawing_no'],
-                        'size1'         => $item['size1'],
-                        'size2'         => $item['size2'],
-                        'size3'         => $item['size3'],
-                        'qty'           => $item['qty'],
-                        'material'      => $item['material'],
-                        'hardness'      => $item['hardness'],
-                        'bs1_dia'       => $item['bs1_dia'], // for calculation
-                        'bs1_depth'     => $item['bs1_depth'], // for calculation
-                        'bs1_bore'      => $item['bs1_bore'],
-                        'bs2_dia'       => $item['bs2_dia'],
-                        'bs2_depth'     => $item['bs2_depth'],
-                        'remarks'       => $item['remarks'],
-                        'revisioncount' => $item['revisioncount'],
-                        'created_at'    => now(),
-                        'updated_at'    => now(), 
-                    ]);
+                    $passNos = splitPassNo($item['pass_no']);
+
+                    foreach ($passNos as $passNo) {
+
+                        PassSheet::insert([
+                            'so_id'         => $details->so_id,
+                            'subproduct_pid' => $details->id,
+                            'subproduct_id' => $details->sub_product_id,
+                            'cpoitemid'     => $item['cpoitemid'],
+                            'sr_no'         => $item['sr_no'],
+                            'pass_no'       => $passNo,
+                            'mrk_pass_no'   => $item['mrk_pass_no'],
+                            'drawing_no'    => $item['drawing_no'],
+                            'size1'         => $item['size1'],
+                            'size2'         => $item['size2'],
+                            'size3'         => $item['size3'],
+                            'qty'           => $item['qty'],
+                            'material'      => $item['material'],
+                            'hardness'      => $item['hardness'],
+                            'bs1_dia'       => $item['bs1_dia'], // for calculation
+                            'bs1_depth'     => $item['bs1_depth'], // for calculation
+                            'bs1_bore'      => $item['bs1_bore'],
+                            'bs2_dia'       => $item['bs2_dia'],
+                            'bs2_depth'     => $item['bs2_depth'],
+                            'remarks'       => $item['remarks'],
+                            'revisioncount' => $item['revisioncount'],
+                            'created_at'    => now(),
+                            'updated_at'    => now(),
+                        ]);
+                    }
                 }
             }
         }
-    }
 
         // Generate the QR code
         $passSheet = PassSheet::whereNull('pass_sheet_qr_code')->get();
 
-        if(!empty($passSheet)) {
+        if (!empty($passSheet)) {
             foreach ($passSheet as $sheet) {
                 $result = Builder::create()
                     ->data($sheet->id . ';PassScan')
@@ -694,9 +694,9 @@ class ImportController extends Controller
                 Storage::disk('public')->put($path, $result->getString());
 
                 // Update the machine record with the QR code path
-                PassSheet::where('id', $sheet->id)->update([ 'pass_sheet_qr_code' => $name ]);
+                PassSheet::where('id', $sheet->id)->update(['pass_sheet_qr_code' => $name]);
             }
-        }  
+        }
     }
-    
+
 }

@@ -18,7 +18,7 @@ class MachineController extends Controller
         $count['unavailableMachines'] = MachineMaster::whereIn('machine_status', ['maintenance', 'breakdown'])->count();
 
         $search = $request->input('search');
-        $data = MachineMaster::with('operations')->where('unit_name', 'like', "%TMR%")
+        $data = MachineMaster::with('operations')
             ->when($search, function ($query, $search) {
                 $query->where('machine', 'like', "%$search%");
                 $query->orWhere('section', 'like', "%$search%");
@@ -35,7 +35,7 @@ class MachineController extends Controller
     {
         $search = $request->input('search'); // Get the search term from the request
         // Fetch machines based on the search term with pagination
-        $machines = MachineMaster::with('operations')->where('unit_name', 'like', "%TMR%")
+        $machines = MachineMaster::with('operations')
             ->when($search, function ($query, $search) {
                 $query->where('machine_qr_code', 'LIKE', "%{$search}%")
                     ->orWhere('machine_type', 'LIKE', "%{$search}%")

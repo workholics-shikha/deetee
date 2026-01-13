@@ -217,3 +217,4 @@ Route::get('copyOperationPngInSOPDetails', [ImportController::class, 'copyOperat
 Route::get('generateNewQrCodes', [ImportController::class, 'generateNewQrCodes'])->name('generateNewQrCodes');
 Route::get('generateNewQrCodes2', [ImportController::class, 'generateNewQrCodes2'])->name('generateNewQrCodes2');
 Route::get('addPassSheetDetails', [ImportController::class, 'addPassSheetDetails'])->name('addPassSheetDetails');
+Route::get('addMissingOperation', [SalesOrderController::class, 'addMissingOperation'])->name('addMissingOperation');

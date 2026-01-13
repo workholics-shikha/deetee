@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\{ErpSalesOrder, MachineMaster, MachineWiseOperation, SalesOrderProduct, SalesOrderTracking, SOProductOperationDetails};
+use App\Models\{ErpSalesOrder, MachineMaster, SalesOrderProduct};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, Log, Validator};
 
@@ -67,7 +67,7 @@ class ScanController extends Controller
   
         $data = ErpSalesOrder::select('id', 'so_no', 'so_id', 'so_unitid')
             ->with(['soProducts' => function ($query) {
-                $query->select('id', 'so_id', 'sub_product_id', 'item_name', 'sales_order_products.so_id');
+                $query->select('id', 'so_id', 'sub_product_id', 'item_name', 'sales_order_products.so_id')->where('soquantity', '!=', 0);;
             }])->find($so_id);
 
         if ($machine->unit_name != $data->industry) {

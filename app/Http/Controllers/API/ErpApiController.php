@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\{ErpItems, ErpMaterialList, ErpSalesOrder, ErpSoType, ErpSpecialOperation, SalesOrderProduct};
+use App\Models\{ErpSalesOrder, ErpSoType};
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Support\Facades\{Http, Log, Storage};
 

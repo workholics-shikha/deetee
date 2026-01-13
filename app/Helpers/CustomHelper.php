@@ -486,7 +486,7 @@ if (!function_exists('getSizeValue')) {
             'A'     => ['OD', 'ID', 'Thickness'],
         ];
 
-        return $map[$group] ?? [null, null, null];
+        return $map[$group] ?? ['', '', ''];
     }
 }
 

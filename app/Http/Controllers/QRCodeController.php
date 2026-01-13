@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ErpSalesOrder, MachineMaster, OperationMaster, ProductMasters, SubProduct, User};
+use App\Models\{ErpSalesOrder, MachineMaster, OperationMaster, ProductMasters, SOProductOperationDetails, SubProduct, User};
 use Illuminate\Http\Request;
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Support\Facades\{Storage, DB, File};
@@ -88,6 +88,8 @@ class QRCodeController extends Controller
             Storage::disk('public')->put($path, $result->getString());
 
             OperationMaster::where('id', $operations->id)->update(['operation_qr_code' => $name]);
+
+            SOProductOperationDetails::where('operation_id', $operations->id)->update(['operation_qr_code' => $name]);
         }
 
         if ($type   ==   'Operator') {

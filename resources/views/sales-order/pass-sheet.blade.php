@@ -118,7 +118,7 @@
                                                 <span class=""> {{ $pass_data->pass_no }} </span>
                                             </td>
                                             <td class="" style="text-align:center;">  {{ $pass_data->mrk_pass_no }} </td>
-                                            <td class="" style="text-align:center;">  {{ !empty($pass_data->size1) ? $pass_data->size1 : '-' }}  </td> 
+                                            <td class="" style="text-align:center;">  {{ !empty($pass_data->size1) ? $pass_data->size1 : '-' }} </td> 
                                             <td class="" style="text-align:center;">  {{ !empty($pass_data->size2) ? $pass_data->size2 : '-' }} </td>
                                             <td class="" style="text-align:center;">  {{ !empty($pass_data->size3) ? $pass_data->size3 : '-' }} </td>
                                             <td class="" style="text-align:center;">  {{ $pass_data->qty }} </td>

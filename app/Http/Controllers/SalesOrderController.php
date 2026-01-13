@@ -45,13 +45,19 @@ class SalesOrderController extends Controller
             'pagination' => (string) $data->links(),
         ]);
     }
- 
+
     public function route_card_preview(Request $request)
     {
         $data = SalesOrderProduct::find($request->id);
         $saleOrder = ErpSalesOrder::where('so_id', $data->so_id)->first();
         $getSubProductId = SalesOrderProduct::where('id', $request->id)->value('sub_product_id');
-        $getOperationList = SOProductOperationDetails::where('sales_order_product_id', $request->id)->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])->get();
+      
+        $getOperationList = SOProductOperationDetails::where('sales_order_product_id', $request->id)
+                             ->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])
+                              ->orderByRaw("CASE WHEN sr_no IS NULL OR sr_no = '' THEN 1 ELSE 0 END")
+                              ->orderBy('sr_no')
+                             ->get();
+
         return view('sales-order.route-card', compact('data', 'saleOrder', 'getOperationList'));
     }
 
@@ -59,8 +65,8 @@ class SalesOrderController extends Controller
     {
         $saleOrder = ErpSalesOrder::where('so_id', $request->id)->first();
         $data = SalesOrderProduct::where('so_id', $request->id)->get();
-       
-        return view('sales-order.product-list-sheet', compact('data', 'saleOrder' ));
+
+        return view('sales-order.product-list-sheet', compact('data', 'saleOrder'));
     }
 
     public function printProductList($id)
@@ -78,7 +84,11 @@ class SalesOrderController extends Controller
         $container['data'] = SalesOrderProduct::find($id);
         $container['saleOrder'] = ErpSalesOrder::where('so_id', $container['data']->so_id)->first();
         $container['getSubProductId'] = $container['data']->sub_product_id;
-        $container['getOperationList'] = SOProductOperationDetails::where('sales_order_product_id', $id)->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])->get();
+        $container['getOperationList'] = SOProductOperationDetails::where('sales_order_product_id', $id)
+                                        ->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])
+                                         ->orderByRaw("CASE WHEN sr_no IS NULL OR sr_no = '' THEN 1 ELSE 0 END")
+                              ->orderBy('sr_no')
+                              ->get();
         $container['title'] = 'Printable PDF';
         $pdf = Pdf::setOptions(['isPhpEnabled' => true, 'isRemoteEnabled' => true])->loadView('sales-order.pdf.qr-pdf', $container);
         return $pdf->stream('document.pdf');
@@ -149,8 +159,10 @@ class SalesOrderController extends Controller
         $typeOfProduct = $salesOrderProduct->measureunit;      // e.g. SET / NOS
         if ($typeOfProduct === 'SET') {
             // if not added only 
-            $checkPass = PassSheet::where([ 'so_id' => $salesOrderProduct->so_id, 'subproduct_id' => $so_pid])->find('id');
-            if(empty($checkPass)){ addPassSheetDetails($salesOrderProduct->cpoitemid); }
+            $checkPass = PassSheet::where(['so_id' => $salesOrderProduct->so_id, 'subproduct_id' => $so_pid])->find('id');
+            if (empty($checkPass)) {
+                addPassSheetDetails($salesOrderProduct->cpoitemid);
+            }
         }
 
         $order = ErpSalesOrder::where('so_id', $salesOrderProduct->so_id)->first(['so_no', 'id']);
@@ -161,8 +173,8 @@ class SalesOrderController extends Controller
         }
 
         /* -----------------------------------------------------------------
-     | 2.  Build once: processed‑qty JSON structure
-     *-----------------------------------------------------------------*/
+       | 2.  Build once: processed‑qty JSON structure
+        *-----------------------------------------------------------------*/
         $processedQtyRows = $this->buildProcessedQtyRows($typeOfProduct, $salesOrderProduct);
 
         /* -----------------------------------------------------------------
@@ -259,7 +271,7 @@ class SalesOrderController extends Controller
         }
         return $rows;
     }
- 
+
     public function operationReview(Request $request)
     {
         try {
@@ -351,7 +363,7 @@ class SalesOrderController extends Controller
                 $itemPassId = (int) $item['pass_sheet_id'];
                 $itemQty    = (int) $item['quantity'];
 
-                if($reviewType === 'rework' || $reviewType === 'approved') {   
+                if ($reviewType === 'rework' || $reviewType === 'approved') {
                     if ($pass_id > 0) {
                         if ($itemPassId == $pass_id && $itemQty == $current_roll) {
                             $item['status']     = $reviewType;
@@ -427,16 +439,17 @@ class SalesOrderController extends Controller
         }
     }
 
-    public function getOperationReviewList($id){
-         return DB::table('rc_review')->where('so_track_id', $id)->get();
+    public function getOperationReviewList($id)
+    {
+        return DB::table('rc_review')->where('so_track_id', $id)->get();
     }
- 
+
     public function pass_sheet($sop_id)
     {
         $data = SalesOrderProduct::find($sop_id);
         $so = ErpSalesOrder::where('so_id', $data->so_id)->first(['so_no', 'id', 'so_group']);
         $subProductName = SubProduct::where('id', $data->sub_product_id)->value('sub_product_name');
-        
+
         $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
 
         if ($pass_sheet->isEmpty()) {
@@ -444,7 +457,7 @@ class SalesOrderController extends Controller
         }
         return view('sales-order.pass-sheet', compact('data', 'so', 'subProductName', 'pass_sheet', 'sop_id'));
     }
- 
+
     public function so_details($id)
     {
         $data = ErpSalesOrder::findOrFail($id);
@@ -469,4 +482,77 @@ class SalesOrderController extends Controller
         return view('sales-order.details', compact('data', 'items', 'subProducts'));
     }
 
+    public function addMissingOperation()
+    {
+        // DB::transaction(function () {
+
+            $products = SalesOrderProduct::whereBetween('sub_product_id', [34,42])
+                ->whereNotNull('sub_product_id')->orderBy('id')  ->take(10)
+                ->get();
+
+            foreach ($products as $data) {
+
+               // Route card operations
+                $routeCardOperationIds = SubproductWiseOperation::where('subproduct_id', $data->sub_product_id)->whereNotNull('operation_id')
+                    ->pluck('operation_id')
+                    ->toArray();
+
+                // Already added operations
+                $usedOperationIds = SOProductOperationDetails::where([
+                    'sub_product_id' => $data->sub_product_id,
+                    'so_id' => $data->so_id
+                ])
+                    ->pluck('operation_id')
+                    ->toArray();
+ 
+                // Missing operations
+                $missingOperationIds = array_diff($routeCardOperationIds, $usedOperationIds);
+
+                if (empty($missingOperationIds)) {
+                    continue;
+                }
+
+                // Build processed qty ONCE
+                $processedQtyRows = $this->buildProcessedQtyRows(
+                    $data->measureunit,
+                    $data
+                );
+
+                foreach ($missingOperationIds as $operationId) {
+
+                    $op = SubproductWiseOperation::where('subproduct_id', $data->sub_product_id)
+                        ->where('operation_id', $operationId)
+                        ->first();
+
+                    if (! $op) {
+                        continue;
+                    }
+
+                    $opMaster = DB::table('operation_masters')
+                        ->select('operation_qr_code', 'parameter_input')
+                        ->where('id', $operationId)
+                        ->first();
+
+                    SOProductOperationDetails::firstOrCreate(
+                        [
+                            'so_id'          => $data->so_id,
+                            'sub_product_id' => $data->sub_product_id,
+                            'operation_id'   => $operationId,
+                        ],
+                        [
+                            'so_no'             => ErpSalesOrder::where('so_id',$data->so_id)->value('so_no')??'',
+                            'sales_order_product_id' => $data->id,
+                            'product_id'        => $op->product_master_id,
+                            'operation_name'    => $op->operation_name,
+                            'operation_stage'   => $op->sub_operations,
+                            'operation_qr_code' => $opMaster->operation_qr_code ?? '',
+                            'operation_status'  => $opMaster->parameter_input ?? '',
+                            'qty'               => $data->soquantity,
+                            'processed_qty'     => json_encode($processedQtyRows),
+                        ]
+                    );
+                }
+            }
+        // });
+    }
 }
