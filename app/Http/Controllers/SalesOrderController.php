@@ -46,21 +46,6 @@ class SalesOrderController extends Controller
         ]);
     }
 
-    public function route_card_preview(Request $request)
-    {
-        $data = SalesOrderProduct::find($request->id);
-        $saleOrder = ErpSalesOrder::where('so_id', $data->so_id)->first();
-        $getSubProductId = SalesOrderProduct::where('id', $request->id)->value('sub_product_id');
-      
-        $getOperationList = SOProductOperationDetails::where('sales_order_product_id', $request->id)
-                             ->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])
-                              ->orderByRaw("CASE WHEN sr_no IS NULL OR sr_no = '' THEN 1 ELSE 0 END")
-                              ->orderBy('sr_no')
-                             ->get();
-
-        return view('sales-order.route-card', compact('data', 'saleOrder', 'getOperationList'));
-    }
-
     public function product_list_sheet_preview(Request $request)
     {
         $saleOrder = ErpSalesOrder::where('so_id', $request->id)->first();
@@ -83,12 +68,20 @@ class SalesOrderController extends Controller
     {
         $container['data'] = SalesOrderProduct::find($id);
         $container['saleOrder'] = ErpSalesOrder::where('so_id', $container['data']->so_id)->first();
-        $container['getSubProductId'] = $container['data']->sub_product_id;
-        $container['getOperationList'] = SOProductOperationDetails::where('sales_order_product_id', $id)
-                                        ->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])
-                                         ->orderByRaw("CASE WHEN sr_no IS NULL OR sr_no = '' THEN 1 ELSE 0 END")
-                              ->orderBy('sr_no')
-                              ->get();
+        $container['getSubProductId'] = $sub_product_id = $container['data']->sub_product_id;
+
+        // $container['getOperationList'] = SOProductOperationDetails::where('sales_order_product_id', $id)
+        //                                 ->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])
+        //                                  ->orderByRaw("CASE WHEN sr_no IS NULL OR sr_no = '' THEN 1 ELSE 0 END")
+        //                       ->orderBy('sr_no')
+        //                       ->get();
+
+        $container['getOperationList'] = SubproductWiseOperation::with('operationData')
+            ->where(['subproduct_id' => $sub_product_id, 'product_master_id' => $container['data']->product_id])
+            ->orderByRaw("CASE WHEN s_no IS NULL OR s_no = '' THEN 1 ELSE 0 END")
+            ->orderBy('s_no')
+            ->get();
+
         $container['title'] = 'Printable PDF';
         $pdf = Pdf::setOptions(['isPhpEnabled' => true, 'isRemoteEnabled' => true])->loadView('sales-order.pdf.qr-pdf', $container);
         return $pdf->stream('document.pdf');
@@ -140,100 +133,6 @@ class SalesOrderController extends Controller
         return view('sales-order.tracking', compact('getRolls', 'getOperationData'));
     }
 
-    public function update_sub_product(Request $request)
-    {
-        /* -----------------------------------------------------------------
-        | 1.  Validate & fetch the main Sales‑Order‑Product
-        *-----------------------------------------------------------------*/
-        $so_pid = $request->so_product_id;
-        $salesOrderProduct = SalesOrderProduct::find($so_pid);
-
-        if (! $salesOrderProduct) {
-            return response()->json(['error' => 'Sales Order Product not found.'], 404);
-        }
-
-        // Update the chosen sub‑product on the SOP itself
-        $salesOrderProduct->sub_product_id = $request->sub_product_id;
-        $salesOrderProduct->save();
-
-        $typeOfProduct = $salesOrderProduct->measureunit;      // e.g. SET / NOS
-        if ($typeOfProduct === 'SET') {
-            // if not added only 
-            $checkPass = PassSheet::where(['so_id' => $salesOrderProduct->so_id, 'subproduct_id' => $so_pid])->find('id');
-            if (empty($checkPass)) {
-                addPassSheetDetails($salesOrderProduct->cpoitemid);
-            }
-        }
-
-        $order = ErpSalesOrder::where('so_id', $salesOrderProduct->so_id)->first(['so_no', 'id']);
-
-        if ($order) {
-            $soNo = $order->so_no;
-            $orderId = $order->id;
-        }
-
-        /* -----------------------------------------------------------------
-       | 2.  Build once: processed‑qty JSON structure
-        *-----------------------------------------------------------------*/
-        $processedQtyRows = $this->buildProcessedQtyRows($typeOfProduct, $salesOrderProduct);
-
-        /* -----------------------------------------------------------------
-     | 3.  Loop through operations for the selected sub‑product
-     *-----------------------------------------------------------------*/
-        $operations = SubproductWiseOperation::where('subproduct_id', $request->sub_product_id)->get();
-
-        foreach ($operations as $op) {
-
-            $opMaster = DB::table('operation_masters')
-                ->select('operation_qr_code', 'parameter_input')
-                ->where('id', $op->operation_id)
-                ->first();
-
-            /* ------------ Composite key that identifies one row ---------- */
-            $key = [
-                'so_id' => $salesOrderProduct->so_id,
-                'sales_order_product_id' => $salesOrderProduct->id,
-                'operation_id' => is_numeric($op->operation_id) ? (int) $op->operation_id : null,
-            ];
-
-            /* ------------ Data needed when we first create the row -------- */
-            $createData = [
-                'so_no'             => $soNo,
-                'product_id'        => $op->product_master_id,
-                'sub_product_id'    => $op->subproduct_id,
-                'operation_name'    => $op->operation_name,
-                'operation_stage'   => $op->sub_operations,
-                'operation_qr_code' => $opMaster->operation_qr_code ?? '',
-                'operation_status' => $opMaster->parameter_input ?? '',
-                'qty' => $salesOrderProduct->soquantity, // ← set only on create
-                'processed_qty' => json_encode($processedQtyRows),
-            ];
-
-            /** @var SOProductOperationDetails $detail */
-            $detail = SOProductOperationDetails::firstOrCreate($key, $createData);
-
-            /* ------------ If it already existed, update only selected cols */
-            if (! $detail->wasRecentlyCreated) {
-                $detail->fill([
-                    // update anything *except* qty
-                    'so_no'             => $soNo,
-                    'product_id'        => $op->product_master_id,
-                    'sub_product_id'    => $op->subproduct_id,
-                    'operation_name'    => $op->operation_name,
-                    'operation_stage'   => $op->sub_operations,
-                    'operation_qr_code' => $opMaster->operation_qr_code ?? '',
-                    'operation_status'  => $opMaster->parameter_input ?? '',
-                    'processed_qty'     => json_encode($processedQtyRows),
-                ])->save();
-            }
-        }
-
-        /* -----------------------------------------------------------------
-           | 4.  Redirect to the correct screen
-        *----------------------------------------------------------------- */
-        return redirect('admin/sales-order-details/' . $orderId);
-    }
-
     /**
      * Build the processed‑qty array once.
      */
@@ -242,23 +141,28 @@ class SalesOrderController extends Controller
         $rows = [];
 
         if ($type === 'SET') {
-            $passSheets = PassSheet::where(['cpoitemid' => $sop->cpoitemid, 'so_id' => $sop->so_id, 'subproduct_id' => $sop->sub_product_id])->pluck('id');
+            $passSheets = PassSheet::where([
+                'cpoitemid'      => $sop->cpoitemid,
+                'so_id'          => $sop->so_id,
+                'subproduct_id'  => $sop->sub_product_id,
+            ])->get(['id', 'qty']);
 
             if ($passSheets->isEmpty()) {
                 throw new \RuntimeException('No pass sheets found for SET product.');
             }
 
-            foreach ($passSheets as $sheetId) {
-                for ($i = 1; $i <= $sop->soquantity; $i++) {
+            foreach ($passSheets as $sheet) {
+                for ($i = 1; $i <= (int) $sheet->qty; $i++) {
                     $rows[] = [
-                        'pass_sheet_id' => $sheetId,
-                        'quantity'      => $i,
-                        'status'        => 'not-started',
-                        'updated_by'    => 0,
-                        'completed_date' => ''
+                        'pass_sheet_id'  => $sheet->id,
+                        'quantity'       => $i,        // each row represents 1 unit
+                        'status'         => 'not-started',
+                        'updated_by'     => 0,
+                        'completed_date' => null,     // better than ''
                     ];
                 }
             }
+
         } else { // NOS or other measure‑unit
             for ($i = 1; $i <= $sop->soquantity; $i++) {
                 $rows[] = [
@@ -444,20 +348,6 @@ class SalesOrderController extends Controller
         return DB::table('rc_review')->where('so_track_id', $id)->get();
     }
 
-    public function pass_sheet($sop_id)
-    {
-        $data = SalesOrderProduct::find($sop_id);
-        $so = ErpSalesOrder::where('so_id', $data->so_id)->first(['so_no', 'id', 'so_group']);
-        $subProductName = SubProduct::where('id', $data->sub_product_id)->value('sub_product_name');
-
-        $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
-
-        if ($pass_sheet->isEmpty()) {
-            $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
-        }
-        return view('sales-order.pass-sheet', compact('data', 'so', 'subProductName', 'pass_sheet', 'sop_id'));
-    }
-
     public function so_details($id)
     {
         $data = ErpSalesOrder::findOrFail($id);
@@ -486,73 +376,204 @@ class SalesOrderController extends Controller
     {
         // DB::transaction(function () {
 
-            $products = SalesOrderProduct::whereBetween('sub_product_id', [34,42])
-                ->whereNotNull('sub_product_id')->orderBy('id')  ->take(10)
-                ->get();
+        $products = SalesOrderProduct::whereBetween('sub_product_id', [34, 42])
+            ->whereNotNull('sub_product_id')->orderBy('id')->take(10)
+            ->get();
 
-            foreach ($products as $data) {
+        foreach ($products as $data) {
 
-               // Route card operations
-                $routeCardOperationIds = SubproductWiseOperation::where('subproduct_id', $data->sub_product_id)->whereNotNull('operation_id')
-                    ->pluck('operation_id')
-                    ->toArray();
+            // Route card operations
+            $routeCardOperationIds = SubproductWiseOperation::where('subproduct_id', $data->sub_product_id)->whereNotNull('operation_id')
+                ->pluck('operation_id')
+                ->toArray();
 
-                // Already added operations
-                $usedOperationIds = SOProductOperationDetails::where([
-                    'sub_product_id' => $data->sub_product_id,
-                    'so_id' => $data->so_id
-                ])
-                    ->pluck('operation_id')
-                    ->toArray();
- 
-                // Missing operations
-                $missingOperationIds = array_diff($routeCardOperationIds, $usedOperationIds);
+            // Already added operations
+            $usedOperationIds = SOProductOperationDetails::where([
+                'sub_product_id' => $data->sub_product_id,
+                'so_id' => $data->so_id
+            ])
+                ->pluck('operation_id')
+                ->toArray();
 
-                if (empty($missingOperationIds)) {
+            // Missing operations
+            $missingOperationIds = array_diff($routeCardOperationIds, $usedOperationIds);
+
+            if (empty($missingOperationIds)) {
+                continue;
+            }
+
+            // Build processed qty ONCE
+            $processedQtyRows = $this->buildProcessedQtyRows(
+                $data->measureunit,
+                $data
+            );
+
+            foreach ($missingOperationIds as $operationId) {
+
+                $op = SubproductWiseOperation::where('subproduct_id', $data->sub_product_id)
+                    ->where('operation_id', $operationId)
+                    ->first();
+
+                if (! $op) {
                     continue;
                 }
 
-                // Build processed qty ONCE
-                $processedQtyRows = $this->buildProcessedQtyRows(
-                    $data->measureunit,
-                    $data
+                $opMaster = DB::table('operation_masters')
+                    ->select('operation_qr_code', 'parameter_input')
+                    ->where('id', $operationId)
+                    ->first();
+
+                SOProductOperationDetails::firstOrCreate(
+                    [
+                        'so_id'          => $data->so_id,
+                        'sub_product_id' => $data->sub_product_id,
+                        'operation_id'   => $operationId,
+                    ],
+                    [
+                        'so_no'             => ErpSalesOrder::where('so_id', $data->so_id)->value('so_no') ?? '',
+                        'sales_order_product_id' => $data->id,
+                        'product_id'        => $op->product_master_id,
+                        'operation_name'    => $op->operation_name,
+                        'operation_stage'   => $op->sub_operations,
+                        'operation_qr_code' => $opMaster->operation_qr_code ?? '',
+                        'operation_status'  => $opMaster->parameter_input ?? '',
+                        'qty'               => $data->soquantity,
+                        'processed_qty'     => json_encode($processedQtyRows),
+                    ]
                 );
-
-                foreach ($missingOperationIds as $operationId) {
-
-                    $op = SubproductWiseOperation::where('subproduct_id', $data->sub_product_id)
-                        ->where('operation_id', $operationId)
-                        ->first();
-
-                    if (! $op) {
-                        continue;
-                    }
-
-                    $opMaster = DB::table('operation_masters')
-                        ->select('operation_qr_code', 'parameter_input')
-                        ->where('id', $operationId)
-                        ->first();
-
-                    SOProductOperationDetails::firstOrCreate(
-                        [
-                            'so_id'          => $data->so_id,
-                            'sub_product_id' => $data->sub_product_id,
-                            'operation_id'   => $operationId,
-                        ],
-                        [
-                            'so_no'             => ErpSalesOrder::where('so_id',$data->so_id)->value('so_no')??'',
-                            'sales_order_product_id' => $data->id,
-                            'product_id'        => $op->product_master_id,
-                            'operation_name'    => $op->operation_name,
-                            'operation_stage'   => $op->sub_operations,
-                            'operation_qr_code' => $opMaster->operation_qr_code ?? '',
-                            'operation_status'  => $opMaster->parameter_input ?? '',
-                            'qty'               => $data->soquantity,
-                            'processed_qty'     => json_encode($processedQtyRows),
-                        ]
-                    );
-                }
             }
+        }
         // });
+    }
+
+    public function update_sub_product(Request $request)
+    {
+        /* -----------------------------------------------------------------
+        | 1.  Validate & fetch the main Sales‑Order‑Product
+        *-----------------------------------------------------------------*/
+        $so_pid = $request->so_product_id;
+        $salesOrderProduct = SalesOrderProduct::find($so_pid);
+
+        if (! $salesOrderProduct) {
+            return response()->json(['error' => 'Sales Order Product not found.'], 404);
+        }
+
+        // Update the chosen sub‑product on the SOP itself
+        $salesOrderProduct->sub_product_id = $request->sub_product_id;
+        $salesOrderProduct->save();
+
+        $typeOfProduct = $salesOrderProduct->measureunit;      // e.g. SET / NOS
+        if ($typeOfProduct === 'SET') {
+            // if not added only 
+            $checkPass = PassSheet::where(['so_id' => $salesOrderProduct->so_id, 'subproduct_id' => $so_pid])->find('id');
+            if (empty($checkPass)) {
+                addPassSheetDetails($salesOrderProduct->cpoitemid, $salesOrderProduct->so_id);
+            }
+        }
+
+        $order = ErpSalesOrder::where('so_id', $salesOrderProduct->so_id)->first(['so_no', 'id']);
+
+        if ($order) {
+            $soNo = $order->so_no;
+            $orderId = $order->id;
+        }
+
+        /* -----------------------------------------------------------------
+        | 2.  Build once: processed‑qty JSON structure
+        *-----------------------------------------------------------------*/
+        $processedQtyRows = $this->buildProcessedQtyRows($typeOfProduct, $salesOrderProduct);
+
+        /* -----------------------------------------------------------------
+        | 3.  Loop through operations for the selected sub‑product
+        * -----------------------------------------------------------------*/
+        $operations = SubproductWiseOperation::where('subproduct_id', $request->sub_product_id)->get();
+
+        foreach ($operations as $op) {
+
+            $opMaster = DB::table('operation_masters')
+                ->select('operation_qr_code', 'parameter_input')
+                ->where('id', $op->operation_id)
+                ->first();
+
+            /* ------------ Composite key that identifies one row ---------- */
+            $key = [
+                'so_id' => $salesOrderProduct->so_id,
+                'sales_order_product_id' => $salesOrderProduct->id,
+                'operation_id' => is_numeric($op->operation_id) ? (int) $op->operation_id : null,
+            ];
+
+            /* ------------ Data needed when we first create the row -------- */
+            $createData = [
+                'so_no'             => $soNo,
+                'product_id'        => $op->product_master_id,
+                'sub_product_id'    => $op->subproduct_id,
+                'operation_name'    => $op->operation_name,
+                'operation_stage'   => $op->sub_operations,
+                'operation_qr_code' => $opMaster->operation_qr_code ?? '',
+                'operation_status' => $opMaster->parameter_input ?? '',
+                'qty' => $salesOrderProduct->soquantity, // ← set only on create
+                'processed_qty' => json_encode($processedQtyRows),
+            ];
+
+            /** @var SOProductOperationDetails $detail */
+            $detail = SOProductOperationDetails::firstOrCreate($key, $createData);
+
+            /* ------------ If it already existed, update only selected cols */
+            if (! $detail->wasRecentlyCreated) {
+                $detail->fill([
+                    // update anything *except* qty
+                    'so_no'             => $soNo,
+                    'product_id'        => $op->product_master_id,
+                    'sub_product_id'    => $op->subproduct_id,
+                    'operation_name'    => $op->operation_name,
+                    'operation_stage'   => $op->sub_operations,
+                    'operation_qr_code' => $opMaster->operation_qr_code ?? '',
+                    'operation_status'  => $opMaster->parameter_input ?? '',
+                    'processed_qty'     => json_encode($processedQtyRows),
+                ])->save();
+            }
+        }
+
+        /* -----------------------------------------------------------------
+           | 4.  Redirect to the correct screen
+        *----------------------------------------------------------------- */
+        return redirect('admin/sales-order-details/' . $orderId);
+    }
+
+    public function pass_sheet($sop_id)
+    {
+        $data = SalesOrderProduct::find($sop_id);
+        $so = ErpSalesOrder::where('so_id', $data->so_id)->first(['so_no', 'id', 'so_group']);
+        $subProductName = SubProduct::where('id', $data->sub_product_id)->value('sub_product_name');
+
+        $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
+
+        if ($pass_sheet->isEmpty()) {
+            $pass_sheet = PassSheet::where(['cpoitemid' => $data->cpoitemid, 'so_id' => $data->so_id])->get();
+        }
+        return view('sales-order.pass-sheet', compact('data', 'so', 'subProductName', 'pass_sheet', 'sop_id'));
+    }
+
+    public function route_card_preview(Request $request)
+    {
+        $data = SalesOrderProduct::find($request->id);
+        $saleOrder = ErpSalesOrder::where('so_id', $data->so_id)->first();
+        $getSubProductId = SalesOrderProduct::where('id', $request->id)->value('sub_product_id');
+
+        // $getOperationList = SOProductOperationDetails::where('sales_order_product_id', $request->id)
+        //                      ->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])
+        //                       ->orderByRaw("CASE WHEN sr_no IS NULL OR sr_no = '' THEN 1 ELSE 0 END")
+        //                       ->orderBy('sr_no')
+        //                      ->get();
+
+        $getOperationList = SubproductWiseOperation::with('operationData')
+            ->where(['subproduct_id' => $data->sub_product_id, 'product_master_id' => $data->product_id])
+            ->orderByRaw("CASE WHEN s_no IS NULL OR s_no = '' THEN 1 ELSE 0 END")
+            ->orderBy('s_no')
+            ->get();
+
+        // echo "<pre>";  print_r($getOperationList); exit;
+
+        return view('sales-order.route-card', compact('data', 'saleOrder', 'getOperationList'));
     }
 }

@@ -112,7 +112,7 @@
     <tr>
         @foreach($chunk as $operation)
             <td style="border:1px solid #000; text-align:center;">
-                <img src="{{ $operation->operation_qr_code }}" width="110" height="110"><br>
+                <img src="{{ optional($operation->operationData)->operation_qr_code }}" width="110" height="110"><br>
                 <span style="font-size:11px;">{{ $operation->operation_name }}</span>
             </td>
         @endforeach

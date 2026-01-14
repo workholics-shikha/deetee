@@ -337,7 +337,7 @@ if (!function_exists('splitPassNo')) {
 }
 
 if (!function_exists('addPassSheetDetails')) {
-    function addPassSheetDetails($sop_id)
+    function addPassSheetDetails($sop_id, $so_id)
     {
         $erp_response = callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $sop_id);
         $itemjson = $erp_response->json();
@@ -346,7 +346,7 @@ if (!function_exists('addPassSheetDetails')) {
             foreach ($itemjson as $item) { 
 
                 $passNos = splitPassNo($item['pass_no']);
-                $sop = SalesOrderProduct::where(['cpoitemid'=>$sop_id])->first();
+                $sop = SalesOrderProduct::where(['cpoitemid'=>$sop_id, 'so_id'=>$so_id])->first();
 
                 foreach ($passNos as $passNo) {
 
@@ -378,7 +378,7 @@ if (!function_exists('addPassSheetDetails')) {
                 }
             }
         }
-
+ 
         // Generate the QR code
         $passSheet = PassSheet::whereNull('pass_sheet_qr_code')->get();
         foreach ($passSheet as $sheet) {
