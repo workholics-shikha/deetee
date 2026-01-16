@@ -162,7 +162,6 @@ class SalesOrderController extends Controller
                     ];
                 }
             }
-
         } else { // NOS or other measure‑unit
             for ($i = 1; $i <= $sop->soquantity; $i++) {
                 $rows[] = [
@@ -462,7 +461,7 @@ class SalesOrderController extends Controller
         $salesOrderProduct->sub_product_id = $request->sub_product_id;
         $salesOrderProduct->save();
 
-        $typeOfProduct = $salesOrderProduct->measureunit;      // e.g. SET / NOS
+        $typeOfProduct = $salesOrderProduct->measureunit; // e.g. SET / NOS
         if ($typeOfProduct === 'SET') {
             // if not added only 
             $checkPass = PassSheet::where(['so_id' => $salesOrderProduct->so_id, 'subproduct_id' => $so_pid])->find('id');
@@ -560,20 +559,330 @@ class SalesOrderController extends Controller
         $saleOrder = ErpSalesOrder::where('so_id', $data->so_id)->first();
         $getSubProductId = SalesOrderProduct::where('id', $request->id)->value('sub_product_id');
 
-        // $getOperationList = SOProductOperationDetails::where('sales_order_product_id', $request->id)
-        //                      ->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])
-        //                       ->orderByRaw("CASE WHEN sr_no IS NULL OR sr_no = '' THEN 1 ELSE 0 END")
-        //                       ->orderBy('sr_no')
-        //                      ->get();
-
         $getOperationList = SubproductWiseOperation::with('operationData')
             ->where(['subproduct_id' => $data->sub_product_id, 'product_master_id' => $data->product_id])
             ->orderByRaw("CASE WHEN s_no IS NULL OR s_no = '' THEN 1 ELSE 0 END")
             ->orderBy('s_no')
             ->get();
 
-        // echo "<pre>";  print_r($getOperationList); exit;
-
         return view('sales-order.route-card', compact('data', 'saleOrder', 'getOperationList'));
     }
+
+    public function buildProcessedQtyRowsNew1()
+    {
+
+        $getSOProducts = DB::select(
+            "SELECT
+            sopod.*,
+            sop.measureunit
+            FROM sales_order_product_operation_details sopod
+            JOIN sales_order_products sop
+            ON sop.id = sopod.sales_order_product_id
+            WHERE sopod.qty1 IS NOT NULL
+            AND sopod.qty1 <> 0
+            AND sopod.qty1 <> sopod.qty
+            AND sopod.processed_qty NOT LIKE '%in-progress%'
+            AND sopod.processed_qty NOT LIKE '%partial%'
+            ORDER BY sopod.qty1 ASC;
+
+            "
+        );
+
+        print_r($getSOProducts);
+        exit;
+
+
+        $rows = [];
+
+        if ($type === 'SET') {
+            $passSheets = PassSheet::where([
+                'cpoitemid'      => $sop->cpoitemid,
+                'so_id'          => $sop->so_id,
+                'subproduct_id'  => $sop->sub_product_id,
+            ])->get(['id', 'qty']);
+
+            if ($passSheets->isEmpty()) {
+                throw new \RuntimeException('No pass sheets found for SET product.');
+            }
+
+            foreach ($passSheets as $sheet) {
+                for ($i = 1; $i <= (int) $sheet->qty; $i++) {
+                    $rows[] = [
+                        'pass_sheet_id'  => $sheet->id,
+                        'quantity'       => $i,        // each row represents 1 unit
+                        'status'         => 'not-started',
+                        'updated_by'     => 0,
+                        'completed_date' => null,     // better than ''
+                    ];
+                }
+            }
+        } else { // NOS or other measure‑unit
+            for ($i = 1; $i <= $sop->soquantity; $i++) {
+                $rows[] = [
+                    'quantity'   => $i,
+                    'status'     => 'not-started',
+                    'updated_by' => 0,
+                    'completed_date' => ''
+                ];
+            }
+        }
+        return $rows;
+    }
+
+    public function buildProcessedQtyRowsNew()
+    {
+        $items = DB::select("
+                SELECT
+                    sopod.id AS sopod_id,
+                    sopod.sales_order_product_id,
+                    sopod.qty,
+                    sopod.processed_qty,
+                    sop.measureunit,
+                    sop.soquantity,
+                    sop.cpoitemid,
+                    sop.so_id,
+                    sop.sub_product_id
+                FROM sales_order_product_operation_details sopod
+                JOIN sales_order_products sop
+                    ON sop.id = sopod.sales_order_product_id
+                WHERE sopod.qty IS NOT NULL
+                AND sopod.qty <> 0
+                AND (sopod.qty1 IS NULL OR sopod.qty1 <> sopod.qty)
+                ORDER BY sopod.id ASC
+            ");
+
+        foreach ($items as $row) {
+
+            $targetQty = (int) $row->qty;
+            if ($targetQty <= 0) {
+                continue;
+            }
+
+            // decode existing JSON safely
+            $existing = [];
+            if (!empty($row->processed_qty)) {
+                $decoded = json_decode($row->processed_qty, true);
+                if (is_array($decoded)) {
+                    $existing = $decoded;
+                }
+            }
+
+            // index existing rows by quantity so we can preserve status/updated_by/etc.
+            $byQty = [];
+            foreach ($existing as $e) {
+                if (!is_array($e) || !isset($e['quantity'])) continue;
+                $q = (int) $e['quantity'];
+                if ($q > 0) $byQty[$q] = $e;
+            }
+
+            $newRows = [];
+
+            if ($row->measureunit === 'SET') {
+
+                $passSheets = PassSheet::where([
+                    'cpoitemid'     => $row->cpoitemid,
+                    'so_id'         => $row->so_id,
+                    'subproduct_id' => $row->sub_product_id,
+                ])->get(['id', 'qty']);
+
+                // If no pass sheets, fallback to simple 1..qty (otherwise you'll blow up jobs)
+                if ($passSheets->isEmpty()) {
+                    for ($i = 1; $i <= $targetQty; $i++) {
+                        $old = $byQty[$i] ?? [];
+                        $newRows[] = [
+                            'quantity'       => $i,
+                            'status'         => $old['status'] ?? 'not-started',
+                            'updated_by'     => (int)($old['updated_by'] ?? 0),
+                            'completed_date' => $old['completed_date'] ?? null,
+                            'pass_sheet_id'  => $old['pass_sheet_id'] ?? null,
+                        ];
+                    }
+                } else {
+                    // Build sequential quantities across all pass sheets, but cap at targetQty
+                    $seq = 1;
+                    foreach ($passSheets as $sheet) {
+                        for ($i = 1; $i <= (int)$sheet->qty; $i++) {
+                            if ($seq > $targetQty) break 2;
+
+                            $old = $byQty[$seq] ?? [];
+                            $newRows[] = [
+                                'pass_sheet_id'  => (int) $sheet->id,
+                                'quantity'       => $seq,
+                                'status'         => $old['status'] ?? 'not-started',
+                                'updated_by'     => (int)($old['updated_by'] ?? 0),
+                                'completed_date' => $old['completed_date'] ?? null,
+                            ];
+                            $seq++;
+                        }
+                    }
+
+                    // If pass sheets total < targetQty, pad remaining
+                    for (; $seq <= $targetQty; $seq++) {
+                        $old = $byQty[$seq] ?? [];
+                        $newRows[] = [
+                            'pass_sheet_id'  => $old['pass_sheet_id'] ?? null,
+                            'quantity'       => $seq,
+                            'status'         => $old['status'] ?? 'not-started',
+                            'updated_by'     => (int)($old['updated_by'] ?? 0),
+                            'completed_date' => $old['completed_date'] ?? null,
+                        ];
+                    }
+                }
+            } else {
+                // NOS / others: simple 1..qty
+                for ($i = 1; $i <= $targetQty; $i++) {
+                    $old = $byQty[$i] ?? [];
+                    $newRows[] = [
+                        'quantity'       => $i,
+                        'status'         => $old['status'] ?? 'not-started',
+                        'updated_by'     => (int)($old['updated_by'] ?? 0),
+                        'completed_date' => $old['completed_date'] ?? null,
+                    ];
+                }
+            }
+
+            // Save updated JSON back
+            DB::table('sales_order_product_operation_details')
+                ->where('id', $row->sopod_id)
+                ->update([
+                    'processed_qty' => json_encode($newRows),
+                ]);
+        }
+
+        return true;
+    }
+ 
+    public function syncProcessedQtyJsonByQty()
+    {
+        $items = DB::select("
+            SELECT
+                sopod.id AS sopod_id,
+                sopod.qty,
+                sopod.processed_qty,
+                sop.measureunit,
+                sop.cpoitemid,
+                sop.so_id,
+                sop.sub_product_id
+            FROM sales_order_product_operation_details sopod
+            JOIN sales_order_products sop
+            ON sop.id = sopod.sales_order_product_id
+            WHERE sopod.qty IS NOT NULL
+            AND sopod.qty <> 0
+            AND (sopod.qty1 IS NULL OR sopod.qty1 <> sopod.qty)
+            ORDER BY sopod.id ASC
+        ");
+
+        $updatedIds = [];
+        $skippedIds = []; // skipped because we'd delete in-progress/partial/completed beyond qty
+
+        foreach ($items as $row) {
+
+            $targetQty = (int) $row->qty;
+            if ($targetQty <= 0) {
+                continue;
+            }
+
+            // decode existing JSON safely
+            $existing = [];
+            if (!empty($row->processed_qty)) {
+                $decoded = json_decode($row->processed_qty, true);
+                if (is_array($decoded)) $existing = $decoded;
+            }
+
+            // index by quantity
+            $byQty = [];
+            foreach ($existing as $e) {
+                if (!is_array($e) || !isset($e['quantity'])) continue;
+                $q = (int) $e['quantity'];
+                if ($q > 0) $byQty[$q] = $e;
+            }
+
+            $oldMaxQty = empty($byQty) ? 0 : max(array_keys($byQty));
+
+            // block shrinking if it would delete active states
+            if ($targetQty < $oldMaxQty) {
+                for ($q = $targetQty + 1; $q <= $oldMaxQty; $q++) {
+                    if (!isset($byQty[$q])) continue;
+                    $st = strtolower((string)($byQty[$q]['status'] ?? ''));
+                    if (in_array($st, ['in-progress', 'partial', 'completed'], true)) {
+                        $skippedIds[] = $row->sopod_id;
+                        continue 2;
+                    }
+                }
+            }
+
+            // build resized JSON
+            $newRows = [];
+            for ($q = 1; $q <= $targetQty; $q++) {
+                if (isset($byQty[$q])) {
+                    $rowData = $byQty[$q];
+                    $rowData['quantity'] = $q;
+                    $newRows[] = $rowData;
+                } else {
+                    $newRows[] = [
+                        'quantity'       => $q,
+                        'status'         => 'not-started',
+                        'updated_by'     => 0,
+                        'completed_date' => null,
+                    ];
+                }
+            }
+
+            // SET: attach pass_sheet_id only if missing
+            if ($row->measureunit === 'SET') {
+                $passSheets = PassSheet::where([
+                    'cpoitemid'     => $row->cpoitemid,
+                    'so_id'         => $row->so_id,
+                    'subproduct_id' => $row->sub_product_id,
+                ])->get(['id', 'qty']);
+
+                if ($passSheets->isNotEmpty()) {
+                    $map = [];
+                    $seq = 1;
+                    foreach ($passSheets as $sheet) {
+                        for ($i = 1; $i <= (int)$sheet->qty; $i++) {
+                            if ($seq > $targetQty) break 2;
+                            $map[$seq] = (int)$sheet->id;
+                            $seq++;
+                        }
+                    }
+                    foreach ($newRows as &$nr) {
+                        $q = (int)$nr['quantity'];
+                        if (empty($nr['pass_sheet_id']) && isset($map[$q])) {
+                            $nr['pass_sheet_id'] = $map[$q];
+                        }
+                    }
+                    unset($nr);
+                }
+            }
+
+            // compare old vs new to avoid fake updates
+            $oldJson = json_encode(array_values($existing));
+            $newJson = json_encode($newRows);
+
+            if ($oldJson === $newJson && (int)$row->qty === (int)($row->qty1 ?? 0)) {
+                // nothing really changed (qty1 not selected in query; ignore if you want)
+                continue;
+            }
+
+            $affected = DB::table('sales_order_product_operation_details')
+                ->where('id', $row->sopod_id)
+                ->update([
+                    'processed_qty' => $newJson,
+                    'qty1'          => $targetQty,
+                ]);
+
+            if ($affected > 0) {
+                $updatedIds[] = $row->sopod_id;
+            }
+        }
+
+        return [
+            'updated_count' => count($updatedIds),
+            'updated_ids'   => $updatedIds,
+            'skipped_count' => count($skippedIds),
+            'skipped_ids'   => $skippedIds,
+        ];
+    }
+
 }

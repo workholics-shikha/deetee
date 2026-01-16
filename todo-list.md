@@ -332,3 +332,12 @@ DELETE FROM subproduct_wise_operation WHERE `subproduct_wise_operation`.`id` = 6
 INSERT INTO `subproduct_wise_operation` (`id`, `product_master_id`, `subproduct_id`, `operation_id`, `operation_name`, `sub_operations`, `unit`, `parameter1_label`, `parameter1_value`, `parameter2_label`, `parameter2_value`, `parameter1_value_set`, `parameter2_value_set`, `operation_type`, `fixed_ICT`, `created_at`, `updated_at`, `operation_availabilty`) VALUES (NULL, '2', '5', '22', 'Grinding-1', 'Bore Semi-final & Final Grinding of coupling <br> Both side journal final & Berral semi final grinding only of roll.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1'), (NULL, '2', '5', '23', 'Grinding-2', 'Berral grinding with coupling <br> Journal Dia & Facing grinding - Both Side.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1');
  
 INSERT INTO `subproduct_wise_operation` (`id`, `product_master_id`, `subproduct_id`, `operation_id`, `operation_name`, `sub_operations`, `unit`, `parameter1_label`, `parameter1_value`, `parameter2_label`, `parameter2_value`, `parameter1_value_set`, `parameter2_value_set`, `operation_type`, `fixed_ICT`, `created_at`, `updated_at`, `operation_availabilty`) VALUES (NULL, '2', '6', '22', 'Grinding-1', 'Bore Semi-final & Final Grinding of coupling <br> Both side journal final & Berral semi final grinding only of roll.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1'), (NULL, '2', '6', '23', 'Grinding-2', 'Berral grinding with coupling <br> Journal Dia & Facing grinding - Both Side.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1');
+
+<!-- // used this query on 15-01-2026 -->
+
+SELECT * FROM `sales_order_product_operation_details` WHERE `so_id` IN (11337) ORDER BY `sales_order_product_operation_details`.`sales_order_product_id` ASC
+
+
+<!-- // do not touch in-progess data  -->
+ 
+SELECT * FROM sales_order_product_operation_details WHERE (processed_qty LIKE '%in-progress%' OR processed_qty LIKE '%partial%') AND qty IS NOT NULL AND (qty1 IS NULL OR qty1 <> qty) ORDER BY id ASC

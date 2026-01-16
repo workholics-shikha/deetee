@@ -149,7 +149,7 @@ class QRCodeController extends Controller
         if ($type   ==   'Product') {
             $qrCode = $products->product_qr_code;
             $id     = $products->id;
- 
+
             deleteImage($qrCode);
 
             // == Generate the QR code 
@@ -327,7 +327,7 @@ class QRCodeController extends Controller
 
     public function generateQrCard(Request $request)
     {
-        $qr_value   = $request->qr_code;
+        $qr_value = $request->qr_code;
         $qr_use_for = $request->qr_use_for;
 
         // Generate the QR code
@@ -351,7 +351,6 @@ class QRCodeController extends Controller
 
         // Save file to public directory
         file_put_contents($fullPath, $result->getString());
-
 
         $path = 'generic-qrcodes/' . $fileName;
 
@@ -459,6 +458,54 @@ class QRCodeController extends Controller
 
         return response()->json([
             'message' => "✅ Successfully generated QR codes for {$generatedCount} machine(s)."
+        ]);
+    }
+
+    public function generateGenericQrCard()
+    {
+        // Get all machines
+        $machines = DB::table('generic_qrcodes')->get();
+        $generatedCount = 0;
+
+        foreach ($machines as $machine) {
+
+            $result = Builder::create()
+                ->data($machine->code)
+                ->size(300)
+                ->margin(10)
+                ->build();
+
+            // Clean file name to avoid special characters
+           
+            $fileName = $machine->qr_code;
+            $relativePath = 'storage/generic-qrcodes/' . $fileName;
+            $fullPath = public_path($relativePath);
+
+            // Ensure directory exists
+            $directory = dirname($fullPath);
+            if (!File::exists($directory)) {
+                File::makeDirectory($directory, 0755, true);
+            }
+
+            // Save file to public directory
+            file_put_contents($fullPath, $result->getString());
+
+            $path = 'generic-qrcodes/' . $fileName;
+
+            // Save to storage (public disk)
+            Storage::disk('public')->put($path, $result->getString());
+
+            // Insert DB record
+            DB::table('generic_qrcodes')
+                ->where('id', $machine->id)
+                ->update([
+                    'qr_code'    => $fileName,
+                    'updated_at' => now(),
+                ]);
+        }
+
+        return response()->json([
+            'message' => "✅ Successfully generated QR codes for {$generatedCount}."
         ]);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ErpSalesOrder, OperationMaster, PassSheet, SalesOrderProduct, SalesOrderTracking, SOProductOperationDetails, SubProduct, SubproductWiseOperation};
+use App\Models\{ErpSalesOrder, PassSheet, SalesOrderProduct, SalesOrderTracking, SOProductOperationDetails, SubProduct, SubproductWiseOperation};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 

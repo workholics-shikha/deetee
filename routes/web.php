@@ -218,3 +218,9 @@ Route::get('generateNewQrCodes', [ImportController::class, 'generateNewQrCodes']
 Route::get('generateNewQrCodes2', [ImportController::class, 'generateNewQrCodes2'])->name('generateNewQrCodes2');
 Route::get('addPassSheetDetails', [ImportController::class, 'addPassSheetDetails'])->name('addPassSheetDetails');
 Route::get('addMissingOperation', [SalesOrderController::class, 'addMissingOperation'])->name('addMissingOperation');
+
+Route::get('generateGenericQrCard', [QRCodeController::class, 'generateGenericQrCard'])->name('generateGenericQrCard');
+
+// 16-01-2026
+Route::get('buildProcessedQtyRowsNew', [SalesOrderController::class, 'buildProcessedQtyRowsNew'])->name('buildProcessedQtyRowsNew');
+Route::get('syncProcessedQtyJsonByQty', [SalesOrderController::class, 'syncProcessedQtyJsonByQty'])->name('syncProcessedQtyJsonByQty');
