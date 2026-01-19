@@ -103,21 +103,18 @@
                                                 <h6 class="text-445B64 fs-14">Filter: From Date - To Date</h6>
                                                 <div class="row">
                                                     <div class="col-12 col-lg-6 d-flex align-items-center mb-lg-0 mb-3">
-                                                        <input type="date" name="from_date" class="form-control" required
-                                                            value="{{ request('from_date') }}">
+                                                        <input type="date" name="from_date" class="form-control" required value="{{ request('from_date') ?? \Carbon\Carbon::parse($fromDate)->format('Y-m-d') }}">
                                                     </div>
                                                     <div class="col-12 col-lg-6 d-flex align-items-center mb-lg-0 mb-3">
-                                                        <input type="date" name="to_date" class="form-control" required
-                                                            value="{{ request('to_date') }}">
+                                                        <input type="date" name="to_date" class="form-control" required value="{{ request('to_date') ?? \Carbon\Carbon::parse($toDate)->format('Y-m-d') }}">
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-12 d-flex align-items-center mb-3">
-                                            <button type="submit"
-                                                class="btn btn-skyBlue btn-sm rounded-2 me-2">Submit</button>
+                                            <button type="submit" class="btn btn-skyBlue btn-sm rounded-2 me-2"> Submit </button>
                                             <a href="{{ url()->current() }}" class="btn btn-skyBlue btn-sm rounded-2">
-                                                <i class="fa-solid fa-arrow-rotate-right"></i>
+                                                <i class="fa-solid fa-arrow-rotate-right"> </i>
                                             </a>
                                         </div>
                                         <hr>
@@ -187,24 +184,16 @@
                                             <table class="table rounded-3 mb-0">
                                                 <thead>
                                                     <tr>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Date
-                                                        </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">
-                                                            Machine </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> SO No.
-                                                        </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">
-                                                            Product </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">
-                                                            Sub-Product </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">
-                                                            Pass Item </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">
-                                                            Process </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">
-                                                            Duration </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">
-                                                            Quantity </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">Start Date </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">End Date </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Machine </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> SO No. </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Product </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Sub-Product </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Pass Item </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Process </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Duration </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Quantity </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -214,12 +203,18 @@
                                                                 <td scope="row" class="p-3">
                                                                     <div class="">
                                                                         <h6 class="text-445B64 mb-0 fw-medium">
+                                                                            {{ \Carbon\Carbon::parse($history->start_date)->format('Y-m-d') }}
+                                                                        </h6>
+                                                                    </div>
+                                                                </td>
+                                                                <td scope="row" class="p-3">
+                                                                    <div class="">
+                                                                        <h6 class="text-445B64 mb-0 fw-medium">
                                                                             {{ \Carbon\Carbon::parse($history->end_date)->format('Y-m-d') }}
                                                                         </h6>
                                                                     </div>
                                                                 </td>
-                                                                <td class="text-445B64 p-3">
-                                                                    {{ $history->machine->machine }} </td>
+                                                                <td class="text-445B64 p-3"> {{ $history->machine->machine }} </td>
 
                                                                 <td class="text-445B64 p-3">
                                                                     <div class="d-flex align-items-center">

@@ -169,8 +169,7 @@ class ReportsController extends Controller
             ->whereBetween(DB::raw('DATE(eso.so_date)'), [$fromDate->toDateString(), $toDate->toDateString()])
             ->groupBy(DB::raw('DATE(eso.so_date)'))
             ->orderBy(DB::raw('DATE(eso.so_date)'), 'DESC');
-
-          // $productionOverview = $production->paginate(10)->appends($request->all());;
+ 
           $productionOverview = $production->get();
 
         // ========= Count handling =========

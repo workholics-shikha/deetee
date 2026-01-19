@@ -1196,6 +1196,8 @@ class SalesOrderController extends Controller
 
         $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
 
+        // print_r($getOperationsIds); exit;
+
         $getDetails = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
 
         $operations = [];

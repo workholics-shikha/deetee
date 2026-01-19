@@ -92,7 +92,6 @@ class UserController extends Controller
 
     public function save(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'unit' => 'required',
@@ -122,8 +121,8 @@ class UserController extends Controller
         $userData['username'] = $username = generateCustomUsername($name);
 
         if ($request->hasFile('image')) {
-            $attachment = fileUpload($request->file('image'), 'profile_images'); // image upload ===
-            $userData['profile_image']  =  $attachment;
+            $attachment = fileUpload($request->file('image'), 'profile_images'); // === image upload ===
+            $userData['profile_image'] = $attachment;
         }
 
         $user = User::create($userData);
@@ -294,32 +293,7 @@ class UserController extends Controller
         }
 
         exit;
-        /*
-        $salesOrderProduct = PassSheet::all();
-            
-          foreach ($salesOrderProduct as $so_products) {
-
-            // Generate the QR code
-             $result = Builder::create()
-                ->data($so_products->id.';PassScan')
-                ->size(300) // Set size in pixels
-                ->margin(10) // Set margin in pixels
-                ->build();
-
-            $name = $so_products->id . '-' . time() . '.png';
-
-            // Path where you want to save the QR code image
-            $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
-
-            // Save the QR code image to storage (public disk)
-            Storage::disk('public')->put($path, $result->getString());
-
-            // Update the machine record with the QR code path
-            PassSheet::where('id', $so_products->id)->update(['pass_sheet_qr_code' => $name]);  
-            
-          }
-            exit; */
-
+        
         $salesOrderProduct = SalesOrderProduct::select('cpoitemid')->where(['scr_status' => 'Scrutinized', 'measureunit' => 'SET'])->get();
 
         // Insert each machine, generate its QR code, and update the machine_qr_code field
@@ -359,149 +333,11 @@ class UserController extends Controller
                     ]);
                 }
             }
-
-            // $salesOrderProduct = SalesOrderProduct::all();
-            // Generate the QR code
-            /* $result = Builder::create()
-                ->data($so_products->id)
-                ->size(300) // Set size in pixels
-                ->margin(10) // Set margin in pixels
-                ->build();
-
-            $name = $so_products->id . '-' . time() . '.png';
-
-            // Path where you want to save the QR code image
-            $path = 'so-product-qrcodes/' . $name; // unique filename
-
-            // Save the QR code image to storage (public disk)
-            Storage::disk('public')->put($path, $result->getString());
-
-            // Update the machine record with the QR code path
-            SalesOrderProduct::where('id', $so_products->id)->update(['pass_sheet_qr_code' => $name]); */
+ 
         }
 
         exit;
-        // productsss ====
-
-        /* $products = DB::table('product_masters')->where('id', '>', '43')->get();
-
-        // Insert each machine, generate its QR code, and update the machine_qr_code field
-        foreach ($products as $product) {
-            // == Insert the machine record and get its ID
-            $jsonData   =  ['id' => $product->id, 'product' => $product->erp_product];
-
-            $jsonString =  json_encode($jsonData);
-
-            // == Generate the QR code 
-            $result = Builder::create()
-                ->data($product->id)
-                ->size(300) // Set size in pixels
-                ->margin(10) // Set margin in pixels
-                ->build();
-
-            $name = 'qr_' . $product->unit . uniqid() . '.png';
-
-            // Path where you want to save the QR code image
-            $path2 = 'product-qrcodes/' . $name; // unique filename
-
-            // Save the QR code image to storage (public disk)
-            Storage::disk('public')->put($path2, $result->getString());
-
-            // Update the machine record with the QR code path
-            DB::table('product_masters')
-                ->where('id', $product->id)
-                ->update(['product_qr_code' => $name]);
-        } */
-
-        /* $users = DB::table('users')->where('role','!=',1)->get();
-
-        // Insert each machine, generate its QR code, and update the machine_qr_code field
-        foreach ($users as $user) {
-            // Insert the machine record and get its IDph
-            $jsonData = ['id'=> $user->id, 'type'=> 'user', 'role'=> $user->role, 'name'=> $user->name, 'phone'=> $user->phone, 'email'=> $user->email, 'username'=>$user->username];
-
-            $jsonString = json_encode($jsonData);
- 
-            // Generate the QR code
-            $result = Builder::create()
-                ->data($user->id)
-                ->size(300) // Set size in pixels
-                ->margin(10) // Set margin in pixels
-                ->build();
-
-            // $name = $user->id.'-' . time() . '.png';
-            $name = 'qr_'.$user->id . uniqid() . '.png';
- 
-            // Path where you want to save the QR code image
-            $path = 'user-qrcodes/' . $name; // unique filename
-
-            // Save the QR code image to storage (public disk)
-            Storage::disk('public')->put($path, $result->getString());
-
-            // Update the machine record with the QR code path
-            DB::table('users')->where('id', $user->id)->update(['user_qr_code' => $name]);
-
-        }
-
-        // machine ===
-
-         $machines = DB::table('machine_master')->get();
-
-        // Insert each machine, generate its QR code, and update the machine_qr_code field
-        foreach ($machines as $machine) {
-            // Insert the machine record and get its IDph
-            $jsonData = ['id' => $machine->id, 'machine' => $machine->machine];
-
-            $jsonString = json_encode($jsonData);
-
-            // Generate the QR code
-            $result = Builder::create()
-                ->data($machine->id)
-                ->size(300) // Set size in pixels
-                ->margin(10) // Set margin in pixels
-                ->build();
-
-            $name = 'qr_'.$machine->machine . '-' . uniqid() . '.png';
-
-            // Path where you want to save the QR code image
-            $path1 = 'machine-qrcodes/' . $name; // unique filename
-
-            // Save the QR code image to storage (public disk)
-            Storage::disk('public')->put($path1, $result->getString());
-
-            // Update the machine record with the QR code path
-            DB::table('machine_master')
-                ->where('id', $machine->id)
-                ->update(['machine_qr_code' => $name]);
-        }  
- 
-        // SO ====
-
-        $erpSalesOrders = ErpSalesOrder::all();
         
-        foreach ($erpSalesOrders as $salesOrder) {
-   
-            // == Generate the QR code 
-            $result = Builder::create()
-                ->data($salesOrder->id)
-                ->size(300) // Set size in pixels
-                ->margin(10) // Set margin in pixels
-                ->build();
-
-            $nameSO  = 'qr_'.$salesOrder->id. uniqid() . '.png';
-
-            // Path where you want to save the QR code image
-            $path2 = 'so-qrcodes/' . $nameSO; // unique filename
-
-            // Save the QR code image to storage (public disk)
-            Storage::disk('public')->put($path2, $result->getString());
-
-            // Update the machine record with the QR code path
-            ErpSalesOrder::where('id', $salesOrder->id)->update(['so_qr_code' => $nameSO]);
-
-        } 
-
-      */
     }
 
     public function generateQRForPass()
@@ -561,21 +397,45 @@ class UserController extends Controller
         // === Date Filters ===
         $startDate = $request->input('from_date');
         $endDate   = $request->input('to_date');
-
-        if ($startDate && $endDate) {
+  
+        /* if ($startDate && $endDate) {
             $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
             $toDate   = Carbon::parse($endDate)->endOfDay();
-        } elseif ($startDate) {
+        } else if ($startDate) {
             $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
             $toDate   = Carbon::parse($startDate)->endOfDay();
-        } else {
+        } else { echo 'elseeeeeeeeeeeee';
             // default last 7 days
             $startOfDay = now()->subDays(6)->startOfDay();
 
             // default → today
             $fromDate = today()->startOfDay();
             $toDate = today()->endOfDay();
+        } */
+
+        // === Date Filters ===
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+
+        if ($startDate && $endDate) {
+            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
+            $toDate   = Carbon::parse($endDate)->endOfDay();
+
+        } elseif ($startDate) {
+            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
+            $toDate   = Carbon::parse($startDate)->endOfDay();
+
+        } else {
+            // default last 7 days (including today)
+            $fromDate = $startOfDay = now()->subDays(6)->startOfDay();
+            $toDate   = now()->endOfDay();
         }
+ 
+        // echo "<pre>"; 
+        // print_r($fromDate);  echo "<br>"; 
+        // print_r($toDate); 
+        
+        // exit;
 
         // Days count
         $dayCount = $fromDate->diffInDays($toDate) + 1;
@@ -610,11 +470,15 @@ class UserController extends Controller
                 'subProduct:id,sub_product_name'
             ])
             ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
-            ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id', 'pass_id') // ✅ added missing groupBys
-            ->get();
+            ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id', 'pass_id')  // ✅ added missing groupBys
+            ->orderBy(DB::raw('DATE(end_date_time)'),'DESC')->get();
 
-         // echo "<pre>"; print_r($soHistory->toArray()); exit;
-
+        // Print it BEFORE ->get()
+        // dd([
+        //     'sql' => $soHistory->toSql(),
+        //     'bindings' => $soHistory->getBindings(),
+        // ]);
+ 
         // === Production Graph (last 7 days) ===
         // Step 1: build date range
         $period = CarbonPeriod::create($startOfDay, $toDate);
@@ -660,7 +524,9 @@ class UserController extends Controller
             'soHistory',
             'count7Days',
             'dayCount',
-            'labels'
+            'labels',
+            'fromDate',
+            'toDate'
         ));
     }
 
