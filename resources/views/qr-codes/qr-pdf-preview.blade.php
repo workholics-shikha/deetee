@@ -33,7 +33,7 @@
             .pdf-header .unit {
                 font-size: 16px;
                 text-align: right;
-            } 
+            }
 
             table {
                 width: 100%;
@@ -90,32 +90,33 @@
                 </tr>
             </thead>
             <tbody id="myTableBody">
-                          @php $i = 0; @endphp
-                            @foreach($data as $operation)
-                                @if($i % 4 == 0)
-                                    <tr>
-                                @endif
-                                <td style="text-align:center;">
-                                    <img width="130" height="130" src="{{ asset('storage/generic-qrcodes') . '/' . $operation->qr_code }}" >    
-                                    <!--<p class="m-2">{{ $operation->code }}</p>-->
-                                    <p class="m-2">{{ $operation->qr_use_for }}</p>
-                                </td>
-                                @php $i++; @endphp
-                                @if($i % 4 == 0)
-                                    </tr>
-                                @endif
-                                @if($i % 12 == 0)
-                                    <div style="page-break-after: always;" style="height:100px"></div>
-                                @endif
-                            @endforeach
-                            @if($i % 4 != 0)
-                                </tr>
-                            @endif
+                @php $i = 0; @endphp
+                @foreach($data as $operation)
+                @if($i % 4 == 0)
+                <tr>
+                    @endif
+                    <td style="text-align:center;">
+                        <img width="130" height="130"
+                            src="{{ asset('storage/generic-qrcodes') . '/' . $operation->qr_code }}">
+
+                        <p class="m-2">{{ $operation->qr_use_for }}</p>
+                    </td>
+                    @php $i++; @endphp
+                    @if($i % 4 == 0)
+                </tr>
+                @endif
+                @if($i % 12 == 0)
+                <div style="page-break-after: always;" style="height:100px"></div>
+                @endif
+                @endforeach
+                @if($i % 4 != 0)
+                </tr>
+                @endif
             </tbody>
         </table>
 
         <!-- Footer -->
-        <div class="footer d-flex flex-column align-items-center flex-wrap align-content-stretch" >
+        <div class="footer d-flex flex-column align-items-center flex-wrap align-content-stretch">
             Generated Document
         </div>
     </div>

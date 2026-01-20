@@ -57,13 +57,7 @@
                                 <div class="col-12 col-md-4 col-xl-3 mb-3">
                                     <h6 class="text-445B64 mb-1">Unit</h6>
                                     <h6 class="text-0D161A fw-medium"> {{ $user_data->unit_name }}</h6>
-                                </div>
-                                {{-- <div class="col-12 col-md-4 col-xl-3 mb-3">
-                                    <h6 class="text-445B64 mb-2">Group</h6>
-                                    <h6 class="text-0D161A fw-medium">
-                                        <span class="rounded-pill bg-D5FFCC text-success fw-normal px-2 py-1 ms-2"> B </span>
-                                    </h6>
-                                </div> --}}
+                                </div> 
                             </div>
                         </div>
                     </div>

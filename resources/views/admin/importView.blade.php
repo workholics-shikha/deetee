@@ -3,7 +3,6 @@
 @section('content')
 
     <!-- Main Content Area Start -->
-
     <div class="main-content-area">
         <div class="main-content">
             <div class="row">
@@ -20,8 +19,7 @@
                             </div>
                         </div>
                     </div>
-
-
+ 
                     {{-- Import Machine Data --}}
                     <div class="card border-0 rounded-3">
                         <div class="card-body">
@@ -194,7 +192,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

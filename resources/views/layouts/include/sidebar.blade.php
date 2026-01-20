@@ -130,6 +130,5 @@
         <a class="flex-sm-fill text-start nav-link mb-2" aria-current="page" href="{{ route('admin.logout') }}">
             <span class="sidebar-icon"><i class="fas fa-sign-out" aria-hidden="true"></i></span>
             <span class=""> Logout </span> </a>
-
     </nav>
 </div>

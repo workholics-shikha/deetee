@@ -30,14 +30,7 @@
                                     <h6 class="text-445B64">Under Maintenance/Breakdown</h6>
                                     <h4 class="text-0D161A mb-0 fw-semibold">{{ $count['unavailableMachines'] }}</h4>
                                 </div>
-                            </div>
-                            <!-- Available -->
-                            {{-- <div class="col-6 col-md-3">
-                                <div class="pe-2 pe-lg-0">
-                                    <h6 class="text-445B64">Breakdown</h6>
-                                    <h4 class="text-0D161A mb-0 fw-semibold">{{ $count['unavailableProduct'] }}</h4>
-                                </div>
-                            </div> --}}
+                            </div> 
                         </div>
                     </div>
                 </div>

@@ -51,10 +51,7 @@
                                 <div class="table-responsive">
                                     <table class="table rounded-3" id="myTable">
                                         <thead>
-                                            <tr>
-                                                {{-- <th scope="col" class="text-center">
-                                                    <input class="form-check-input table-checkbox" type="checkbox" value="" id="flexCheckDefault" />
-                                                </th> --}}
+                                            <tr> 
                                                 <th scope="col" class="text-445B64 p-3"> Name </th>
                                                 <th scope="col" class="text-445B64 p-3"> Unit </th>
                                                 <th scope="col" class="text-445B64 p-3"> Parameter Input</th>
