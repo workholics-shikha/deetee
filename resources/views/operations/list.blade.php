@@ -67,7 +67,7 @@
                                     </table>
                                     <!-- Pagination Section -->
                                     <div class="pagination d-flex justify-content-center" id="paginationLinks">
-                                    {{ $records->appends(request()->query())->links() }}
+                                      {{ $records->appends(request()->query())->links() }}
                                     </div>
 
                                 </div>

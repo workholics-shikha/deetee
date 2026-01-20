@@ -114,6 +114,12 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
 
     Route::group(['middleware' => ['auth', 'permission:reports']], function () {
         Route::match(['get', 'post'], 'admin/reports', [ReportsController::class, 'index'])->name('admin.reports');
+
+        Route::match(['get', 'post'], 'admin/so-completion-tracking', [ReportsController::class, 'so_completion_tracking'])->name('admin.so-completion-tracking');
+        Route::match(['get', 'post'], 'admin/so-completion-tracking-page', [ReportsController::class, 'so_completion_tracking_page'])->name('admin.so-completion-tracking-page');
+
+        Route::match(['get', 'post'], 'admin/so-roll-tracking', [ReportsController::class, 'so_roll_tracking'])->name('admin.so-roll-tracking');
+        Route::match(['get', 'post'], 'admin/so-roll-tracking-page', [ReportsController::class, 'so_roll_tracking_page'])->name('admin.so-roll-tracking-page');
     });
 
     Route::get('admin/updateCompletedCount', [ReportsController::class, 'updateCompletedCount']);

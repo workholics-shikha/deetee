@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\{SalesOrderTracking, SOProductOperationDetails};
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-
+use Carbon\Carbon;
 
 class ReportsController extends Controller
 {
@@ -16,7 +15,7 @@ class ReportsController extends Controller
 
         set_time_limit(300); // seconds
         ini_set('max_execution_time', 300);
- 
+
         $unit      = $request->input('unit'); // 1-Tooling, 2-RMR, 3-TMR
         $tab       = $request->input('tab');
         $startDate = $request->input('from_date');
@@ -30,6 +29,9 @@ class ReportsController extends Controller
         $toDate = $endDate
             ? Carbon::parse($endDate)->endOfDay()
             : now()->endOfDay();
+
+            $defaultFromDate = now()->subDays(6)->startOfDay();
+            $defaultToDate = now()->endOfDay();
 
         // ========= Tab 3 - Maintenance History =========
         $query = DB::table('machine_health_monitorings as m')
@@ -51,8 +53,7 @@ class ReportsController extends Controller
             ->whereBetween('m.start_date_time', [$fromDate, $toDate])
             ->orderBy('m.start_date_time', 'DESC');
 
-        $maintenanceHistory = $query->paginate(10)->appends($request->all());
-        // $maintenanceHistory = $query->get();
+        $maintenanceHistory = $query->take(PAGE_NO)->get();
 
         // ========= Tab 1 - MIS - Maintenance Overview =========
         $query1 = DB::table('machine_health_monitorings as m')
@@ -69,12 +70,10 @@ class ReportsController extends Controller
             ->whereBetween(DB::raw('DATE(m.created_at)'), [$fromDate->toDateString(), $toDate->toDateString()])
             ->groupBy(DB::raw('DATE(m.created_at)'), 'm.monitor_for', 'mm.unit_name')
             ->orderBy(DB::raw('DATE(m.created_at)'), 'DESC');
-
-        // $maintenanceOverview = $query1->paginate(10)->appends($request->all());
-        $maintenanceOverview = $query1->limit(15)->get();
+ 
+        $maintenanceOverview = $query1->limit(PAGE_NO)->get();
 
         // ========= Tab 2 - Sale Order Completion Tracking =========
-
         $unitMap = [
             'Tooling' => 1,
             'RMR' => 2,
@@ -86,8 +85,8 @@ class ReportsController extends Controller
         $baseQuery = SalesOrderTracking::query()
             ->join('erp_sales_orders as eso', 'sales_order_trackings.so_id', '=', 'eso.so_id')
             ->whereNotNull('sales_order_trackings.end_date_time')
-            ->whereDate('sales_order_trackings.end_date_time', '>=', $fromDate)
-            ->whereDate('sales_order_trackings.end_date_time', '<=', $toDate)
+            ->whereDate('sales_order_trackings.end_date_time', '>=', $defaultFromDate)
+            ->whereDate('sales_order_trackings.end_date_time', '<=', $defaultToDate)
             ->when($unit, function ($q) use ($unitId) {
                 return $q->where('eso.so_unitid', $unitId);
             });
@@ -123,8 +122,7 @@ class ReportsController extends Controller
             })
             ->groupBy('so_id', 'ideal_cycle_time', 'operation_id', 'so_product_id', 'sub_product_id', DB::raw('DATE(end_date_time)'), 'pass_id')
             ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')
-            ->limit(15)->get();
-        // ->paginate(10)->appends($request->all());
+            ->limit(PAGE_NO)->get();
 
         $soCompletionTracking = (clone $baseQuery)
             ->join('product_masters as p', 'sales_order_trackings.so_product_id', '=', 'p.id')
@@ -143,10 +141,10 @@ class ReportsController extends Controller
                 'soProduct:so_id,so_no,so_group,so_date',
                 'salesorderProducts:so_id,size1,size2,size3,soquantity,hardness,material'
             ])
-            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$defaultFromDate->toDateString(), $defaultToDate->toDateString()])
             ->groupBy('so_id', 'so_product_id', 'sub_product_id', 'pass_id')
             ->orderBy(DB::raw('DATE(MAX(end_date_time))'), 'DESC')
-            ->limit(45)
+            ->limit(PAGE_NO)
             ->get();
 
         // ========= Tab 4 - Production Overview =========
@@ -277,7 +275,7 @@ class ReportsController extends Controller
                 ->whereBetween('m.start_date_time', [$fromDate, $toDate])
                 ->orderBy('m.start_date_time', 'DESC');
 
-            $maintenanceHistory = $query->paginate(10)->appends($request->all());
+            $maintenanceHistory = $query->paginate(PAGE_NO)->appends($request->all());
 
             // count for current tab (same intention as your code)
             $queryCount = (clone $query)->count();
@@ -398,7 +396,7 @@ class ReportsController extends Controller
                     'pass_id'
                 )
                 ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')
-                ->limit(10)
+                ->limit(PAGE_NO)
                 ->get();
 
             // ---- SO Completion Tracking ----
@@ -424,7 +422,7 @@ class ReportsController extends Controller
                 ])
                 ->groupBy('so_id', 'so_product_id', 'sub_product_id', 'pass_id')
                 ->orderBy(DB::raw('DATE(MAX(end_date_time))'), 'DESC')
-                ->limit(10)
+                ->limit(PAGE_NO)
                 ->get();
         }
 
@@ -438,5 +436,282 @@ class ReportsController extends Controller
             'fromDate',
             'toDate'
         ));
+    }
+
+    public function so_completion_tracking(Request $request)
+    {
+
+        set_time_limit(300); // seconds
+        ini_set('max_execution_time', 300);
+
+        $unit      = $request->input('unit'); // 1-Tooling, 2-RMR, 3-TMR
+        $tab       = $request->input('tab');
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+
+        // === Default to last 7 days if no filter provided ===
+        $fromDate = $startDate
+            ? Carbon::parse($startDate)->startOfDay()
+            : now()->subDays(6)->startOfDay();
+
+        $toDate = $endDate
+            ? Carbon::parse($endDate)->endOfDay()
+            : now()->endOfDay();
+
+        $unitMap = [
+            'Tooling' => 1,
+            'RMR' => 2,
+            'TMR' => 3,
+        ];
+
+        $unitId = $unitMap[$unit] ?? null;
+
+        $baseQuery = SalesOrderTracking::query()
+            ->join('erp_sales_orders as eso', 'sales_order_trackings.so_id', '=', 'eso.so_id')
+            ->whereNotNull('sales_order_trackings.end_date_time')
+            ->whereDate('sales_order_trackings.end_date_time', '>=', $fromDate)
+            ->whereDate('sales_order_trackings.end_date_time', '<=', $toDate)
+            ->when($unit, function ($q) use ($unitId) {
+                return $q->where('eso.so_unitid', $unitId);
+            });
+
+        $soCompletionTracking = (clone $baseQuery)
+            ->join('product_masters as p', 'sales_order_trackings.so_product_id', '=', 'p.id')
+            ->leftJoin('sub_product as sp', 'sales_order_trackings.sub_product_id', '=', 'sp.id')
+            ->select(
+                'sales_order_trackings.so_id',
+                'so_product_id',
+                'sub_product_id',
+                'pass_id',
+                DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as end_date'),
+                DB::raw("COUNT(DISTINCT CASE WHEN roll_status = 'completed' THEN quantity_processed END) as completed_quantity_count"),
+                DB::raw('MAX(p.product_modified_name) as product_name'),
+                DB::raw('MAX(sp.sub_product_name) as sub_product_name')
+            )->with([
+                'soProduct:so_id,so_no,so_group,so_date',
+                'salesorderProducts:so_id,size1,size2,size3,soquantity,hardness,material'
+            ])
+            //  ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->groupBy('so_id', 'so_product_id', 'sub_product_id', 'pass_id')
+            ->orderBy(DB::raw('DATE(MAX(end_date_time))'), 'DESC')
+            ->paginate(PAGE_SIZE_LARGE);
+
+        return view('reports.so-completion', compact('soCompletionTracking', 'fromDate', 'toDate'));
+    }
+
+    public function so_completion_tracking_page(Request $request)
+    {
+
+        set_time_limit(300); // seconds
+        ini_set('max_execution_time', 300);
+
+        $unit      = $request->input('unit'); // 1-Tooling, 2-RMR, 3-TMR
+        $tab       = $request->input('tab');
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+
+        // === Default to last 7 days if no filter provided ===
+        $fromDate = $startDate
+            ? Carbon::parse($startDate)->startOfDay()
+            : now()->subDays(6)->startOfDay();
+
+        $toDate = $endDate
+            ? Carbon::parse($endDate)->endOfDay()
+            : now()->endOfDay();
+        $unitMap = [
+            'Tooling' => 1,
+            'RMR' => 2,
+            'TMR' => 3,
+        ];
+
+        $unitId = $unitMap[$unit] ?? null;
+
+        $baseQuery = SalesOrderTracking::query()
+            ->join('erp_sales_orders as eso', 'sales_order_trackings.so_id', '=', 'eso.so_id')
+            ->whereNotNull('sales_order_trackings.end_date_time')
+            ->whereDate('sales_order_trackings.end_date_time', '>=', $fromDate)
+            ->whereDate('sales_order_trackings.end_date_time', '<=', $toDate)
+            ->when($unit, function ($q) use ($unitId) {
+                return $q->where('eso.so_unitid', $unitId);
+            });
+
+        $soCompletionTracking = (clone $baseQuery)
+            ->join('product_masters as p', 'sales_order_trackings.so_product_id', '=', 'p.id')
+            ->leftJoin('sub_product as sp', 'sales_order_trackings.sub_product_id', '=', 'sp.id')
+            ->select(
+                'sales_order_trackings.so_id',
+                'so_product_id',
+                'sub_product_id',
+                'pass_id',
+                DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as end_date'),
+                DB::raw("COUNT(DISTINCT CASE WHEN roll_status = 'completed' THEN quantity_processed END) as completed_quantity_count"),
+                DB::raw('MAX(p.product_modified_name) as product_name'),
+                DB::raw('MAX(sp.sub_product_name) as sub_product_name')
+            )->with([
+                'soProduct:so_id,so_no,so_group,so_date',
+                'salesorderProducts:so_id,size1,size2,size3,soquantity,hardness,material'
+            ])
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->groupBy('so_id', 'so_product_id', 'sub_product_id', 'pass_id')
+            ->orderBy(DB::raw('DATE(MAX(end_date_time))'), 'DESC')
+            ->paginate(PAGE_SIZE_LARGE);
+
+        return response()->json([
+            'html' => view('reports.so-completion-html', compact('soCompletionTracking', 'fromDate', 'toDate'))->render(),
+            'pagination' => (string) $soCompletionTracking->links(),
+        ]);
+    }
+
+    public function so_roll_tracking(Request $request)
+    {
+        set_time_limit(300); // seconds
+        ini_set('max_execution_time', 300);
+
+        $unit      = $request->input('unit'); // 1-Tooling, 2-RMR, 3-TMR
+        $tab       = $request->input('tab');
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+ 
+        // === Default to last 7 days if no filter provided ===
+        $fromDate = $startDate
+            ? Carbon::parse($startDate)->startOfDay()
+            : now()->subDays(6)->startOfDay();
+
+        $toDate = $endDate
+            ? Carbon::parse($endDate)->endOfDay()
+            : now()->endOfDay();
+        $unitMap = [
+            'Tooling' => 1,
+            'RMR' => 2,
+            'TMR' => 3,
+        ];
+
+        $unitId = $unitMap[$unit] ?? null;
+
+        $baseQuery = SalesOrderTracking::query()
+            ->join('erp_sales_orders as eso', 'sales_order_trackings.so_id', '=', 'eso.so_id')
+            ->whereNotNull('sales_order_trackings.end_date_time')
+            ->whereDate('sales_order_trackings.end_date_time', '>=', $fromDate)
+            ->whereDate('sales_order_trackings.end_date_time', '<=', $toDate)
+            ->when($unit, function ($q) use ($unitId) {
+                return $q->where('eso.so_unitid', $unitId);
+            });
+
+        $soRollTracking = (clone $baseQuery)
+            ->select(
+                'sales_order_trackings.so_id',
+                'sales_order_trackings.ideal_cycle_time',
+                'operation_id',
+                'so_product_id',
+                'sub_product_id',
+                'pass_id',
+                DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as end_date'),
+                DB::raw('SUM(time_taken) as time_taken_minutes'),
+                // Count each completed row as 1
+                DB::raw('COUNT(CASE WHEN roll_status = "completed" THEN 1 END) as total_quantity_processed'),
+                DB::raw('MAX(machine_id) as machine_id')
+            )
+            ->with([
+                'operation:id,operation_name',
+                'soProduct:so_id,so_no,so_group',
+                'machine:id,machine',
+                'product:id,product_modified_name',
+                'subProduct:id,sub_product_name',
+                'salesorderProducts:so_id,size1,size2,size3,hardness,material,soquantity'
+            ])
+            ->whereIn('sales_order_trackings.so_id', function ($query) {
+                $query->select('st.so_id')
+                    ->from('sales_order_trackings as st')
+                    ->where('st.roll_status', 'completed')
+                    ->groupBy('st.so_id', 'st.operation_id', 'st.so_product_id', 'st.sub_product_id');
+            })
+            ->groupBy('so_id', 'ideal_cycle_time', 'operation_id', 'so_product_id', 'sub_product_id', DB::raw('DATE(end_date_time)'), 'pass_id')
+            ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')
+            ->paginate(PAGE_SIZE_LARGE);
+            //->limit(PAGE_NO)->get();
+
+        return view('reports.so-roll-tracking', compact('soRollTracking', 'fromDate', 'toDate'));
+    }
+
+    public function so_roll_tracking_page(Request $request)
+    {
+        set_time_limit(300); // seconds
+        ini_set('max_execution_time', 300);
+
+        $unit      = $request->unit; // 1-Tooling, 2-RMR, 3-TMR
+        $tab       = $request->tab;
+        $startDate = $request->from_date;
+        $endDate   = $request->to_date;
+
+        print_r($request->all()); echo "<br>";
+        print_r($endDate);
+        
+
+        // === Default to last 7 days if no filter provided ===
+        $fromDate = $startDate
+            ? Carbon::parse($startDate)->startOfDay()
+            : now()->subDays(6)->startOfDay();
+
+        $toDate = $endDate
+            ? Carbon::parse($endDate)->endOfDay()
+            : now()->endOfDay();
+        $unitMap = [
+            'Tooling' => 1,
+            'RMR' => 2,
+            'TMR' => 3,
+        ];
+
+        $unitId = $unitMap[$unit] ?? null;
+
+        $baseQuery = SalesOrderTracking::query()
+            ->join('erp_sales_orders as eso', 'sales_order_trackings.so_id', '=', 'eso.so_id')
+            ->whereNotNull('sales_order_trackings.end_date_time')
+            ->whereDate('sales_order_trackings.end_date_time', '>=', $fromDate)
+            ->whereDate('sales_order_trackings.end_date_time', '<=', $toDate)
+            ->when($unit, function ($q) use ($unitId) {
+                return $q->where('eso.so_unitid', $unitId);
+            });
+
+        $soRollTracking = (clone $baseQuery)
+            ->select(
+                'sales_order_trackings.so_id',
+                'sales_order_trackings.ideal_cycle_time',
+                'operation_id',
+                'so_product_id',
+                'sub_product_id',
+                'pass_id',
+                DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as end_date'),
+                DB::raw('SUM(time_taken) as time_taken_minutes'),
+                // Count each completed row as 1
+                DB::raw('COUNT(CASE WHEN roll_status = "completed" THEN 1 END) as total_quantity_processed'),
+                DB::raw('MAX(machine_id) as machine_id')
+            )
+            ->with([
+                'operation:id,operation_name',
+                'soProduct:so_id,so_no,so_group',
+                'machine:id,machine',
+                'product:id,product_modified_name',
+                'subProduct:id,sub_product_name',
+                'salesorderProducts:so_id,size1,size2,size3,hardness,material,soquantity'
+            ])
+            ->whereIn('sales_order_trackings.so_id', function ($query) {
+                $query->select('st.so_id')
+                    ->from('sales_order_trackings as st')
+                    ->where('st.roll_status', 'completed')
+                    ->groupBy('st.so_id', 'st.operation_id', 'st.so_product_id', 'st.sub_product_id');
+            })
+            ->groupBy('so_id', 'ideal_cycle_time', 'operation_id', 'so_product_id', 'sub_product_id', DB::raw('DATE(end_date_time)'), 'pass_id')
+            ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')
+            ->paginate(PAGE_SIZE_LARGE); 
+
+        return response()->json([
+            'html' => view('reports.so-roll-tracking-html', compact('soRollTracking', 'fromDate', 'toDate'))->render(),
+            'pagination' => (string) $soRollTracking->links(),
+        ]);
     }
 }
