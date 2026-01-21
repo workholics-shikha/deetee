@@ -16,7 +16,7 @@ Define('DEFAULT_IMAGE'  , 'assets/images/default-image.jpg');
 
 Define('PAGE_NO'        , 10);
 
-Define('PAGE_SIZE_LARGE' , 25);
+Define('PAGE_SIZE_LARGE' , 15);
 
 Define('SUPPORT_EMAIL'  , "deetee@deeteegroup.com");
 

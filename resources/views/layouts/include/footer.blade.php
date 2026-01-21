@@ -1,20 +1,65 @@
- <!-- Modal -->
- <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-     <div class="modal-dialog">
-         <div class="modal-content">
-             <div class="modal-header">
-                 <h1 class="modal-title fs-5" id="exampleModalLabel">Scan QR Code</h1>
-                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-             </div>
-             <div class="modal-body position-relative text-center mx-auto" style="width:fit-content">
-                 <img id="modalImage" src="" class="img-fluid" alt="Preview" style="max-height: 80vh;">
-             </div>
-         </div>
-     </div>
- </div>
+<!-- Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Scan QR Code</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body position-relative text-center mx-auto" style="width:fit-content">
+                <img id="modalImage" src="" class="img-fluid" alt="Preview" style="max-height: 80vh;">
+            </div>
+        </div>
+    </div>
+</div>
 
- <script>
-     document.addEventListener('click', function(e) {
+<script>
+    $(document).ready(function() {
+   
+        // SO pagination
+        let soXhr = null;
+
+        $(document).on('click', '#paginationSOLinks a', function (e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const url = new URL($(this).attr('href'), window.location.origin);
+            const page = url.searchParams.get('page') || 1;
+
+            fetchData1(page);
+        });
+
+        function fetchData1(page) {
+            // Abort previous request if user clicks fast
+            if (soXhr) soXhr.abort();
+
+            $('#paginationSOLinks a').addClass('disabled').css('pointer-events', 'none');
+            $('#myTableBody').html(`<tr><td colspan="15" class="p-3 text-center">Loading...</td></tr>`);
+
+            soXhr = $.ajax({
+                url: $('#searchInput').attr('search-url'),
+                type: 'GET',
+                data: {
+                    page: page,
+                    from_date: $('#from_date').val(),
+                    to_date: $('#to_date').val(),
+                    unit: $('#unit').val()
+                },
+                success: function (response) {
+                    $('#myTableBody').html(response.html);
+                    $('#paginationSOLinks').html(response.pagination);
+                    $('#page').val(page);
+                },
+                complete: function () {
+                    soXhr = null;
+                    $('#paginationSOLinks a').removeClass('disabled').css('pointer-events', '');
+                }
+            });
+        }
+
+    });
+     
+    document.addEventListener('click', function(e) {
          if (e.target.classList.contains('fa-arrows-rotate')) {
              location.reload();
          }
@@ -35,7 +80,7 @@
          });
 
          // Handle pagination link clicks
-         $(document).on('click', '.pagination a', function(e) {
+         $(document).on('click', '.pagination a', function(e) { 
              e.preventDefault();
              let page = $(this).attr('href').split('page=')[1]; // Extract page number from URL
              fetchData(page);
@@ -88,9 +133,7 @@
 
              // Extract page number from URL
              let page = $(this).attr('href').split('page=')[1];
-
-             console.log("Pagination link clicked for page: ", page);
-
+ 
              // Fetch data for the clicked page
              fetchDataQRTab(page);
          });
@@ -213,5 +256,5 @@
              myModal.show();
          });
      });
-     
+
 </script>

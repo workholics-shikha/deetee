@@ -12,13 +12,15 @@
                         <div class="row">
                             <div class="col-12">
                                 <div class="tab-menu pb-0">
-                                    <a href="#" class="tab mb-0 active" onclick="openTab(event, 'MIS')">
+                                    <a href="#" class="tab mb-0 active" onclick="openTab(event, 'MIS')" data-tab="MIS">
                                         <h6 class="text-445B64">MIS</h6>
                                     </a>
-                                    <a href="#" class="tab mb-0" onclick="openTab(event, 'SaleOrders')">
+                                    <a href="#" class="tab mb-0" onclick="openTab(event, 'SaleOrders')"
+                                        data-tab="SaleOrders">
                                         <h6 class="text-0D161A">Sale Orders</h6>
                                     </a>
-                                    <a href="#" class="tab mb-0" onclick="openTab(event, 'Maintenance')">
+                                    <a href="#" class="tab mb-0" onclick="openTab(event, 'Maintenance')"
+                                        data-tab="Maintenance">
                                         <h6 class="text-445B64">Maintenance</h6>
                                     </a>
                                 </div>
@@ -29,14 +31,16 @@
                             <div class="col-12 col-lg-6 border-end"> </div>
 
                             <div class="col-12 col-lg-6 d-flex align-items-center">
-                                {{-- filter --}}
                                 @php $unit = request('unit'); @endphp
-                                <form method="GET" action="{{ url()->current() }}">
+
+                                {{-- filter --}}
+                            
+                                <form method="GET" action="{{ url()->current() }}" id="filterForm">
                                     <input type="hidden" name="tab" value="{{ request('tab') }}" id="tabName">
                                     <div class="row">
                                         <div class="col-12 col-xl-10">
                                             <div class="pe-0 pe-lg-4">
-                                                <h6 class="text-445B64 fs-14">Filter: From Date - To Date & Unit</h6>
+                                                <h6 class="text-445B64 fs-14"> Filter: From Date - To Date & Unit </h6>
                                                 <div class="row">
                                                     <div class="col-12 col-lg-4 d-flex align-items-center mb-lg-0 mb-3">
                                                         <input type="date" name="from_date" class="form-control"
@@ -52,14 +56,11 @@
                                                             name="unit">
                                                             <option value=""> All Unit </option>
                                                             <option value="Tooling" @if ($unit=='Tooling' )
-                                                                {{ 'selected' }} @endif>
-                                                                Tooling </option>
+                                                                {{ 'selected' }} @endif> Tooling </option>
                                                             <option value="RMR" @if ($unit=='RMR' ) {{ 'selected' }}
-                                                                @endif>
-                                                                RMR </option>
+                                                                @endif> RMR </option>
                                                             <option value="TMR" @if ($unit=='TMR' ) {{ 'selected' }}
-                                                                @endif>
-                                                                TMR </option>
+                                                                @endif> TMR </option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -73,6 +74,7 @@
                                         </div>
                                     </div>
                                 </form>
+                                
                             </div>
                         </div>
                     </div>
@@ -135,6 +137,12 @@
                                                 @endif
                                             </tbody>
                                         </table>
+                                          <!-- View more btn -->
+                                        <div class="d-flex justify-content-center mt-3"> <a
+                                                href="{{route('admin.production-overview')}}"> <b> View More <i
+                                                        class="fa-solid fa-angles-right"></i> </b>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -162,8 +170,10 @@
                                                 <tr>
                                                     <th scope="col" class="text-6C7D83 py-2 px-3"> Date </th>
                                                     <th scope="col" class="text-6C7D83 py-2 px-3"> Unit </th>
-                                                    <th scope="col" class="text-6C7D83 py-2 px-3"> Maintenance Type </th>
-                                                    <th scope="col" class="text-6C7D83 py-2 px-3"> Total Downtime Duration</th>
+                                                    <th scope="col" class="text-6C7D83 py-2 px-3"> Maintenance Type
+                                                    </th>
+                                                    <th scope="col" class="text-6C7D83 py-2 px-3"> Total Downtime
+                                                        Duration</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -188,7 +198,12 @@
                                                 </tr>
                                                 @endif
                                             </tbody>
-                                        </table> 
+                                        </table>
+                                          <!-- View more btn -->
+                                        <div class="d-flex justify-content-center mt-3"> <a href="{{route('admin.maintenance-overview')}}"> 
+                                            <b> View More <i class="fa-solid fa-angles-right"></i> </b>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -327,9 +342,9 @@
                                         <div class="d-flex justify-content-center mt-3"> <a
                                                 href="{{route('admin.so-completion-tracking')}}"> <b> View More <i
                                                         class="fa-solid fa-angles-right"></i> </b>
-                                            </a> 
+                                            </a>
                                         </div>
- 
+
                                     </div>
                                 </div>
                             </div>
@@ -476,8 +491,9 @@
                                         </table>
                                         {{-- View more --}}
                                         <div class="d-flex justify-content-center mt-3"> <a
-                                                href="{{route('admin.so-roll-tracking')}}"> <b> View More <i class="fa-solid fa-angles-right"></i> </b>
-                                            </a> 
+                                                href="{{route('admin.so-roll-tracking')}}"> <b> View More <i
+                                                        class="fa-solid fa-angles-right"></i> </b>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -519,6 +535,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
+                                                @if(!empty($maintenanceHistory))
                                                 @if (sizeof($maintenanceHistory) > 0)
                                                 @foreach ($maintenanceHistory as $history)
                                                 <tr>
@@ -546,11 +563,18 @@
                                                     </td>
                                                 </tr>
                                                 @endif
+                                                @endif
                                             </tbody>
                                         </table>
-                                        <div class="d-flex justify-content-center mt-3">
+                                        <div class="d-flex justify-content-center mt-3"> 
+                                            <a
+                                                href="{{route('admin.maintenance-history')}}"> <b> View More <i
+                                                        class="fa-solid fa-angles-right"></i> </b>
+                                            </a>
                                             {{-- {{ $maintenanceHistory->appends(request()->query())->links() }} --}}
                                         </div>
+
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -565,6 +589,10 @@
 
 {{-- Modal end --}}
 <script>
+    function toggleFilterForm(tabName) {
+      $('#filterForm').toggle(tabName === 'MIS');
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
             const urlParams = new URLSearchParams(window.location.search);
             const activeTab = urlParams.get("tab") || "MIS";
@@ -572,6 +600,10 @@
             openTab({
                 currentTarget: document.querySelector(`[onclick="openTab(event, '${activeTab}')"]`)
             }, activeTab);
+
+            console.log(urlParams.get("tab"));
+
+           toggleFilterForm(activeTab);
 
         });
 

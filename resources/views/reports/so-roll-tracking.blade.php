@@ -1,4 +1,4 @@
-@section('title', 'Reports')
+@section('title', 'Report-SO Roll Tracking')
 @extends('layouts.app')
 @section('content')
 

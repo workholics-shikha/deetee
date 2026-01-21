@@ -120,6 +120,16 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
 
         Route::match(['get', 'post'], 'admin/so-roll-tracking', [ReportsController::class, 'so_roll_tracking'])->name('admin.so-roll-tracking');
         Route::match(['get', 'post'], 'admin/so-roll-tracking-page', [ReportsController::class, 'so_roll_tracking_page'])->name('admin.so-roll-tracking-page');
+
+        Route::match(['get', 'post'], 'admin/maintenance-history', [ReportsController::class, 'maintenance_history'])->name('admin.maintenance-history');
+        Route::match(['get', 'post'], 'admin/maintenance-history-page', [ReportsController::class, 'maintenance_history_page'])->name('admin.maintenance-history-page');
+
+        Route::match(['get', 'post'], 'admin/production-overview', [ReportsController::class, 'production_overview'])->name('admin.production-overview');
+        Route::match(['get', 'post'], 'admin/production-overview-page', [ReportsController::class, 'production_overview_page'])->name('admin.production-overview-page');
+
+        Route::match(['get', 'post'], 'admin/maintenance-overview', [ReportsController::class, 'maintenance_overview'])->name('admin.maintenance-overview');
+        Route::match(['get', 'post'], 'admin/maintenance-overview-page', [ReportsController::class, 'maintenance_overview_page'])->name('admin.maintenance-overview-page');
+        
     });
 
     Route::get('admin/updateCompletedCount', [ReportsController::class, 'updateCompletedCount']);
