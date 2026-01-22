@@ -145,25 +145,7 @@ class MachineController extends Controller
             ->whereBetween('start_date_time', [$startOfDay, $endOfDay])
             ->limit(10)
             ->get();
-
-        /* $soHistory = SalesOrderTracking::select(
-            'so_id',
-            'operation_id',
-            // DB::raw('DATE(start_date_time) as start_date'),
-            DB::raw('MAX(start_date_time) as start_date'), // first occurrence
-            DB::raw('SUM(time_taken) AS time_taken_minutes'),
-            DB::raw('COUNT(DISTINCT `quantity_processed`) AS total_quantity_processed')
-        )
-            ->whereBetween('start_date_time', [$startOfDay, $endOfDay])
-            ->where('machine_id', $id)
-            ->where('roll_status', 'completed')
-            ->whereNotNull('end_date_time')
-            ->with(['operation:id,operation_name', 'soProduct:so_id,so_no'])
-            ->groupBy('so_id', 'operation_id')
-            ->orderBy('operation_id', 'DESC')
-            ->limit(10)
-            ->get(); */
-
+  
         $soHistory = SalesOrderTracking::select(
             'so_id',
             'operation_id',
@@ -211,17 +193,7 @@ class MachineController extends Controller
             $dates[$start->toDateString()] = 0; // default 0
             $start->addDay();
         }
-
-        // Step 2: run query
-        /* $data = SalesOrderTracking::selectRaw('DATE(start_date_time) as date, COUNT(DISTINCT quantity_processed) as total')
-            ->where('machine_id', $id)
-            ->whereBetween(DB::raw('DATE(start_date_time)'), [$fromDate, $toDate])
-            ->whereNotNull('end_date_time')
-            ->groupBy(DB::raw('DATE(start_date_time)'))
-            ->orderBy('date')
-            ->pluck('total', 'date') // return as [date => total]
-            ->toArray(); */
-
+ 
         // Daily totals by completion date
         $data = SalesOrderTracking::selectRaw('
         DATE(end_date_time) as date,
@@ -430,7 +402,9 @@ class MachineController extends Controller
             'oeeRuntime',
             'downtime',
             'dayCount',
-            'labels'
+            'labels',
+            'fromDate',
+            'toDate'
         ));
     }
 }

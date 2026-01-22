@@ -76,18 +76,16 @@
         </a> --}}
 
         <div class="nav-item dropdown mb-2 {{ in_array(request()->segment(2), ['production-overview', 'maintenance-overview', 'so-completion-tracking', 'so-roll-tracking', 'maintenance-history']) ? 'active' : '' }}">
-            <a class="flex-sm-fill text-start nav-link dropdown-toggle {{ in_array(request()->segment(2), ['production-overview', 'maintenance-overview', 'so-completion-tracking', 'so-roll-tracking', 'maintenance-history']) ? 'active' : '' }}" href="{{ route('admin.reports') }}" id="reportsDropdown" role="button"
-                data-bs-toggle="dropdown" aria-expanded="false">
+            <a class="flex-sm-fill text-start nav-link dropdown-toggle {{ in_array(request()->segment(2), ['production-overview', 'maintenance-overview', 'so-completion-tracking', 'so-roll-tracking', 'maintenance-history']) ? 'active' : '' }}" href="{{ route('admin.reports') }}" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <span class="sidebar-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 16 18" fill="none">
-                        <path
-                            d="M3 17.3332C2.30556 17.3332 1.71528 17.0901 1.22917 16.604C0.743056 16.1179 0.5 15.5276 0.5 14.8332V12.3332H3V0.666504H15.5V14.8332C15.5 15.5276 15.2569 16.1179 14.7708 16.604C14.2847 17.0901 13.6944 17.3332 13 17.3332H3ZM13 15.6665C13.2361 15.6665 13.434 15.5866 13.5938 15.4269C13.7535 15.2672 13.8333 15.0693 13.8333 14.8332V2.33317H4.66667V12.3332H12.1667V14.8332C12.1667 15.0693 12.2465 15.2672 12.4062 15.4269C12.566 15.5866 12.7639 15.6665 13 15.6665ZM5.5 6.49984V4.83317H13V6.49984H5.5ZM5.5 8.99984V7.33317H13V8.99984H5.5Z" />
+                        <path d="M3 17.3332C2.30556 17.3332 1.71528 17.0901 1.22917 16.604C0.743056 16.1179 0.5 15.5276 0.5 14.8332V12.3332H3V0.666504H15.5V14.8332C15.5 15.5276 15.2569 16.1179 14.7708 16.604C14.2847 17.0901 13.6944 17.3332 13 17.3332H3ZM13 15.6665C13.2361 15.6665 13.434 15.5866 13.5938 15.4269C13.7535 15.2672 13.8333 15.0693 13.8333 14.8332V2.33317H4.66667V12.3332H12.1667V14.8332C12.1667 15.0693 12.2465 15.2672 12.4062 15.4269C12.566 15.5866 12.7639 15.6665 13 15.6665ZM5.5 6.49984V4.83317H13V6.49984H5.5ZM5.5 8.99984V7.33317H13V8.99984H5.5Z" />
                     </svg>
                 </span>
-                <span>Reports</span>
+                <span> Reports </span>
             </a>
 
-            <ul class="dropdown-menu {{ in_array(request()->segment(2), ['production-overview', 'maintenance-overview', 'so-completion-tracking', 'so-roll-tracking', 'maintenance-history']) ? 'active show' : '' }}" aria-labelledby="reportsDropdown">
+            <ul class="dropdown-menu {{ in_array(request()->segment(2), ['production-overview', 'maintenance-overview', 'so-completion-tracking', 'so-roll-tracking', 'maintenance-history']) ? 'active' : '' }}" aria-labelledby="reportsDropdown">
                 <li>
                     <a class="dropdown-item {{ in_array(request()->segment(2), ['production-overview']) ? 'active' : '' }}" href="{{ route('admin.production-overview') }}">
                         MIS-Production Overview

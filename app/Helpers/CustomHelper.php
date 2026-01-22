@@ -343,10 +343,10 @@ if (!function_exists('addPassSheetDetails')) {
         $itemjson = $erp_response->json();
 
         if (!empty($itemjson)) {
-            foreach ($itemjson as $item) { 
+            foreach ($itemjson as $item) {
 
                 $passNos = splitPassNo($item['pass_no']);
-                $sop = SalesOrderProduct::where(['cpoitemid'=>$sop_id, 'so_id'=>$so_id])->first();
+                $sop = SalesOrderProduct::where(['cpoitemid' => $sop_id, 'so_id' => $so_id])->first();
 
                 foreach ($passNos as $passNo) {
 
@@ -378,7 +378,7 @@ if (!function_exists('addPassSheetDetails')) {
                 }
             }
         }
- 
+
         // Generate the QR code
         $passSheet = PassSheet::whereNull('pass_sheet_qr_code')->get();
         foreach ($passSheet as $sheet) {
@@ -397,7 +397,7 @@ if (!function_exists('addPassSheetDetails')) {
             Storage::disk('public')->put($path, $result->getString());
 
             // Update the machine record with the QR code path
-            PassSheet::where('id', $sheet->id)->update([ 'pass_sheet_qr_code' => $name, 'so_id' => $sop->so_id, 'subproduct_id' => $sop->sub_product_id ]);
+            PassSheet::where('id', $sheet->id)->update(['pass_sheet_qr_code' => $name, 'so_id' => $sop->so_id, 'subproduct_id' => $sop->sub_product_id]);
         }
     }
 }
@@ -501,10 +501,13 @@ if (!function_exists('getCompletedSOCount')) {
 
         $unitId = $unitMap[$unit] ?? null;
 
+        $start = $date . ' 00:00:00';
+        $end   = $date . ' 23:59:59';
+
         $query = SOProductOperationDetails::query()
             ->join('erp_sales_orders as eso', 'sales_order_product_operation_details.so_id', '=', 'eso.so_id')
             ->whereNotNull('sales_order_product_operation_details.operation_id')
-            ->where('sales_order_product_operation_details.operation_name', 'NOT LIKE', '%outsource%')
+            // ->where('sales_order_product_operation_details.operation_name', 'NOT LIKE', '%outsource%')
             ->when($unit, function ($q) use ($unitId) {
                 return $q->where('eso.so_unitid', $unitId);
             })
@@ -513,8 +516,12 @@ if (!function_exists('getCompletedSOCount')) {
             ->havingRaw("
                 COUNT(*) = SUM(CASE WHEN final_status = 'completed' THEN 1 ELSE 0 END)
             ")
-            ->havingRaw("MAX(DATE(sales_order_product_operation_details.updated_at)) = ?", [$date])
+            // ->havingRaw("MAX(DATE(sales_order_product_operation_details.updated_at)) = ?", [$date]) 
+            ->havingRaw("MAX(sales_order_product_operation_details.created_at) BETWEEN ? AND ?", [$start, $end])
             ->count();
+            /* $sql = $query->toSql();
+            $bindings = $query->getBindings();
+            dd($sql, $bindings); */
 
         return $query;
     }
@@ -524,21 +531,20 @@ if (!function_exists('getCompletedQtyOverAll')) {
     function getCompletedQtyOverAll($date, $unit = null)
     {
         try {
-            $targetDate = Carbon::parse($date)->startOfDay();
+            $target = Carbon::parse($date)->toDateString(); // 'YYYY-MM-DD'
         } catch (Exception $e) {
             return 0;
         }
 
-        $unitMap = [
-            'Tooling' => 1,
-            'RMR'     => 2,
-            'TMR'     => 3,
-        ];
+        $unitMap = ['Tooling' => 1, 'RMR' => 2, 'TMR' => 3];
+        $unitId  = $unitMap[$unit] ?? null;
 
-        $unitId = $unitMap[$unit] ?? null;
+        // crude but effective filter to reduce rows before PHP loops
+        $needle = '"completed_date":"' . $target . '"';
 
-        $operations = SOProductOperationDetails::query()
+        $query = SOProductOperationDetails::query()
             ->select(
+                'sales_order_product_operation_details.id',
                 'sales_order_product_operation_details.so_id',
                 'sales_order_product_operation_details.sales_order_product_id',
                 'sales_order_product_operation_details.product_id',
@@ -546,76 +552,56 @@ if (!function_exists('getCompletedQtyOverAll')) {
                 'sales_order_product_operation_details.processed_qty'
             )
             ->join('erp_sales_orders as eso', 'sales_order_product_operation_details.so_id', '=', 'eso.so_id')
-            ->when($unitId, function ($q) use ($unitId) {
-                return $q->where('eso.so_unitid', $unitId);
-            })
+            ->when($unitId, fn ($q) => $q->where('eso.so_unitid', $unitId))
             ->whereNotNull('sales_order_product_operation_details.operation_status')
-            ->where('sales_order_product_operation_details.operation_status', '!=', 'Outsourced')
-            ->where('sales_order_product_operation_details.operation_status', '!=', '')
-            ->orderBy('sales_order_product_operation_details.so_id')
-            ->orderBy('sales_order_product_operation_details.sales_order_product_id')
-            ->orderBy('sales_order_product_operation_details.sub_product_id')
-            ->get();
+            ->whereNotIn('sales_order_product_operation_details.operation_status', ['Outsourced', ''])
+            ->where('sales_order_product_operation_details.processed_qty', 'like', "%{$needle}%");
 
-        if ($operations->isEmpty()) {
-            return 0;
-        }
+        // groupKey => [completedCountOp1, completedCountOp2, ...]
+        $countsByGroup = [];
 
-        // Group operations by unique product/subproduct set
-        $grouped = $operations->groupBy(function ($item) {
-            return $item->so_id . '-' . $item->sales_order_product_id . '-' . $item->product_id . '-' . $item->sub_product_id;
-        });
+        $query->chunkById(500, function ($rows) use (&$countsByGroup, $target) {
+            foreach ($rows as $op) {
+                $groupKey = $op->so_id . '-' . $op->sales_order_product_id . '-' . $op->product_id . '-' . $op->sub_product_id;
 
-        $totalCompletedQty = 0;
-
-        foreach ($grouped as $groupKey => $groupOps) {
-            $groupQtySets = [];
-
-            foreach ($groupOps as $op) {
                 $decoded = json_decode($op->processed_qty, true);
                 if (!is_array($decoded)) {
                     continue;
                 }
 
-                $completedInOp = [];
+                $completedCount = 0;
+
                 foreach ($decoded as $entry) {
                     if (
-                        isset($entry['status'], $entry['completed_date'], $entry['quantity']) &&
-                        $entry['status'] === 'completed' &&
-                        !empty($entry['completed_date'])
+                        ($entry['status'] ?? null) === 'completed' &&
+                        !empty($entry['completed_date']) &&
+                        isset($entry['quantity'])
                     ) {
-                        try {
-                            $completedDate = Carbon::parse($entry['completed_date'])->startOfDay();
-
-                            if ($completedDate->equalTo($targetDate)) {
-                                $completedInOp[] = (int)$entry['quantity'];
-                            }
-                        } catch (Exception $e) {
-                            continue;
+                        // Faster than Carbon parse: compare first 10 chars (YYYY-MM-DD)
+                        $d = substr((string) $entry['completed_date'], 0, 10);
+                        if ($d === $target) {
+                            $completedCount += (int) $entry['quantity'];
                         }
                     }
                 }
 
-                // If no quantity was completed in this operation on the target date → intersection will become empty
-                $groupQtySets[] = $completedInOp;
+                $countsByGroup[$groupKey][] = $completedCount;
             }
+        }, 'sales_order_product_operation_details.id');
 
-            // Now intersect all operations' completed quantity arrays
-            if (!empty($groupQtySets)) {
-                $fullyCompletedQty = array_shift($groupQtySets);
-                foreach ($groupQtySets as $set) {
-                    $fullyCompletedQty = array_intersect($fullyCompletedQty, $set);
-                    if (empty($fullyCompletedQty)) break; // no need to continue if intersection is already empty
-                }
+        $total = 0;
 
-                $totalCompletedQty += count($fullyCompletedQty);
+        // Fully completed overall per group = min(completedCount per operation)
+        foreach ($countsByGroup as $opCounts) {
+            if (!empty($opCounts)) {
+                $total += min($opCounts);
             }
         }
 
-        return $totalCompletedQty;
+        return $total;
     }
 }
-
+  
 if (!function_exists('getCompletedQty')) {
     function getCompletedQty($date, $product_id, $sub_product_id, $unit = null)
     {
@@ -727,7 +713,7 @@ if (!function_exists('getParamFirstValueNew')) {
         }
 
         $operation = OperationMaster::find($op_id);
-        $soo = SOProductOperationDetails::where(['sales_order_product_id' => $p_id, 'operation_id' => $op_id])->first(); 
+        $soo = SOProductOperationDetails::where(['sales_order_product_id' => $p_id, 'operation_id' => $op_id])->first();
 
         if (!$operation || !$soo) {
             return 'NA';
@@ -836,7 +822,7 @@ if (!function_exists('getParamFirstValueNew')) {
 
         //  TMR
         if ($operation->unit === 'TMR') {
- 
+
             if ($data->measureunit == 'SET') {
 
                 if (!empty($passId)) {
@@ -846,7 +832,6 @@ if (!function_exists('getParamFirstValueNew')) {
                 }
 
                 $passDetails = PassSheet::find($passId);
- 
             }
 
             $material = ['Cutting'];

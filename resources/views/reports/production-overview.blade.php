@@ -36,7 +36,7 @@
                                                     <input type="hidden" id="page" value="{{ request('page', 1) }}">
 
                                                     <input type="hidden" id="searchInput"
-                                                        search-url="{{ route('admin.maintenance-history-page') }}">
+                                                        search-url="{{ route('admin.production-overview-page') }}">
                                                     <div class="col-12 col-lg-4 d-flex align-items-center mb-lg-0 mb-3">
                                                         <input type="date" name="from_date" class="form-control"
                                                             required id="from_date"
@@ -74,8 +74,7 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- First card -->
+ 
                 <div class="card border-0 rounded-3 mb-4 overflow-hidden">
                     <div class="card-header bg-white border-bottom">
                         <div class="row align-items-center">
@@ -109,17 +108,11 @@
                                             @if (sizeof($productionOverview) > 0)
                                             @foreach ($productionOverview as $poverview)
                                             <tr>
-                                                <td class="text-445B64 p-3"> {{ $poverview->so_date }} </td>
-                                                <td class="text-445B64 p-3 text-left">
-                                                    {{ $poverview->total_so }} </td>
-                                                <td class="text-445B64 p-3 text-left">
-                                                    {{ getCompletedSOCount($poverview->so_date, $unit) }}
-                                                </td>
-                                                <td class="text-445B64 p-3 text-left">
-                                                    {{ $poverview->total_quantity }} </td>
-                                                <td class="text-445B64 p-3 text-left">
-                                                    {{ getCompletedQtyOverAll($poverview->so_date, $unit) }}
-                                                </td>
+                                                <td class="text-445B64 p-3">           {{ $poverview->so_date }} </td>
+                                                <td class="text-445B64 p-3 text-left"> {{ $poverview->total_so }} </td>
+                                                <td class="text-445B64 p-3 text-left"> {{ getCompletedSOCount($poverview->so_date, $unit) }} </td>
+                                                <td class="text-445B64 p-3 text-left"> {{ $poverview->total_quantity }} </td>
+                                                <td class="text-445B64 p-3 text-left"> {{ getCompletedQtyOverAll($poverview->so_date, $unit) }} </td>
                                             </tr>
                                             @endforeach
                                             @else

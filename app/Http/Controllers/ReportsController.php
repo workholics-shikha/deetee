@@ -424,68 +424,6 @@ class ReportsController extends Controller
         ]);
     }
 
-    private function buildProductionOverviewQuery(Request $request): array
-    {
-        $unit      = $request->input('unit');
-        $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
-
-        // Default last 7 days (change 6 to 9 for 10 days)
-        $fromDate = $startDate ? Carbon::parse($startDate)->startOfDay() : now()->subDays(6)->startOfDay();
-        $toDate   = $endDate   ? Carbon::parse($endDate)->endOfDay()     : now()->endOfDay();
-
-        $unitMap = [
-            'Tooling' => 1,
-            'RMR'     => 2,
-            'TMR'     => 3,
-        ];
-        $unitId = $unitMap[$unit] ?? null;
-
-        $completedSub = DB::table('sales_order_product_operation_details')
-            ->selectRaw('DATE(updated_at) as udate, COUNT(DISTINCT so_id) as completed_so_count')
-            ->where('final_status', 'completed')
-            ->whereBetween('updated_at', [$fromDate, $toDate]) // ✅ limit by date
-            ->groupBy(DB::raw('DATE(updated_at)'));
-
-        $query = DB::table('erp_sales_orders as eso')
-            ->leftJoinSub($completedSub, 'spd_counts', function ($join) {
-                $join->on(DB::raw('DATE(eso.so_date)'), '=', 'spd_counts.udate');
-            })
-            ->selectRaw('
-            DATE(eso.so_date) as so_date,
-            COUNT(*) as total_so,
-            SUM(eso.soquantity) as total_quantity,
-            COALESCE(MAX(spd_counts.completed_so_count), 0) as completed_so_count
-        ')
-            ->when($unitId, fn($q) => $q->where('eso.so_unitid', $unitId))
-            ->whereBetween('eso.so_date', [$fromDate, $toDate]) // ✅ no DATE() in WHERE
-            ->groupBy(DB::raw('DATE(eso.so_date)'))
-            ->orderByDesc(DB::raw('DATE(eso.so_date)'));
-
-        return [$query, $fromDate, $toDate];
-    }
-
-    public function production_overview(Request $request)
-    {
-        [$query, $fromDate, $toDate] = $this->buildProductionOverviewQuery($request);
-
-        $productionOverview = $query->paginate(PAGE_SIZE_LARGE);
-
-        return view('reports.production-overview', compact('productionOverview', 'fromDate', 'toDate'));
-    }
-
-    public function production_overview_page(Request $request)
-    {
-        [$query, $fromDate, $toDate] = $this->buildProductionOverviewQuery($request);
-
-        $productionOverview = $query->paginate(PAGE_SIZE_LARGE);
-
-        return response()->json([
-            'html' => view('reports.production-overview-html', compact('productionOverview', 'fromDate', 'toDate'))->render(),
-            'pagination' => (string) $productionOverview->links(),
-        ]);
-    }
-
     private function buildMaintenanceOverviewQuery(Request $request): array
     {
         $unit      = $request->input('unit');       // Tooling/RMR/TMR (string)
@@ -533,4 +471,67 @@ class ReportsController extends Controller
             'pagination' => (string) $maintenanceOverview->links(),
         ]);
     }
+    
+    
+    private function buildProductionOverviewQuery(Request $request): array
+    {
+        $unit      = $request->input('unit');
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+
+        // Default last 7 days (change 6 to 9 for 10 days)
+        $fromDate = $startDate ? Carbon::parse($startDate)->startOfDay() : now()->subDays(6)->startOfDay();
+        $toDate   = $endDate   ? Carbon::parse($endDate)->endOfDay()     : now()->endOfDay();
+
+        $unitMap = [
+            'Tooling' => 1,
+            'RMR'     => 2,
+            'TMR'     => 3,
+        ];
+        $unitId = $unitMap[$unit] ?? null;
+
+        $completedSub = DB::table('sales_order_product_operation_details')
+            ->selectRaw('DATE(updated_at) as udate, COUNT(DISTINCT so_id) as completed_so_count')
+            ->where('final_status', 'completed')
+            ->whereBetween('updated_at', [$fromDate, $toDate]) // ✅ limit by date
+            ->groupBy(DB::raw('DATE(updated_at)'));
+
+        $query = DB::table('erp_sales_orders as eso')
+            ->leftJoinSub($completedSub, 'spd_counts', function ($join) {
+                $join->on(DB::raw('DATE(eso.so_date)'), '=', 'spd_counts.udate');
+            })
+            ->selectRaw('
+            DATE(eso.so_date) as so_date,
+            COUNT(*) as total_so,
+            SUM(eso.soquantity) as total_quantity,
+            COALESCE(MAX(spd_counts.completed_so_count), 0) as completed_so_count')
+            ->when($unitId, fn($q) => $q->where('eso.so_unitid', $unitId))
+            ->whereBetween('eso.so_date', [$fromDate, $toDate]) // ✅ no DATE() in WHERE
+            ->groupBy(DB::raw('DATE(eso.so_date)'))
+            ->orderByDesc(DB::raw('DATE(eso.so_date)'));
+  
+        return [$query, $fromDate, $toDate];
+    }
+
+    public function production_overview(Request $request)
+    {
+        [$query, $fromDate, $toDate] = $this->buildProductionOverviewQuery($request);
+
+        $productionOverview = $query->paginate(PAGE_SIZE_LARGE);
+
+        return view('reports.production-overview', compact('productionOverview', 'fromDate', 'toDate'));
+    }
+
+    public function production_overview_page(Request $request)
+    {
+        [$query, $fromDate, $toDate] = $this->buildProductionOverviewQuery($request);
+
+        $productionOverview = $query->paginate(PAGE_SIZE_LARGE);
+
+        return response()->json([
+            'html' => view('reports.production-overview-html', compact('productionOverview', 'fromDate', 'toDate'))->render(),
+            'pagination' => (string) $productionOverview->links(),
+        ]);
+    }
+
 }
