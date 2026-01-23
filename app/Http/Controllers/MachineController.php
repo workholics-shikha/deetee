@@ -78,7 +78,18 @@ class MachineController extends Controller
         ]);
 
         $machine = MachineMaster::find($request->machine_id);
-        $machine->machine_status = $request->status;
+        $machine->machine_status = $machineStatus = $request->status;
+
+        //check machine status
+        $lastUsed = SalesOrderTracking::select('end_date_time')->where('machine_id',$request->machine_id)->orderBy('id','desc')->first();
+
+
+        if ($lastUsed->end_date_time == null && $machineStatus == 'active') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Machine is running in an SO.'
+            ], 500);
+        }
 
         if ($machine->save()) {
             return response()->json([
@@ -257,22 +268,26 @@ class MachineController extends Controller
     public function details(Request $request, $id)
     {
         // === Date Filters ===
+        // === Date Filters ===
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+  
+        // === Date Filters ===
         $startDate = $request->input('from_date');
         $endDate   = $request->input('to_date');
 
         if ($startDate && $endDate) {
             $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
             $toDate   = Carbon::parse($endDate)->endOfDay();
+
         } elseif ($startDate) {
             $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
             $toDate   = Carbon::parse($startDate)->endOfDay();
-        } else {
-            // default last 7 days
-            $startOfDay = now()->subDays(6)->startOfDay();
 
-            // default → today
-            $fromDate = today()->startOfDay();
-            $toDate = today()->endOfDay();
+        } else {
+            // default last 7 days (including today)
+            $fromDate = $startOfDay = now()->subDays(6)->startOfDay();
+            $toDate   = now()->endOfDay();
         }
 
         // Days count

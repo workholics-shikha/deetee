@@ -167,7 +167,8 @@
                                                 <h6 class="text-445B64 fs-14">Filter: From Date - To Date</h6>
                                                 <div class="row">
                                                     <div class="col-12 col-lg-6 d-flex align-items-center mb-lg-0 mb-3">
-                                                        <input type="date" name="from_date" class="form-control" required
+                                                        <input type="date" name="from_date" class="form-control"
+                                                            required
                                                             value="{{ request('from_date') ?? \Carbon\Carbon::parse($fromDate)->format('Y-m-d') }}">
                                                     </div>
                                                     <div class="col-12 col-lg-6 d-flex align-items-center mb-lg-0 mb-3">
@@ -559,8 +560,11 @@
 </div>
 <script>
     function updateMachineStatus(select) {
+
             const newStatus = select.value;
             const machineId = $(select).data('machine-id'); // assuming you passed data-machine-id
+            const oldValue = select.dataset.oldValue; // MUST exist now
+ 
             $.ajax({
                 url: '{{ route('admin.update-machine-status') }}',
                 method: 'POST',
@@ -590,8 +594,20 @@
                     }
                 },
                 error: function(xhr) {
-                    alert('Failed to update status.');
-                    console.error(xhr.responseText);
+                     let res;
+                        try {
+                            res = xhr.responseJSON || JSON.parse(xhr.responseText);
+                            alert(res.message || "Something went wrong");
+                        } catch (e) {
+                            alert("Something went wrong");
+                            console.error("Non-JSON response:", xhr.responseText);
+                        }
+                            setTimeout(() => {
+                            window.location.reload();
+                            }, 2000);
+
+                            // select.value = oldValue;
+
                 }
             });
         }
