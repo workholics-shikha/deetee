@@ -191,7 +191,7 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
 
     Route::get('admin/machine-pdf-preview/{id}', [QRCodeController::class, 'machinePdfPreview'])->name('admin.machinePdfPreview');
 
-    Route::post('/admin/update-machine-status', [MachineController::class, 'updateStatus'])->name('admin.updateMachineStatus');
+    Route::post('/admin/update-machine-status', [MachineController::class, 'updateStatus'])->name('admin.update-machine-status');
 
     Route::get('admin/notification', [NotificationController::class, 'index'])->name('admin.notification');
 

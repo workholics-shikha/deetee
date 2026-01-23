@@ -97,6 +97,7 @@ class UserController extends Controller
             'unit' => 'required',
             'role' => 'required',
             'designation' => 'required',
+            'department' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -109,6 +110,7 @@ class UserController extends Controller
         $userData['name'] = $name;
         $userData['email'] = $request->email;
         $userData['phone'] = $request->phone;
+        $userData['shift'] = $request->shift;
         $userData['password'] = Hash::make($request->password);
         $userData['unit'] = $unit = $request->unit;
         $userData['designation'] = $request->designation;
@@ -335,9 +337,7 @@ class UserController extends Controller
             }
  
         }
-
         exit;
-        
     }
 
     public function generateQRForPass()
@@ -392,27 +392,12 @@ class UserController extends Controller
         }
     }
  
-    public function details(Request $request, $id)
+    public function details_old(Request $request, $id)
     {
         // === Date Filters ===
         $startDate = $request->input('from_date');
         $endDate   = $request->input('to_date');
   
-        /* if ($startDate && $endDate) {
-            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($endDate)->endOfDay();
-        } else if ($startDate) {
-            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($startDate)->endOfDay();
-        } else { echo 'elseeeeeeeeeeeee';
-            // default last 7 days
-            $startOfDay = now()->subDays(6)->startOfDay();
-
-            // default → today
-            $fromDate = today()->startOfDay();
-            $toDate = today()->endOfDay();
-        } */
-
         // === Date Filters ===
         $startDate = $request->input('from_date');
         $endDate   = $request->input('to_date');
@@ -431,12 +416,6 @@ class UserController extends Controller
             $toDate   = now()->endOfDay();
         }
  
-        // echo "<pre>"; 
-        // print_r($fromDate);  echo "<br>"; 
-        // print_r($toDate); 
-        
-        // exit;
-
         // Days count
         $dayCount = $fromDate->diffInDays($toDate) + 1;
         $plannedRuntime = 1350 * $dayCount; // in minutes
@@ -473,12 +452,6 @@ class UserController extends Controller
             ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id', 'pass_id')  // ✅ added missing groupBys
             ->orderBy(DB::raw('DATE(end_date_time)'),'DESC')->get();
 
-        // Print it BEFORE ->get()
-        // dd([
-        //     'sql' => $soHistory->toSql(),
-        //     'bindings' => $soHistory->getBindings(),
-        // ]);
- 
         // === Production Graph (last 7 days) ===
         // Step 1: build date range
         $period = CarbonPeriod::create($startOfDay, $toDate);
@@ -518,6 +491,121 @@ class UserController extends Controller
         $count7Days = array_values($count7Days);
 
         $user_data = User::find($id);
+
+        return view('operator.details', compact(
+            'user_data',
+            'soHistory',
+            'count7Days',
+            'dayCount',
+            'labels',
+            'fromDate',
+            'toDate'
+        ));
+    }
+ 
+    public function details(Request $request, $id)
+    {
+        // === Date Filters ===
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+  
+        // === Date Filters ===
+        $startDate = $request->input('from_date');
+        $endDate   = $request->input('to_date');
+
+        if ($startDate && $endDate) {
+            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
+            $toDate   = Carbon::parse($endDate)->endOfDay();
+
+        } elseif ($startDate) {
+            $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
+            $toDate   = Carbon::parse($startDate)->endOfDay();
+
+        } else {
+            // default last 7 days (including today)
+            $fromDate = $startOfDay = now()->subDays(6)->startOfDay();
+            $toDate   = now()->endOfDay();
+        }
+ 
+        // Days count
+        $dayCount = $fromDate->diffInDays($toDate) + 1;
+        $plannedRuntime = 1350 * $dayCount; // in minutes
+        $idealRuntime = 1440 * $dayCount; // in minutes
+
+        // ========= Base Query =========
+        $baseQuery = SalesOrderTracking::query()
+            ->where('operator_id', $id)
+            ->whereNotNull('end_date_time')
+            ->where('roll_status', 'completed');
+  
+        // === Production Graph (last 7 days) ===
+        // Step 1: build date range
+        $period = CarbonPeriod::create($startOfDay, $toDate);
+        $labels = [];
+        $dates = [];
+        foreach ($period as $date) {
+            $key = $date->format('d M');
+            $labels[] = $key;
+            $dates[$key] = 0;
+        }
+
+        // Step 2: fetch data 
+        $data = (clone $baseQuery)
+            ->select(
+                'so_id',
+                'operation_id',
+                DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as raw_date'),
+                DB::raw('SUM(time_taken) as time_taken_minutes'),
+                DB::raw('COUNT(quantity_processed) as total')
+            )
+            ->with(['operation:id,operation_name', 'soProduct:so_id,so_no'])
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            ->groupBy('so_id', 'operation_id')
+            ->pluck('total', 'raw_date')
+            ->toArray();
+
+        // Step 3: re-map
+        $mappedData = [];
+        foreach ($data as $rawDate => $total) {
+            $key = Carbon::parse($rawDate)->format('d M');
+            $mappedData[$key] = (int) $total;
+        }
+
+        // Step 4: merge
+        $count7Days = array_replace($dates, $mappedData);
+        $count7Days = array_values($count7Days);
+
+        $user_data = User::find($id);
+
+        // SO history
+
+        
+        // ========= SO History (detail view) ========= 
+        $soHistory = (clone $baseQuery)
+            ->select(
+                //'so_id',
+                //'operation_id',
+                //'machine_id',
+                // 'so_product_id',
+                // 'sub_product_id',
+               // 'pass_id',
+                DB::raw('MIN(start_date_time) as start_date'),
+                DB::raw('MAX(end_date_time) as end_date'),
+                DB::raw('SUM(time_taken) as time_taken_minutes'),
+                DB::raw('COUNT(quantity_processed) as total_quantity_processed')
+            )
+            ->with([
+                'operation:id,operation_name',
+                'soProduct:so_id,so_no',
+                'machine:id,machine',
+                // 'product:id,product_modified_name',
+                // 'subProduct:id,sub_product_name'
+            ])
+            ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
+            // ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id', 'pass_id')  // ✅ added missing groupBys
+            ->groupBy( 'quantity_processed' )  // ✅ added missing groupBys
+            ->orderBy(DB::raw('DATE(end_date_time)'),'DESC')->get();
 
         return view('operator.details', compact(
             'user_data',

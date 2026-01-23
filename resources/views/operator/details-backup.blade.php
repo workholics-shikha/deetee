@@ -178,8 +178,8 @@
                                             <table class="table rounded-3 mb-0">
                                                 <thead>
                                                     <tr>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Start Date </th>
-                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> End Date </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">Start Date </th>
+                                                        <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium">End Date </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Machine </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> SO No. </th>
                                                         <th scope="col" class="text-6C7D83 py-2 px-3 fw-medium"> Product </th>
