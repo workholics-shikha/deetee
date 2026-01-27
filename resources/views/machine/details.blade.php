@@ -574,7 +574,9 @@
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
-                    console.log(response.message);
+
+                    //alert(response.message);
+                    successToaster( response.message);
 
                     // Update icon
                     let icon = $('#statusIcon');
@@ -597,17 +599,15 @@
                      let res;
                         try {
                             res = xhr.responseJSON || JSON.parse(xhr.responseText);
-                            alert(res.message || "Something went wrong");
+                            errorToaster(res.message || "Something went wrong");
                         } catch (e) {
-                            alert("Something went wrong");
+                            errorToaster("Something went wrong");
                             console.error("Non-JSON response:", xhr.responseText);
                         }
                             setTimeout(() => {
                             window.location.reload();
                             }, 2000);
-
-                            // select.value = oldValue;
-
+ 
                 }
             });
         }

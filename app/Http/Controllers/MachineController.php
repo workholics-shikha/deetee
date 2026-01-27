@@ -59,17 +59,7 @@ class MachineController extends Controller
         $data = MachineMaster::all();
         return view('machine-qr-codes', compact('data'));
     }
-
-    public function qrList()
-    {
-        $data['operator'] = User::where('role', 'operator')->paginate();
-        $data['machines'] = MachineMaster::paginate();
-        $data['products'] = ProductMasters::paginate();
-        $data['sales_order'] = ErpSalesOrder::paginate();
-
-        return view('admin/qr-codes-list', compact('data'));
-    }
-
+  
     public function updateStatus(Request $request)
     {
         $request->validate([
@@ -82,14 +72,13 @@ class MachineController extends Controller
 
         //check machine status
         $lastUsed = SalesOrderTracking::select('end_date_time')->where('machine_id',$request->machine_id)->orderBy('id','desc')->first();
-
-
-        if ($lastUsed->end_date_time == null && $machineStatus == 'active') {
+ 
+       /* if ($lastUsed->end_date_time == null && $machineStatus == 'active') {
             return response()->json([
                 'status' => false,
                 'message' => 'Machine is running in an SO.'
             ], 500);
-        }
+        } */
 
         if ($machine->save()) {
             return response()->json([

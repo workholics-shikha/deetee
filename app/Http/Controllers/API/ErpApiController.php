@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\{ErpSalesOrder, ErpSoType};
+use App\Models\{ErpSalesOrder};
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Support\Facades\{Http, Log, Storage};
 
@@ -21,33 +21,7 @@ class ErpApiController extends Controller
         echo "HTTP Status Code: " . $response->status() . "\n";
         echo "Response: " . $response;
     }
-
-    // F1
-    public function so_type()
-    {
-        $response = $this->callErpApi(ERP_LINK . '/OH_SoType');
-
-        $data     = $response->json();
-
-        foreach ($data as $datum) {
-
-            ErpSoType::updateOrInsert(
-
-                ['sotype_id'             => $datum['sotype_id']],
-                [
-                    'sotype_id'          => $datum['sotype_id'],
-                    'sotype_name'        => $datum['sotype_name'],
-                    'sotype_status'      => $datum['sotype_status'],
-                    'sotype_deleted'     => $datum['sotype_deleted'],
-                    'sotype_deletedby'   => $datum['sotype_deletedby'],
-                    'sotype_deletedtime' => $datum['sotype_deletedtime']
-                ]
-            );
-        }
-
-        return (['status' => $response->status(), 'data' => $data]);
-    }
-
+  
     // F2
     public function so_type_by_id($id)
     {
