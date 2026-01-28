@@ -751,7 +751,7 @@ class SalesOrderController extends Controller
 
         return true;
     }
- 
+
     public function syncProcessedQtyJsonByQty()
     {
         $items = DB::select("
@@ -885,4 +885,109 @@ class SalesOrderController extends Controller
         ];
     }
 
+    public function getAllSoids()
+    {
+ 
+    
+        $getData = SalesOrderProduct::where(['measureunit' => 'SET'])->whereNotNull('sub_product_id') ->groupBy('so_id')->pluck('so_id')->toArray();
+
+
+echo "<pre>";
+ print_r($getData); 
+
+$soIds = [
+    12192, 12416, 12500, 12625, 12628, 12696, 12723, 12795, 12830, 12832,
+    12843, 12865, 12873, 12903, 12919, 12925, 12933, 12976, 12981, 12985,
+    12987, 12996, 13007, 13011, 13012, 13015, 13016, 13046, 13065, 13081,
+    13083, 13092, 13108, 13143, 13144, 13147, 13160, 13177, 13182, 13189,
+    13193, 13194, 13218, 13219, 13235, 13236, 13239, 13248, 13249, 13250,
+    13251, 13267, 13268, 13269, 13277, 13304, 13309, 13312, 13361, 13371,
+    13376, 13385, 13388, 13400, 13402, 13406, 13426, 13427, 13454, 13505,
+    13516, 13525, 13552
+];
+
+// $rows = DB::table('sales_order_product_operation_details')
+$rows = SOProductOperationDetails::whereIn('so_id', $soIds)
+    ->where(function ($q) {
+        $q->where('processed_qty', 'like', '%in-progress%')
+          ->orWhere('processed_qty', 'like', '%partial%')
+          ->orWhere('processed_qty', 'like', '%pending%');
+    })->groupBy('so_id')
+    ->pluck('so_id')->toArray();
+
+echo "<pre>";
+  print_r($rows); 
+
+// $allUnique = array_values(array_unique(array_merge($getData, $rows)));
+
+
+// echo '<pre>';
+// print_r($allUnique);
+// exit;
+
+$common = array_values(array_intersect($getData, $rows));
+print_r($common);
+
+
+exit;
+
+        $passSheetDetails = PassSheet::whereIn('id', function ($q) use ($getData) {
+            $q->selectRaw('MAX(id)')
+                ->from('pass_sheets')
+                ->whereIn('so_id', $getData)
+                ->groupBy('cpoitemid');
+        })->get();
+ 
+        $firstOperationDetailSub = DB::table('sales_order_product_operation_details as sod1')
+            ->selectRaw('MIN(sod1.id) as id, sod1.so_id, sod1.sub_product_id')
+            ->groupBy('sod1.so_id', 'sod1.sub_product_id');
+
+        $passSheetDetails = PassSheet::query()
+            ->whereIn('pass_sheets.id', function ($q) use ($getData) {
+                $q->selectRaw('MAX(ps.id)', 'pass_sheets.id as pass_sheet_id' )
+                    ->from('pass_sheets as ps')
+                    ->whereIn('ps.so_id', $getData)
+                    ->groupBy('ps.cpoitemid');
+            })
+            ->leftJoinSub($firstOperationDetailSub, 'first_sod', function ($join) {
+                $join->on('first_sod.so_id', '=', 'pass_sheets.so_id')
+                    ->on('first_sod.sub_product_id', '=', 'pass_sheets.subproduct_id');
+            })
+            ->leftJoin(
+                'sales_order_product_operation_details as sod',
+                'sod.id',
+                '=',
+                'first_sod.id'
+            )
+            ->select(
+                'pass_sheets.*',
+                'sod.processed_qty', 'sod.created_at'
+            )
+            ->get();
+        $html = '<table border="1" cellpadding="8" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Pass ID</th>
+                    <th>SO ID</th>
+                    <th>json</th>
+                     <th>created_at</th>
+                </tr>
+            </thead>
+            <tbody>';
+
+        foreach ($passSheetDetails as $details) {
+            $html .= '<tr>
+                <td>'.$details->id.'</td>
+                <td>'.$details->pass_sheet_id.'</td>
+                <td>'.$details->so_id.'</td>
+                <td>'.$details->processed_qty.'</td>
+                <td>'.$details->created_at.'</td>
+              </tr>';
+        }
+
+        $html .= '</tbody></table>';
+
+        echo $html;
+    }
 }

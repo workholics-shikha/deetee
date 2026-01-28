@@ -787,94 +787,6 @@ class SalesOrderController extends Controller
         }
     }
 
-    public function get_processed_rolls(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'so_product_id' => 'required|integer|exists:sales_order_products,id',
-            'pass_id'       => 'nullable|integer',
-            'operation_id'  => 'required|integer|exists:operation_masters,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation Error',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
-
-        $so_product_id = $request->so_product_id; // primary id of so products
-        $pass_id       = $request->pass_id;
-        $operation_id  = $request->operation_id;
-
-        // Get one instance with required fields and processed_qty
-        $operationDetail = SOProductOperationDetails::select(
-            'id',
-            'so_id',
-            'sales_order_product_id',
-            'sub_product_id',
-            'operation_id',
-            'operation_name',
-            'processed_qty'
-        )
-            ->where([
-                'sales_order_product_id' => $so_product_id,
-                'operation_id' => $operation_id
-            ])
-            ->orderByDesc('id')
-            ->first();
-
-        if (!$operationDetail) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'No details found',
-                'data'    => [
-                    'total_roll'   => 0,
-                    'details'      => [],
-                    'roll_details' => []
-                ]
-            ], 404);
-        }
-
-        $so_product_details = SalesOrderProduct::select('measureunit')->find($so_product_id);
-
-        // Decode processed_qty JSON
-        $processedQty = json_decode($operationDetail->processed_qty, true) ?? [];
-
-        // If pass_id is provided, return the matching roll directly
-        if (!empty($pass_id) && $so_product_details->measureunit == 'SET') {
-
-            $get_pass_id = PassSheet::find($pass_id);
-
-            $processedDetails = collect($processedQty)
-                ->filter(fn($item) => $item['pass_sheet_id'] == $get_pass_id->id)
-                ->map(function ($item) {
-                    return [
-                        'pass_sheet_id' => $item['pass_sheet_id'],
-                        'roll_no'       => $item['quantity'] ?? null,
-                        'roll_status'   => $item['status'] ?? null,
-                    ];
-                })->values()->toArray();
-        } else {
-            // Build roll details array
-            $processedDetails = collect($processedQty)->map(function ($item) {
-                return [
-                    'roll_no'     => $item['quantity'] ?? null,
-                    'roll_status' => $item['status'] ?? null,
-                ];
-            })->toArray();
-        }
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Operation details',
-            'data'    => [
-                'total_roll'   => count($processedDetails),
-                'roll_details' => $processedDetails
-            ]
-        ]);
-    }
-
     public function operation_stop(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -1184,7 +1096,8 @@ class SalesOrderController extends Controller
 
         if ($so_product_details->measureunit === 'SET') {
 
-            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3', 'material', 'hardness', 'qty')->where('cpoitemid', $so_product_details->cpoitemid)->get();
+            $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3', 'material', 'hardness', 'qty')
+                                      ->where('cpoitemid', $so_product_details->cpoitemid)->where('so_id', $so_product_details->so_id)->get();
             $so_product_details->pass_sheet = $pass_sheet;
         } else {
             $so_product_details->pass_sheet = null;
@@ -1563,6 +1476,97 @@ class SalesOrderController extends Controller
             'message' => 'Operation details',
             'data'    => ['details' => $getData]
         ], 200);
+    }
+
+    
+
+    public function get_processed_rolls(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'so_product_id' => 'required|integer|exists:sales_order_products,id',
+            'pass_id'       => 'nullable|integer',
+            'operation_id'  => 'required|integer|exists:operation_masters,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation Error',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $so_product_id = $request->so_product_id; // primary id of so products
+        $pass_id       = $request->pass_id;
+        $operation_id  = $request->operation_id;
+
+        // Get one instance with required fields and processed_qty
+        $operationDetail = SOProductOperationDetails::select(
+            'id',
+            'so_id',
+            'sales_order_product_id',
+            'sub_product_id',
+            'operation_id',
+            'operation_name',
+            'processed_qty'
+        )
+            ->where([
+                'sales_order_product_id' => $so_product_id,
+                'operation_id' => $operation_id
+            ])
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$operationDetail) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'No details found',
+                'data'    => [
+                    'total_roll'   => 0,
+                    'details'      => [],
+                    'roll_details' => []
+                ]
+            ], 404);
+        }
+
+        $so_product_details = SalesOrderProduct::select('measureunit')->find($so_product_id);
+
+        // Decode processed_qty JSON
+        $processedQty = json_decode($operationDetail->processed_qty, true) ?? [];
+
+        // If pass_id is provided, return the matching roll directly
+        if (!empty($pass_id) && $so_product_details->measureunit == 'SET') {
+
+            $get_pass_id = PassSheet::find($pass_id);
+
+            $processedDetails = collect($processedQty)
+                ->filter(fn($item) => $item['pass_sheet_id'] == $get_pass_id->id)
+                ->map(function ($item) {
+                    return [
+                        'pass_sheet_id' => $item['pass_sheet_id'],
+                        'roll_no'       => $item['quantity'] ?? null,
+                        'roll_status'   => $item['status'] ?? null,
+                    ];
+                })->values()->toArray();
+                
+        } else {
+            // Build roll details array
+            $processedDetails = collect($processedQty)->map(function ($item) {
+                return [
+                    'roll_no'     => $item['quantity'] ?? null,
+                    'roll_status' => $item['status'] ?? null,
+                ];
+            })->toArray();
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Operation details',
+            'data'    => [
+                'total_roll'   => count($processedDetails),
+                'roll_details' => $processedDetails
+            ]
+        ]);
     }
 
 
