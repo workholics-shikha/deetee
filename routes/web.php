@@ -240,4 +240,4 @@ Route::get('generateGenericQrCard', [QRCodeController::class, 'generateGenericQr
 // 16-01-2026
 Route::get('buildProcessedQtyRowsNew', [SalesOrderController::class, 'buildProcessedQtyRowsNew'])->name('buildProcessedQtyRowsNew');
 Route::get('syncProcessedQtyJsonByQty', [SalesOrderController::class, 'syncProcessedQtyJsonByQty'])->name('syncProcessedQtyJsonByQty');
-Route::get('getAllSoids', [SalesOrderController::class, 'getAllSoids'])->name('getAllSoids');
+Route::get('fixPassSheetIdsForSO', [SalesOrderController::class, 'fixPassSheetIdsForSO'])->name('fixPassSheetIdsForSO');

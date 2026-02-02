@@ -887,49 +887,116 @@ class SalesOrderController extends Controller
 
     public function getAllSoids()
     {
- 
-    
-        $getData = SalesOrderProduct::where(['measureunit' => 'SET'])->whereNotNull('sub_product_id') ->groupBy('so_id')->pluck('so_id')->toArray();
 
 
-echo "<pre>";
- print_r($getData); 
-
-$soIds = [
-    12192, 12416, 12500, 12625, 12628, 12696, 12723, 12795, 12830, 12832,
-    12843, 12865, 12873, 12903, 12919, 12925, 12933, 12976, 12981, 12985,
-    12987, 12996, 13007, 13011, 13012, 13015, 13016, 13046, 13065, 13081,
-    13083, 13092, 13108, 13143, 13144, 13147, 13160, 13177, 13182, 13189,
-    13193, 13194, 13218, 13219, 13235, 13236, 13239, 13248, 13249, 13250,
-    13251, 13267, 13268, 13269, 13277, 13304, 13309, 13312, 13361, 13371,
-    13376, 13385, 13388, 13400, 13402, 13406, 13426, 13427, 13454, 13505,
-    13516, 13525, 13552
-];
-
-// $rows = DB::table('sales_order_product_operation_details')
-$rows = SOProductOperationDetails::whereIn('so_id', $soIds)
-    ->where(function ($q) {
-        $q->where('processed_qty', 'like', '%in-progress%')
-          ->orWhere('processed_qty', 'like', '%partial%')
-          ->orWhere('processed_qty', 'like', '%pending%');
-    })->groupBy('so_id')
-    ->pluck('so_id')->toArray();
-
-echo "<pre>";
-  print_r($rows); 
-
-// $allUnique = array_values(array_unique(array_merge($getData, $rows)));
+        $getData = SalesOrderProduct::where(['measureunit' => 'SET'])->whereNotNull('sub_product_id')->groupBy('so_id')->pluck('so_id')->toArray();
 
 
-// echo '<pre>';
-// print_r($allUnique);
-// exit;
+        echo "<pre>";
+        // print_r($getData); 
 
-$common = array_values(array_intersect($getData, $rows));
-print_r($common);
+        $soIds = [
+            12192,
+            12416,
+            12500,
+            12625,
+            12628,
+            12696,
+            12723,
+            12795,
+            12830,
+            12832,
+            12843,
+            12865,
+            12873,
+            12903,
+            12919,
+            12925,
+            12933,
+            12976,
+            12981,
+            12985,
+            12987,
+            12996,
+            13007,
+            13011,
+            13012,
+            13015,
+            13016,
+            13046,
+            13065,
+            13081,
+            13083,
+            13092,
+            13108,
+            13143,
+            13144,
+            13147,
+            13160,
+            13177,
+            13182,
+            13189,
+            13193,
+            13194,
+            13218,
+            13219,
+            13235,
+            13236,
+            13239,
+            13248,
+            13249,
+            13250,
+            13251,
+            13267,
+            13268,
+            13269,
+            13277,
+            13304,
+            13309,
+            13312,
+            13361,
+            13371,
+            13376,
+            13385,
+            13388,
+            13400,
+            13402,
+            13406,
+            13426,
+            13427,
+            13454,
+            13505,
+            13516,
+            13525,
+            13552
+        ];
+
+        // $rows = DB::table('sales_order_product_operation_details')
+        $rows = SOProductOperationDetails::whereIn('so_id', $soIds)
+            ->where(function ($q) {
+                $q->where('processed_qty', 'like', '%in-progress%')
+                    ->orWhere('processed_qty', 'like', '%partial%')
+                    ->orWhere('processed_qty', 'like', '%pending%');
+            })->groupBy('so_id')
+            ->pluck('so_id')->toArray();
+
+        echo "<pre>";
+        print_r($rows);
+
+        // $allUnique = array_values(array_unique(array_merge($getData, $rows)));
+
+        $filtered = array_values(array_diff($getData, $rows));
+
+        echo '<pre>';
+        print_r($filtered);
+        exit;
 
 
-exit;
+        $common = array_values(array_intersect($getData, $rows));
+        //print_r($common);
+
+
+        exit;
 
         $passSheetDetails = PassSheet::whereIn('id', function ($q) use ($getData) {
             $q->selectRaw('MAX(id)')
@@ -937,14 +1004,14 @@ exit;
                 ->whereIn('so_id', $getData)
                 ->groupBy('cpoitemid');
         })->get();
- 
+
         $firstOperationDetailSub = DB::table('sales_order_product_operation_details as sod1')
             ->selectRaw('MIN(sod1.id) as id, sod1.so_id, sod1.sub_product_id')
             ->groupBy('sod1.so_id', 'sod1.sub_product_id');
 
         $passSheetDetails = PassSheet::query()
             ->whereIn('pass_sheets.id', function ($q) use ($getData) {
-                $q->selectRaw('MAX(ps.id)', 'pass_sheets.id as pass_sheet_id' )
+                $q->selectRaw('MAX(ps.id)', 'pass_sheets.id as pass_sheet_id')
                     ->from('pass_sheets as ps')
                     ->whereIn('ps.so_id', $getData)
                     ->groupBy('ps.cpoitemid');
@@ -961,7 +1028,8 @@ exit;
             )
             ->select(
                 'pass_sheets.*',
-                'sod.processed_qty', 'sod.created_at'
+                'sod.processed_qty',
+                'sod.created_at'
             )
             ->get();
         $html = '<table border="1" cellpadding="8" cellspacing="0">
@@ -978,16 +1046,121 @@ exit;
 
         foreach ($passSheetDetails as $details) {
             $html .= '<tr>
-                <td>'.$details->id.'</td>
-                <td>'.$details->pass_sheet_id.'</td>
-                <td>'.$details->so_id.'</td>
-                <td>'.$details->processed_qty.'</td>
-                <td>'.$details->created_at.'</td>
+                <td>' . $details->id . '</td>
+                <td>' . $details->pass_sheet_id . '</td>
+                <td>' . $details->so_id . '</td>
+                <td>' . $details->processed_qty . '</td>
+                <td>' . $details->created_at . '</td>
               </tr>';
         }
 
         $html .= '</tbody></table>';
 
         echo $html;
+    }
+
+    function fixPassSheetIdsForSO()
+    {
+       // all ids
+          $soIds = [
+            12192, 12416, 12500, 12625, 12628, 12696, 12723, 12795, 12830, 12832, 12843, 12865, 12873, 12903, 12919, 12925, 12933,   12976, 12981, 12985, 12987, 12996, 13007, 13011, 13012, 13015, 13016, 13046, 13065, 13081, 13083, 13092, 13108, 13143, 13144, 13147, 13160, 13177, 13182, 13189, 13193, 13194, 13218, 13219, 13235, 13236, 13239, 13248, 13249, 13250, 13251, 13267, 13268, 13269, 13277, 13304, 13309, 13312, 13361, 13371, 13376, 13385, 13388, 13400, 13402, 13406, 13426, 13427, 13454, 13505, 13516, 13525, 13552
+        ];
+
+        // for-testing
+        $soIds = [ 13177, 13219, 13235, 13250, 13304, 13309, 13312, 13361 ];
+
+        DB::transaction(function () use ($soIds) {
+
+            foreach ($soIds as $soId) {
+
+                /* ----------------------------------------------------
+             | 1️⃣ Get NEW pass_sheets (source of truth)
+             ---------------------------------------------------- */
+                $passSheets = DB::table('pass_sheets')
+                    ->where('so_id', $soId)
+                    ->orderBy('id', 'ASC')
+                    ->pluck('id')
+                    ->values()
+                    ->toArray();
+
+                if (empty($passSheets)) {
+                    continue;
+                }
+
+             /* ----------------------------------------------------
+             | 2️⃣ Fix processed_qty JSON
+             ---------------------------------------------------- */
+                $opRows = DB::table('sales_order_product_operation_details')
+                    ->where('so_id', $soId)
+                    ->select('id', 'processed_qty')
+                    ->get();
+
+                // we will collect mapping OLD → NEW completed IDs
+                $oldCompletedIds = [];
+                $newCompletedIds = [];
+
+                foreach ($opRows as $row) {
+
+                    $json = json_decode($row->processed_qty, true);
+                    if (!is_array($json)) {
+                        continue;
+                    }
+
+                    /* ---- capture OLD completed IDs BEFORE change ---- */
+                    foreach ($json as $item) {
+                        if (($item['status'] ?? null) === 'completed') {
+                            $oldCompletedIds[] = $item['pass_sheet_id'];
+                        }
+                    }
+
+                    /* ---- update JSON (index-based, as per your working logic) ---- */
+                    foreach ($json as $index => &$item) {
+                        if (isset($passSheets[$index])) {
+                            $item['pass_sheet_id'] = $passSheets[$index];
+                        }
+                    }
+                    unset($item);
+
+                    /* ---- capture NEW completed IDs AFTER change ---- */
+                    foreach ($json as $item) {
+                        if (($item['status'] ?? null) === 'completed') {
+                            $newCompletedIds[] = $item['pass_sheet_id'];
+                        }
+                    }
+
+                    DB::table('sales_order_product_operation_details')
+                        ->where('id', $row->id)
+                        ->update([
+                            'processed_qty' => json_encode($json)
+                        ]);
+                }
+
+                /* ----------------------------------------------------
+             | 3️⃣ Update sales_order_trackings.pass_id
+             | Map OLD completed → NEW completed
+             ---------------------------------------------------- */
+                if (!empty($oldCompletedIds) && !empty($newCompletedIds)) {
+
+                    DB::table('sales_order_trackings')
+                        ->where('so_id', $soId)
+                        ->whereIn('pass_id', $oldCompletedIds)
+                        ->update([
+                            'pass_id' => DB::raw("
+                            CASE pass_id
+                            " . collect($oldCompletedIds)
+                                ->values()
+                                ->map(function ($oldId, $i) use ($newCompletedIds) {
+                                    return isset($newCompletedIds[$i])
+                                        ? "WHEN {$oldId} THEN {$newCompletedIds[$i]}"
+                                        : null;
+                                })
+                                ->filter()
+                                ->implode(' ') . "
+                            END
+                        ")
+                        ]);
+                }
+            }
+        });
     }
 }

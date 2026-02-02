@@ -1421,7 +1421,7 @@ class SalesOrderController extends Controller
         $userData = Auth::user()->load('roleName');
  
         // Fetch operation tracking data
-        $getData = SalesOrderTracking::where([
+        $getData = $query = SalesOrderTracking::where([
             'so_product_id' => $mdata->product_id,
             'sub_product_id' => $mdata->sub_product_id,
             'pass_id' => is_numeric($pass_id) ? (int) $pass_id : null,
@@ -1430,6 +1430,12 @@ class SalesOrderController extends Controller
             'so_id' => $mdata->so_id,
             'so_pid_primary' => $mdata->sales_order_product_id
         ])->orderBy('id', 'desc')->get();
+
+//         $sql = $query->toSql();
+// $bindings = $query->getBindings();
+// dd($sql, $bindings);
+        
+       // $query->get();
 
         if ($getData->isEmpty()) {
             return response()->json([
