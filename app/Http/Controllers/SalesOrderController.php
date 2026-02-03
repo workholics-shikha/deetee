@@ -1059,15 +1059,87 @@ class SalesOrderController extends Controller
         echo $html;
     }
 
-    function fixPassSheetIdsForSO()
+    function fixPassSheetIdsForSO1()
     {
-       // all ids
-          $soIds = [
-            12192, 12416, 12500, 12625, 12628, 12696, 12723, 12795, 12830, 12832, 12843, 12865, 12873, 12903, 12919, 12925, 12933,   12976, 12981, 12985, 12987, 12996, 13007, 13011, 13012, 13015, 13016, 13046, 13065, 13081, 13083, 13092, 13108, 13143, 13144, 13147, 13160, 13177, 13182, 13189, 13193, 13194, 13218, 13219, 13235, 13236, 13239, 13248, 13249, 13250, 13251, 13267, 13268, 13269, 13277, 13304, 13309, 13312, 13361, 13371, 13376, 13385, 13388, 13400, 13402, 13406, 13426, 13427, 13454, 13505, 13516, 13525, 13552
+        // all ids
+        /*   $soIds = [
+            12192, 12416, 12500, 12625, 12628, 12696, 12723, 12795, 12830, 12832, 12843, 12865, 12873, 12903, 12919, 12925, 12933, 12976, 12981, 12985, 12987, 12996, 13007, 13011, 13012, 13015, 13016, 13046, 13065, 13081, 13083, 13092, 13108, 13143, 13144, 13147, 13160, 13177, 13182, 13189, 13193, 13194, 13218, 13219, 13235, 13236, 13239, 13248, 13249, 13250, 13251, 13267, 13268, 13269, 13277, 13304, 13309, 13312, 13361, 13371, 13376, 13385, 13388, 13400, 13402, 13406, 13426, 13427, 13454, 13505, 13516, 13525, 13552
         ];
 
         // for-testing
-        $soIds = [ 13177, 13219, 13235, 13250, 13304, 13309, 13312, 13361 ];
+        $soIds = [ 13177, 13219, 13235, 13250, 13304, 13309, 13312, 13361 ]; 
+        
+        Under Scrutiny - 13309, 13312, 
+
+        DELETE FROM `sales_order_product_operation_details` WHERE `so_id` IN (13309, 13312, );
+        DELETE FROM `pass_sheets` WHERE `so_id` IN (13309, 13312, );
+        UPDATE `sales_order_products` SET `sub_product_id` = NULL WHERE `so_id`  IN (13309, 13312, );
+        DELETE FROM `sales_order_trackings` WHERE `so_id`  IN (13309, 13312, );
+
+        */
+
+        // all ids
+        $soIds = [
+            12192,
+            12416,
+            12500,
+            12625,
+            12628,
+            12696,
+            12723,
+            12795,
+            12830,
+            12832,
+            12843,
+            12865,
+            12873,
+            12903,
+            12919,
+            12925,
+            12933,
+            12976,
+            12981,
+            12985,
+            12987,
+            12996,
+            13007,
+            13011,
+            13012,
+            13015,
+            13016,
+            13046,
+            13065,
+            13081,
+            13083,
+            13092,
+            13108,
+            13143,
+            13144,
+            13147,
+            13160,
+            13177,
+            13182,
+            13189,
+            13193,
+            13194,
+            13218,
+            13219,
+            13235,
+            13236,
+            13239,
+            13248,
+            13249,
+            13250,
+            13251,
+            13267,
+            13268,
+            13269,
+            13277,
+            13304,
+            13309,
+            13312,
+            13361
+        ];
 
         DB::transaction(function () use ($soIds) {
 
@@ -1087,12 +1159,12 @@ class SalesOrderController extends Controller
                     continue;
                 }
 
-             /* ----------------------------------------------------
+                /* ----------------------------------------------------
              | 2️⃣ Fix processed_qty JSON
              ---------------------------------------------------- */
                 $opRows = DB::table('sales_order_product_operation_details')
                     ->where('so_id', $soId)
-                    ->select('id', 'processed_qty')
+                    ->select('id', 'processed_qty', 'product_id', 'sub_product_id')
                     ->get();
 
                 // we will collect mapping OLD → NEW completed IDs
@@ -1159,6 +1231,279 @@ class SalesOrderController extends Controller
                             END
                         ")
                         ]);
+                }
+            }
+        });
+    }
+
+    function fixPassSheetIdsForSO2()
+    {
+        $soIds = [
+            12192,
+            12416,
+            12500,
+            12625,
+            12628,
+            12696,
+            12723,
+            12795,
+            12830,
+            12832,
+            12843,
+            12865,
+            12873,
+            12903,
+            12919,
+            12925,
+            12933,
+            12976,
+            12981,
+            12985,
+            12987,
+            12996,
+            13007,
+            13011,
+            13012,
+            13015,
+            13016,
+            13046,
+            13065,
+            13081,
+            13083,
+            13092,
+            13108,
+            13143,
+            13144,
+            13147,
+            13160,
+            13177,
+            13182,
+            13189,
+            13193,
+            13194,
+            13218,
+            13219,
+            13235,
+            13236,
+            13239,
+            13248,
+            13249,
+            13250,
+            13251,
+            13267,
+            13268,
+            13269,
+            13277,
+            13304,
+            13309,
+            13312,
+            13361
+        ];
+
+        $soIds = [13269];
+
+        DB::transaction(function () use ($soIds) {
+
+            foreach ($soIds as $soId) {
+
+                /* ----------------------------------------------------
+             | Get operation rows PER PRODUCT
+             ---------------------------------------------------- */
+                $opRows = DB::table('sales_order_product_operation_details')
+                    ->where('so_id', $soId)
+                    ->select('id', 'processed_qty', 'sales_order_product_id')
+                    ->get();
+
+                foreach ($opRows as $row) {
+
+                    /* ------------------------------------------------
+                 | 1️⃣ Get pass_sheets PER PRODUCT
+                 ------------------------------------------------ */
+                    $passSheets = DB::table('pass_sheets')
+                        ->where('so_id', $soId)
+                        ->where('subproduct_pid', $row->sales_order_product_id) // 🔥 KEY FIX
+                        ->orderBy('id', 'ASC')
+                        ->pluck('id')
+                        ->values()
+                        ->toArray();
+
+                    // echo "<pre>";    print_r($passSheets); exit;
+
+                    if (empty($passSheets)) {
+                        continue;
+                    }
+
+                    $json = json_decode($row->processed_qty, true);
+                    if (!is_array($json)) {
+                        continue;
+                    }
+
+                    /* ------------------------------------------------
+                 | 2️⃣ Capture OLD completed pass_sheet_ids
+                 ------------------------------------------------ */
+                    $oldCompletedIds = [];
+                    foreach ($json as $item) {
+                        if (($item['status'] ?? null) === 'completed') {
+                            $oldCompletedIds[] = $item['pass_sheet_id'];
+                        }
+                    }
+
+                    /* ------------------------------------------------
+                 | 3️⃣ Update processed_qty (index-based, per product)
+                 ------------------------------------------------ */
+                    foreach ($json as $index => &$item) {
+                        if (isset($passSheets[$index])) {
+                            $item['pass_sheet_id'] = $passSheets[$index];
+                        }
+                    }
+                    unset($item);
+
+                    /* ------------------------------------------------
+                 | 4️⃣ Capture NEW completed pass_sheet_ids
+                 ------------------------------------------------ */
+                    $newCompletedIds = [];
+                    foreach ($json as $item) {
+                        if (($item['status'] ?? null) === 'completed') {
+                            $newCompletedIds[] = $item['pass_sheet_id'];
+                        }
+                    }
+
+                    DB::table('sales_order_product_operation_details')
+                        ->where('id', $row->id)
+                        ->update([
+                            'processed_qty' => json_encode($json)
+                        ]);
+
+                    /* ------------------------------------------------
+                 | 5️⃣ Update sales_order_trackings PER PRODUCT
+                 ------------------------------------------------ */
+                    if (!empty($oldCompletedIds) && !empty($newCompletedIds)) {
+
+                        DB::table('sales_order_trackings')
+                            ->where('so_id', $soId)
+                            ->where('so_pid_primary', $row->sales_order_product_id) // 🔥 KEY FIX
+                            ->whereIn('pass_id', $oldCompletedIds)
+                            ->update([
+                                'pass_id' => DB::raw("
+                                CASE pass_id
+                                " . collect($oldCompletedIds)
+                                    ->values()
+                                    ->map(function ($oldId, $i) use ($newCompletedIds) {
+                                        return isset($newCompletedIds[$i])
+                                            ? "WHEN {$oldId} THEN {$newCompletedIds[$i]}"
+                                            : null;
+                                    })
+                                    ->filter()
+                                    ->implode(' ') . "
+                                END
+                            ")
+                            ]);
+                    }
+                }
+            }
+        });
+    }
+
+    function fixPassSheetIdsForSO()
+    { 
+        //echo "hello"; exit;
+        $soIds = [13269]; // keep single SO while testing
+
+        DB::transaction(function () use ($soIds) {
+
+            foreach ($soIds as $soId) {
+
+                /* ----------------------------------------------------
+             | Get operation rows PER sales_order_product_id
+             ---------------------------------------------------- */
+                $opRows = DB::table('sales_order_product_operation_details')
+                    ->where('so_id', $soId)
+                    ->select('id', 'processed_qty', 'sales_order_product_id')
+                    ->get();
+
+                foreach ($opRows as $row) {
+
+                    /* ------------------------------------------------
+                 | 1️⃣ Get pass_sheets PER sales_order_product_id
+                 ------------------------------------------------ */
+                    $passSheets = DB::table('pass_sheets')
+                        ->where('so_id', $soId)
+                        ->where('subproduct_pid', $row->sales_order_product_id) // ✅ CORRECT KEY
+                        ->orderBy('id', 'ASC')
+                        ->pluck('id')
+                        ->values()
+                        ->toArray();
+
+                    if (empty($passSheets)) {
+                        continue;
+                    }
+
+                    $json = json_decode($row->processed_qty, true);
+                    if (!is_array($json)) {
+                        continue;
+                    }
+
+                    /* ------------------------------------------------
+                 | 2️⃣ Capture OLD completed pass_sheet_ids
+                 ------------------------------------------------ */
+                    $oldCompletedIds = [];
+                    foreach ($json as $item) {
+                        if (($item['status'] ?? null) === 'completed') {
+                            $oldCompletedIds[] = $item['pass_sheet_id'];
+                        }
+                    }
+
+                    /* ------------------------------------------------
+                 | 3️⃣ Update processed_qty (index-based)
+                 ------------------------------------------------ */
+                    foreach ($json as $index => &$item) {
+                        if (isset($passSheets[$index])) {
+                            $item['pass_sheet_id'] = $passSheets[$index];
+                        }
+                    }
+                    unset($item);
+
+                    /* ------------------------------------------------
+                 | 4️⃣ Capture NEW completed pass_sheet_ids
+                 ------------------------------------------------ */
+                    $newCompletedIds = [];
+                    foreach ($json as $item) {
+                        if (($item['status'] ?? null) === 'completed') {
+                            $newCompletedIds[] = $item['pass_sheet_id'];
+                        }
+                    }
+
+                    DB::table('sales_order_product_operation_details')
+                        ->where('id', $row->id)
+                        ->update([
+                            'processed_qty' => json_encode($json)
+                        ]);
+
+                    /* ------------------------------------------------
+                 | 5️⃣ Update sales_order_trackings (CORRECTLY)
+                 ------------------------------------------------ */
+                    if (!empty($oldCompletedIds) && !empty($newCompletedIds)) {
+
+                        DB::table('sales_order_trackings')
+                            ->where('so_id', $soId)
+                            ->where('so_pid_primary', $row->sales_order_product_id) // ✅ FIXED
+                            ->whereIn('pass_id', $oldCompletedIds)
+                            ->update([
+                                'pass_id' => DB::raw("
+                                CASE pass_id
+                                " . collect($oldCompletedIds)
+                                    ->values()
+                                    ->map(function ($oldId, $i) use ($newCompletedIds) {
+                                        return isset($newCompletedIds[$i])
+                                            ? "WHEN {$oldId} THEN {$newCompletedIds[$i]}"
+                                            : null;
+                                    })
+                                    ->filter()
+                                    ->implode(' ') . "
+                                END
+                            ")
+                            ]);
+                    }
                 }
             }
         });

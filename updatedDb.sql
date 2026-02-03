@@ -34,3 +34,10 @@ WHERE processed_qty_copy IS NULL;
 UPDATE sales_order_trackings
 SET pass_id_copy = pass_id
 WHERE pass_id IS NOT NULL;
+
+UPDATE pass_sheets ps
+JOIN sales_order_products sop
+  ON sop.so_id = ps.so_id
+ AND sop.cpoitemid = ps.cpoitemid
+SET ps.subproduct_pid = sop.id
+WHERE ps.subproduct_pid IS NULL;
