@@ -70,12 +70,6 @@ class SalesOrderController extends Controller
         $container['saleOrder'] = ErpSalesOrder::where('so_id', $container['data']->so_id)->first();
         $container['getSubProductId'] = $sub_product_id = $container['data']->sub_product_id;
 
-        // $container['getOperationList'] = SOProductOperationDetails::where('sales_order_product_id', $id)
-        //                                 ->whereNotIn('operation_status', [' ', 'NA', 'Outsourced'])
-        //                                  ->orderByRaw("CASE WHEN sr_no IS NULL OR sr_no = '' THEN 1 ELSE 0 END")
-        //                       ->orderBy('sr_no')
-        //                       ->get();
-
         $container['getOperationList'] = SubproductWiseOperation::with('operationData')
             ->where(['subproduct_id' => $sub_product_id, 'product_master_id' => $container['data']->product_id])
             ->orderByRaw("CASE WHEN s_no IS NULL OR s_no = '' THEN 1 ELSE 0 END")
@@ -1405,9 +1399,70 @@ class SalesOrderController extends Controller
     }
 
     function fixPassSheetIdsForSO()
-    { 
+    {
         //echo "hello"; exit;
         $soIds = [13269]; // keep single SO while testing
+        $soIds = [
+            12192,
+            12416,
+            12500,
+            12625,
+            12628,
+            12696,
+            12723,
+            12795,
+            12830,
+            12832,
+            12843,
+            12865,
+            12873,
+            12903,
+            12919,
+            12925,
+            12933,
+            12976,
+            12981,
+            12985,
+            12987,
+            12996,
+            13007,
+            13011,
+            13012,
+            13015,
+            13016,
+            13046,
+            13065,
+            13081,
+            13083,
+            13092,
+            13108,
+            13143,
+            13144,
+            13147,
+            13160,
+            13177,
+            13182,
+            13189,
+            13193,
+            13194,
+            13218,
+            13219,
+            13235,
+            13236,
+            13239,
+            13248,
+            13249,
+            13250,
+            13251,
+            13267,
+            13268,
+            13269,
+            13277,
+            13304,
+            13309,
+            13312,
+            13361
+        ];
 
         DB::transaction(function () use ($soIds) {
 
@@ -1508,4 +1563,123 @@ class SalesOrderController extends Controller
             }
         });
     }
+
+    public function syncProcessedQtyFromPassSheetsAppendOnly()
+    {
+        $rows = DB::table('sales_order_product_operation_details as sopod')
+            ->join('sales_order_products as sop', 'sop.id', '=', 'sopod.sales_order_product_id')
+            ->select(
+                'sopod.id as sopod_id',
+                'sopod.processed_qty',
+                'sop.so_id',
+                'sop.sub_product_id',
+                'sop.cpoitemid'
+            )
+            ->orderBy('sopod.id', 'ASC')
+            ->get();
+
+        $updated = [];
+        $skipped = [];
+
+        foreach ($rows as $row) {
+
+            /* -------------------------------------------------
+         | 1️⃣ Load pass sheets (SOURCE OF TRUTH)
+         ------------------------------------------------- */
+            $passSheets = DB::table('pass_sheets')
+                ->where('cpoitemid', $row->cpoitemid)
+                ->where('so_id', $row->so_id)
+                ->where('subproduct_id', $row->sub_product_id)
+                ->orderBy('id', 'ASC')
+                ->get(['id', 'qty']);
+
+            if ($passSheets->isEmpty()) {
+                continue;
+            }
+
+            /* -------------------------------------------------
+         | 2️⃣ Decode existing JSON safely
+         ------------------------------------------------- */
+            $existing = [];
+            if (!empty($row->processed_qty)) {
+                $decoded = json_decode($row->processed_qty, true);
+                if (is_array($decoded)) {
+                    $existing = $decoded;
+                }
+            }
+
+            /* -------------------------------------------------
+         | 3️⃣ Index existing rows by pass_sheet_id + quantity
+         ------------------------------------------------- */
+            $existingMap = [];
+            foreach ($existing as $e) {
+                if (
+                    isset($e['pass_sheet_id'], $e['quantity'])
+                    && (int)$e['quantity'] > 0
+                ) {
+                    $key = $e['pass_sheet_id'] . ':' . (int)$e['quantity'];
+                    $existingMap[$key] = $e;
+                }
+            }
+
+            /* -------------------------------------------------
+         | 4️⃣ Build final JSON (append-only)
+         ------------------------------------------------- */
+            $final = [];
+            $changed = false;
+
+            foreach ($passSheets as $sheet) {
+                for ($q = 1; $q <= (int)$sheet->qty; $q++) {
+
+                    $key = $sheet->id . ':' . $q;
+
+                    if (isset($existingMap[$key])) {
+                        // KEEP EXACT OLD DATA
+                        $final[] = $existingMap[$key];
+                    } else {
+                        // ADD MISSING ONLY
+                        $final[] = [
+                            'pass_sheet_id'  => (int)$sheet->id,
+                            'quantity'       => $q,
+                            'status'         => 'not-started',
+                            'updated_by'     => 0,
+                            'completed_date' => null,
+                        ];
+                        $changed = true;
+                    }
+                }
+            }
+
+            if (!$changed) {
+                continue;
+            }
+
+            $json = json_encode($final, JSON_UNESCAPED_SLASHES);
+
+            /* -------------------------------------------------
+         | 5️⃣ Defensive length guard (schema sanity)
+         ------------------------------------------------- */
+            if (strlen($json) > 65000) {
+                // This means your column is NOT LONGTEXT
+                $skipped[] = $row->sopod_id;
+                continue;
+            }
+
+            DB::table('sales_order_product_operation_details')
+                ->where('id', $row->sopod_id)
+                ->update([
+                    'processed_qty' => $json,
+                ]);
+
+            $updated[] = $row->sopod_id;
+        }
+
+        return [
+            'updated_count' => count($updated),
+            'updated_ids'   => $updated,
+            'skipped_count' => count($skipped),
+            'skipped_ids'   => $skipped,
+        ];
+    }
+    
 }

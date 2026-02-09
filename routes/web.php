@@ -241,3 +241,5 @@ Route::get('generateGenericQrCard', [QRCodeController::class, 'generateGenericQr
 Route::get('buildProcessedQtyRowsNew', [SalesOrderController::class, 'buildProcessedQtyRowsNew'])->name('buildProcessedQtyRowsNew');
 Route::get('syncProcessedQtyJsonByQty', [SalesOrderController::class, 'syncProcessedQtyJsonByQty'])->name('syncProcessedQtyJsonByQty');
 Route::get('fixPassSheetIdsForSO', [SalesOrderController::class, 'fixPassSheetIdsForSO'])->name('fixPassSheetIdsForSO');
+
+Route::get('syncProcessedQtyFromPassSheetsAppendOnly', [SalesOrderController::class, 'syncProcessedQtyFromPassSheetsAppendOnly'])->name('syncProcessedQtyFromPassSheetsAppendOnly');

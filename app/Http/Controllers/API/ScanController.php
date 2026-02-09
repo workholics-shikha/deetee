@@ -109,7 +109,7 @@ class ScanController extends Controller
         }
 
         if (is_null($data->sub_product_id)) {
-            return response()->json(['status' => false, 'message' => "Can't proceed with this product", 'data' => []], 404);
+            return response()->json(['status' => false, 'message' => "Can't proceed with this product, Sub product not selected yet!", 'data' => []], 404);
         }
 
         if ($data) {

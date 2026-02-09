@@ -155,13 +155,13 @@
                     </td>
                     <td class="" style="border: none; text-align: center;">
                         <p class="" style="margin-bottom: 0;">{{ $sizeVals[1] }} </p>
-                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size1) ?
-                            $details->size1 : '-' }} </h6>
+                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size2) ?
+                            $details->size2 : '-' }} </h6>
                     </td>
                     <td class="" style="border: none; text-align: right;">
                         <p class="" style="margin-bottom: 0;">{{ $sizeVals[2] }} </p>
-                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size1) ?
-                            $details->size1 : '-' }} </h6>
+                        <h6 class="" style="font-weight: 600;"> {{ !empty($details->size3) ?
+                            $details->size3 : '-' }} </h6>
                     </td>
 
                     <td class="" style="border: none; vertical-align: top;">
