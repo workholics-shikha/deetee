@@ -52,9 +52,6 @@
                                     <table class="table rounded-3" id="myTable">
                                         <thead>
                                             <tr>
-                                                {{-- <th scope="col" class="text-center">
-                                                    <input class="form-check-input table-checkbox" type="checkbox" value="" id="flexCheckDefault" />
-                                                </th> --}}
                                                 <th scope="col" class="text-445B64 p-3"> Name </th>
                                                 <th scope="col" class="text-445B64 p-3"> Unit </th>
                                                 <th scope="col" class="text-445B64 p-3"> Parameter Input</th>
@@ -69,9 +66,7 @@
                                         </tbody>
                                     </table>
                                     <!-- Pagination Section -->
-                                    <div class="pagination d-flex justify-content-center" id="paginationLinks">
-                                    {{ $records->appends(request()->query())->links() }}
-                                    </div>
+                                    <div class="pagination d-flex justify-content-center" id="paginationLinks"> {{ $records->links() }} </div>
 
                                 </div>
                             </div>

@@ -1,11 +1,6 @@
- 
 @foreach ($records as $record)
  
-<tr>
-    {{-- <td class="text-center">
-        <input class="form-check-input table-checkbox" type="checkbox" value="{{ $record->id }}" id="flexCheckDefault" />
-    </td> --}}
-    {{-- <td class="p-3">{{ $record->operation_name }}</td> --}}
+<tr> 
     <th scope="row" class="p-3">
         <div class="d-flex align-items-center">
             <span class="table-square-icon rounded-3 img-zoom">
@@ -17,8 +12,7 @@
     </th>
     <td class="p-3">{{ $record->unit }}</td>
     <td class="p-3">{{ $record->parameter_input }}</td>
-    <td class="p-3">{{ $record->matrix }}</td>
-    {{-- <td class="p-3">{{ $record->parameters }}</td> --}}
+    <td class="p-3">{{ $record->matrix }}</td> 
     <td>
         @foreach ($record->machines as $machine)
            <small> {{$machine->id.'-'. $machine->machine}} </small>,<br> @if (!$loop->last) @endif
