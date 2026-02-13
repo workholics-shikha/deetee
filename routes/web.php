@@ -1,17 +1,32 @@
 <?php
 
-use App\Http\Controllers\{AdminLoginController, DashboardController, MachineController, UserController, ProductController, QRCodeController, ReportsController, RouteCardController, SalesOrderController, SubProductOperationController, ImportController, NotificationController, OperationsController};
-use App\Http\Controllers\API\{ErpApiController};
-
-use Illuminate\Support\Facades\{Artisan, Route, DB};
+use App\Http\Controllers\AdminLoginController;
+use App\Http\Controllers\API\ErpApiController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\MachineController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OperationsController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\QRCodeController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\RouteCardController;
+use App\Http\Controllers\SalesOrderController;
+use App\Http\Controllers\SubProductOperationController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/clear-all-cache', function () {
     Artisan::call('optimize:clear');
+
     return '✅ All Laravel caches cleared successfully!';
 });
 
 Route::get('/run-storage-link', function () {
     Artisan::call('storage:link');
+
     return 'Storage link created (if not already).';
 });
 
@@ -30,27 +45,27 @@ Route::get('/truncate-data', function () {
 
 Route::get('so-list', [ErpApiController::class, 'so_list'])->name('so-list');
 
-Route::get('/',              [AdminLoginController::class, 'showLoginForm'])->name('login');
+Route::get('/', [AdminLoginController::class, 'showLoginForm'])->name('login');
 
-Route::get('login',          [AdminLoginController::class, 'showLoginForm'])->name('login');
+Route::get('login', [AdminLoginController::class, 'showLoginForm'])->name('login');
 
-Route::get('admin/login',    [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+Route::get('admin/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
 
-Route::post('admin/login',   [AdminLoginController::class, 'login'])->name('admin.login.submit');
+Route::post('admin/login', [AdminLoginController::class, 'login'])->name('admin.login.submit');
 
-Route::get('admin/logout',   [AdminLoginController::class, 'logout'])->name('admin.logout');
+Route::get('admin/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
 
 Route::get('forgot-password', [AdminLoginController::class, 'showForgotPassForm'])->name('forgot-password');
 
-Route::post('admin/forgot',   [AdminLoginController::class, 'forgotPassword'])->name('admin.forgot.submit');
+Route::post('admin/forgot', [AdminLoginController::class, 'forgotPassword'])->name('admin.forgot.submit');
 
 Route::get('reset-password/{code}', [AdminLoginController::class, 'resetPassForm'])->name('reset-password');
 
 Route::post('admin/reset-password', [AdminLoginController::class, 'resetPassword'])->name('admin.reset.submit');
 
-Route::post('admin/check/email',    [AdminLoginController::class, 'checkEmail'])->name('admin.check.email');
+Route::post('admin/check/email', [AdminLoginController::class, 'checkEmail'])->name('admin.check.email');
 
-Route::get('thankyou',              [AdminLoginController::class, 'thankyou'])->name('thankyou');
+Route::get('thankyou', [AdminLoginController::class, 'thankyou'])->name('thankyou');
 
 Route::get('admin/printProductList/{id}', [SalesOrderController::class, 'printProductList'])->name('printProductList');
 
@@ -58,21 +73,21 @@ Route::get('admin/pdf-document/{id}', [SalesOrderController::class, 'printPrevie
 
 Route::get('admin/printPassSheet/{id}', [SalesOrderController::class, 'printPassSheet'])->name('printPassSheet');
 
-Route::post('admin/resend/submit',  [AdminLoginController::class, 'resendRequest'])->name('admin.resend.submit');
+Route::post('admin/resend/submit', [AdminLoginController::class, 'resendRequest'])->name('admin.resend.submit');
 
 // Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'no_cache'])->group(function () {
 
-    Route::get('admin/profile',   [DashboardController::class, 'profile'])->name('admin.profile');
+    Route::get('admin/profile', [DashboardController::class, 'profile'])->name('admin.profile');
 
     Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     // Sales order routes ====
     Route::group(['middleware' => ['auth', 'permission:sale_orders']], function () {
 
-        Route::get('admin/sales-order',              [SalesOrderController::class, 'index'])->name('admin.sales-order');
+        Route::get('admin/sales-order', [SalesOrderController::class, 'index'])->name('admin.sales-order');
 
-        Route::get('admin/searchInSo',               [SalesOrderController::class, 'searchInSo'])->name('admin.searchInSo');
+        Route::get('admin/searchInSo', [SalesOrderController::class, 'searchInSo'])->name('admin.searchInSo');
 
         Route::get('admin/sales-order-details/{id}', [SalesOrderController::class, 'so_details'])->name('admin.sales-order-details');
 
@@ -84,21 +99,21 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
 
         Route::post('admin/lockRouteCard', [SubProductOperationController::class, 'lockRouteCard'])->name('admin.lockRouteCard');
 
-        Route::get('admin/pass-sheet/{id}',          [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');
+        Route::get('admin/pass-sheet/{id}', [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');
 
-        Route::get('admin/route-card-preview',       [SalesOrderController::class, 'route_card_preview'])->name('admin.route-card-preview');
+        Route::get('admin/route-card-preview', [SalesOrderController::class, 'route_card_preview'])->name('admin.route-card-preview');
 
         Route::get('admin/product-list-sheet-preview', [SalesOrderController::class, 'product_list_sheet_preview'])->name('admin.product-list-sheet-preview');
 
-        Route::get('admin/pass-sheet-preview',       [SalesOrderController::class, 'pass_sheet_preview'])->name('admin.pass-sheet-preview');
+        Route::get('admin/pass-sheet-preview', [SalesOrderController::class, 'pass_sheet_preview'])->name('admin.pass-sheet-preview');
 
-        Route::get('admin/fetch-sub-product',        [SalesOrderController::class, 'fetch_sub_product'])->name('admin.fetch-sub-product');
+        Route::get('admin/fetch-sub-product', [SalesOrderController::class, 'fetch_sub_product'])->name('admin.fetch-sub-product');
 
-        Route::post('admin/update-sub-product',      [SalesOrderController::class, 'update_sub_product'])->name('admin.update-sub-product');
+        Route::post('admin/update-sub-product', [SalesOrderController::class, 'update_sub_product'])->name('admin.update-sub-product');
 
-        Route::post('admin/operation-review',        [SalesOrderController::class, 'operationReview'])->name('admin.operation-review');
+        Route::post('admin/operation-review', [SalesOrderController::class, 'operationReview'])->name('admin.operation-review');
 
-        Route::get('admin/get-reviews-list/{id}',        [SalesOrderController::class, 'getOperationReviewList'])->name('admin.get-reviews-list');
+        Route::get('admin/get-reviews-list/{id}', [SalesOrderController::class, 'getOperationReviewList'])->name('admin.get-reviews-list');
 
         Route::get('admin/getOperationDetails/{id}/{any?}', [SalesOrderController::class, 'getOperationDetails'])->name('admin.getOperationDetails');
     });
@@ -129,7 +144,7 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
 
         Route::match(['get', 'post'], 'admin/maintenance-overview', [ReportsController::class, 'maintenance_overview'])->name('admin.maintenance-overview');
         Route::match(['get', 'post'], 'admin/maintenance-overview-page', [ReportsController::class, 'maintenance_overview_page'])->name('admin.maintenance-overview-page');
-        
+
     });
 
     Route::get('admin/updateCompletedCount', [ReportsController::class, 'updateCompletedCount']);
@@ -156,11 +171,11 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
     });
 
     Route::group(['middleware' => ['auth', 'permission:operators']], function () {
-        Route::get('admin/operators',  [UserController::class, 'operators'])->name('admin.operators');
+        Route::get('admin/operators', [UserController::class, 'operators'])->name('admin.operators');
     });
 
     Route::group(['middleware' => ['auth', 'permission:operations']], function () {
-        Route::get('admin/operations', [OperationsController::class, 'index'])->name('admin.operations'); 
+        Route::get('admin/operations', [OperationsController::class, 'index'])->name('admin.operations');
     });
 
     Route::get('admin/operator-details/{id}', [UserController::class, 'details'])->name('admin.operator-details');

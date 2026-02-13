@@ -20,9 +20,9 @@ class DatabaseSeeder extends Seeder
             // OperationMasterSeeder::class,
             // PassSheetSeeder::class,
             // MasterWiseOperationSeeder::class,
-            
+
         ]);
-        
+
         \App\Models\User::factory(30)->create();
     }
 }

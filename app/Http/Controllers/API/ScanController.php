@@ -3,44 +3,45 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\{ErpSalesOrder, MachineMaster, SalesOrderProduct};
+use App\Models\ErpSalesOrder;
+use App\Models\MachineMaster;
+use App\Models\SalesOrderProduct;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, Log, Validator};
+use Illuminate\Support\Facades\Validator;
 
 class ScanController extends Controller
 {
-
     public function scan_machine($id)
     {
         $data = MachineMaster::select('id', 'unit_name', 'machine', 'machine_image', 'machine_type', 'machine_status')->find($id);
 
-        if (!$data) {
+        if (! $data) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'Invalid machine QR code scanned.',
-                'data'    => null
+                'data' => null,
             ], 404);
         }
 
         $message = match ($data->machine_status) {
-            'in-working'  => 'Machine is already assigned and currently in use.',
+            'in-working' => 'Machine is already assigned and currently in use.',
             'maintenance' => 'Oops! Machine is in maintenance mode.',
-            'breakdown'   => 'Oops! Machine is currently not operational.',
-            default       => null
+            'breakdown' => 'Oops! Machine is currently not operational.',
+            default => null
         };
 
         if ($message) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => $message,
-                'data'    => $data
+                'data' => $data,
             ], 200);
         }
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'Machine is available and ready to use.',
-            'data'    => $data
+            'data' => $data,
         ], 200);
     }
 
@@ -53,9 +54,9 @@ class ScanController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'Validation Error',
-                'errors'  => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -64,10 +65,10 @@ class ScanController extends Controller
 
         // check machice & SO industry
         $machine = MachineMaster::select('unit_name')->find($machine_id);
-  
+
         $data = ErpSalesOrder::select('id', 'so_no', 'so_id', 'so_unitid')
             ->with(['soProducts' => function ($query) {
-                $query->select('id', 'so_id', 'sub_product_id', 'item_name', 'sales_order_products.so_id')->where('soquantity', '!=', 0);;
+                $query->select('id', 'so_id', 'sub_product_id', 'item_name', 'sales_order_products.so_id')->where('soquantity', '!=', 0);
             }])->find($so_id);
 
         if ($machine->unit_name != $data->industry) {
@@ -91,9 +92,9 @@ class ScanController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'Validation Error',
-                'errors'  => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -118,5 +119,4 @@ class ScanController extends Controller
             return response()->json(['status' => false, 'message' => 'Product details', 'data' => $data], 404);
         }
     }
-  
 }

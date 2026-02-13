@@ -29,12 +29,12 @@ class SalesOrderTracking extends Model
         'roll_status',
         'machine_id',
         'comment',
-        'so_pid_primary'
+        'so_pid_primary',
     ];
 
     protected $hidden = [
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     public function operation()
@@ -70,7 +70,7 @@ class SalesOrderTracking extends Model
     {
         return $this->belongsTo(SubProduct::class, 'sub_product_id', 'id');
     }
- 
+
     public function pass()
     {
         return $this->belongsTo(PassSheet::class, 'pass_id');

@@ -1,10 +1,11 @@
 <?php
 
 namespace Database\Seeders;
- 
-use Illuminate\Database\Seeder;
+
 use Endroid\QrCode\Builder\Builder;
-use Illuminate\Support\Facades\{Storage, DB};
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductMasterSeeder extends Seeder
 {
@@ -46,17 +47,17 @@ class ProductMasterSeeder extends Seeder
 
                 ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' => 'Work Rolls', 'erp_nomenclature' => 'WR', 'product_modified_name' => ''],
 
-                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' => 'Intermediate Rolls', 'erp_nomenclature' => 'IMR', 'product_modified_name' => '' ],
+                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' => 'Intermediate Rolls', 'erp_nomenclature' => 'IMR', 'product_modified_name' => ''],
 
-                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' =>    'Drive Rolls', 'erp_nomenclature' => 'DR', 'product_modified_name' => ''],
+                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' => 'Drive Rolls', 'erp_nomenclature' => 'DR', 'product_modified_name' => ''],
 
-                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' =>    'Idler Rolls', 'erp_nomenclature' => 'IDR', 'product_modified_name' => ''],
+                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' => 'Idler Rolls', 'erp_nomenclature' => 'IDR', 'product_modified_name' => ''],
 
-                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' =>    'Back-up Rolls', 'erp_nomenclature' => 'BUR', 'product_modified_name' => ''],
+                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' => 'Back-up Rolls', 'erp_nomenclature' => 'BUR', 'product_modified_name' => ''],
 
-                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' =>    'SHAFTS', 'erp_nomenclature' => 'SHF', 'product_modified_name' => ''],
+                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' => 'SHAFTS', 'erp_nomenclature' => 'SHF', 'product_modified_name' => ''],
 
-                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' =>    'Other', 'erp_nomenclature' => 'OTH', 'product_modified_name' => ''],
+                ['unit_number' => 1, 'unit' => 'Tooling', 'group' => 'E', 'erp_product' => 'Other', 'erp_nomenclature' => 'OTH', 'product_modified_name' => ''],
 
                 // ============= RMR =============
 
@@ -71,7 +72,7 @@ class ProductMasterSeeder extends Seeder
                 ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'F', 'erp_product' => 'Other Rolls ', 'erp_nomenclature' => 'OTH', 'product_modified_name' => ''],
 
                 ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'F', 'erp_product' => 'Wiper rolls', 'erp_nomenclature' => 'wpr', 'product_modified_name' => '20 Hi Wiper Roll'],
- 
+
                 ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'F', 'erp_product' => 'Side Support Rolls', 'erp_nomenclature' => 'SSR', 'product_modified_name' => '20 Hi Side support role'],
 
                 ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'G', 'erp_product' => 'Work Rolls',    'erp_nomenclature' => 'WR', 'product_modified_name' => '4 Hi - 6 Hi work roll'],
@@ -94,7 +95,7 @@ class ProductMasterSeeder extends Seeder
 
                 ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'I', 'erp_product' => 'Arbors',    'erp_nomenclature' => 'ARB', 'product_modified_name' => 'Arbors(SHAFT)'],
 
-                ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'I', 'erp_product' => 'Straightening Rolls',    'erp_nomenclature' => 'STR', 'product_modified_name' => 'Stratening Roll' ],
+                ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'I', 'erp_product' => 'Straightening Rolls',    'erp_nomenclature' => 'STR', 'product_modified_name' => 'Stratening Roll'],
 
                 ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'J', 'erp_product' => 'Work Rolls',    'erp_nomenclature' => 'WR', 'product_modified_name' => ''],
 
@@ -104,9 +105,9 @@ class ProductMasterSeeder extends Seeder
 
                 ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'J', 'erp_product' => 'Back-Up rolls',    'erp_nomenclature' => 'BUR', 'product_modified_name' => ''],
 
-                ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'J', 'erp_product' =>    'Other rolls',    'erp_nomenclature' => 'OTH', 'product_modified_name' => ''],
+                ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'J', 'erp_product' => 'Other rolls',    'erp_nomenclature' => 'OTH', 'product_modified_name' => ''],
 
-                ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'K', 'erp_product' =>    'Shear Blades',    'erp_nomenclature' => 'SB', 'product_modified_name' => ''],
+                ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'K', 'erp_product' => 'Shear Blades',    'erp_nomenclature' => 'SB', 'product_modified_name' => ''],
 
                 ['unit_number' => 2, 'unit' => 'RMR', 'group' => 'K', 'erp_product' => 'Others', 'erp_nomenclature' => 'OTH', 'product_modified_name' => ''],
 
@@ -156,21 +157,21 @@ class ProductMasterSeeder extends Seeder
         // Insert each machine, generate its QR code, and update the machine_qr_code field
         foreach ($products as $product) {
             // == Insert the machine record and get its ID
-            $jsonData   =  [ 'id' => $product->id, 'product' => $product->erp_product ];
+            $jsonData = ['id' => $product->id, 'product' => $product->erp_product];
 
-            $jsonString =  json_encode($jsonData);
+            $jsonString = json_encode($jsonData);
 
-            // == Generate the QR code 
+            // == Generate the QR code
             $result = Builder::create()
                 ->data($jsonString)
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $product->unit.'-'. $product->erp_nomenclature .'-' .$product->group.'-' . time() . '.png';
+            $name = $product->unit.'-'.$product->erp_nomenclature.'-'.$product->group.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'product-qrcodes/' . $name; // unique filename
+            $path = 'product-qrcodes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());

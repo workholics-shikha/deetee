@@ -32,12 +32,11 @@ return new class extends Migration
             $table->string('bs2_depth')->nullable();
             $table->text('remarks')->nullable();
             $table->integer('revisioncount')->default(0);
-            $table->string("pass_sheet_qr_code")->nullable();
+            $table->string('pass_sheet_qr_code')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
     }
-
 
     /**
      * Reverse the migrations.

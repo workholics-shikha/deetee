@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('machine_health_monitorings', function (Blueprint $table) {
             $table->id();
             $table->integer('master_id');
-            $table->date('start_date_time'); 
-            $table->date('end_date_time')->nullable(); 
-            $table->string('reason', 255)->nullable(); 
+            $table->date('start_date_time');
+            $table->date('end_date_time')->nullable();
+            $table->string('reason', 255)->nullable();
             $table->string('monitor_for')->comment('maintenance, breakdown');
             $table->timestamps();
         });

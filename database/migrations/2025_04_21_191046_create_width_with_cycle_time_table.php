@@ -15,16 +15,16 @@ return new class extends Migration
             $table->id();
             $table->integer('operation');
             $table->string('thickness');
-            $table->string('0_250');	
-            $table->string('251_500');	
-            $table->string('501_750');	
+            $table->string('0_250');
+            $table->string('251_500');
+            $table->string('501_750');
             $table->string('751_1000');
             $table->string('0_50');
             $table->string('51_151');
             $table->string('0_100');
             $table->string('101_150');
             $table->string('151_200');
-            $table->string('201_300');	
+            $table->string('201_300');
             $table->timestamps();
         });
     }

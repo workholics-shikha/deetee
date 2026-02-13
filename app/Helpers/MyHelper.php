@@ -2,17 +2,23 @@
 
 namespace App\Helpers;
 
-use App\Models\{ErpSalesOrder, IdealCycleTime, MachineMaster, PassSheet, SalesOrderProduct, SOProductOperationDetails, SubproductWiseOperation, User};
+use App\Models\ErpSalesOrder;
+use App\Models\IdealCycleTime;
+use App\Models\MachineMaster;
+use App\Models\PassSheet;
+use App\Models\SalesOrderProduct;
+use App\Models\SOProductOperationDetails;
+use App\Models\SubproductWiseOperation;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class MyHelper
 {
-
     public static function getCycleTime1($operationid, $parameter1, $parameter2, $getVal, $getVal2)
     {
-        if ($parameter1 === "Material") {
+        if ($parameter1 === 'Material') {
             $materials = DB::table('material_with_cycle_time')
-                ->select("$getVal as cycleTime", "diameter")
+                ->select("$getVal as cycleTime", 'diameter')
                 ->where('operation', $operationid)
                 ->where($getVal, '!=', '')
                 ->get();
@@ -20,8 +26,10 @@ class MyHelper
             $material = $materials->first(function ($item) use ($getVal2) {
                 if (strpos($item->diameter, '-') !== false) {
                     [$min, $max] = explode('-', $item->diameter);
+
                     return $getVal2 >= (int) $min && $getVal2 <= (int) $max;
                 }
+
                 return false;
             });
 
@@ -30,17 +38,19 @@ class MyHelper
             }
         }
 
-        if ($parameter1 === "Thickness") {
+        if ($parameter1 === 'Thickness') {
             $thicknessRecords = DB::table('thickness_with_cycle_time')
-                ->select("cycle_time", "thickness")
+                ->select('cycle_time', 'thickness')
                 ->where('operation', $operationid)
                 ->get();
 
             $thicknessRecord = $thicknessRecords->first(function ($item) use ($getVal) {
                 if (strpos($item->thickness, '-') !== false) {
                     [$min, $max] = explode('-', $item->thickness);
+
                     return $getVal >= (int) $min && $getVal <= (int) $max;
                 }
+
                 return false;
             });
 
@@ -49,7 +59,7 @@ class MyHelper
             }
         }
 
-        if ($parameter1 === "Bore") {
+        if ($parameter1 === 'Bore') {
             $boreInput = $getVal ? $getVal : 0;
             $thicknessInput = $getVal2 ? $getVal2 : 0;
             $boreRecords = DB::table('bore_with_cycle_time')
@@ -59,17 +69,19 @@ class MyHelper
             $matchedRow = $boreRecords->first(function ($row) use ($thicknessInput) {
                 if (strpos($row->thickness, '-') !== false) {
                     [$min, $max] = explode('-', $row->thickness);
-                    return $thicknessInput >= (int)$min && $thicknessInput <= (int)$max;
+
+                    return $thicknessInput >= (int) $min && $thicknessInput <= (int) $max;
                 }
+
                 return false;
             });
 
             $columnToUse = null;
             $boreColumns = [
-                '0_35'    => [0, 35],
-                '36_50'   => [36, 50],
-                '51_75'   => [51, 75],
-                '76_100'  => [76, 100],
+                '0_35' => [0, 35],
+                '36_50' => [36, 50],
+                '51_75' => [51, 75],
+                '76_100' => [76, 100],
                 '101_125' => [101, 125],
                 '126_150' => [126, 150],
                 '0_50' => [0, 50],
@@ -95,17 +107,17 @@ class MyHelper
             }
 
             if ($cycleTime !== null) {
-                echo  $cycleTime;
+                echo $cycleTime;
             } else {
             }
         }
 
-        if ($parameter1 === "OD") {
+        if ($parameter1 === 'OD') {
         }
-        if ($parameter1 === "Manual") {
+        if ($parameter1 === 'Manual') {
             echo $cycleTime;
         }
-        if ($parameter1 === "Corners") {
+        if ($parameter1 === 'Corners') {
             $corner = $getVal ? $getVal : 0;
             $cornerRecord = DB::table('corners_with_cycle_time')
                 ->select('cycle_time')
@@ -136,7 +148,7 @@ class MyHelper
 
         return $machine ? [
             'unit_name' => $machine->unit_name,
-            'unit_number' => $machine->unit_number
+            'unit_number' => $machine->unit_number,
         ] : null;
     }
 
@@ -157,15 +169,15 @@ class MyHelper
 
         $getMapId = IdealCycleTime::where(['operation_id' => $operationid, 'machine_id' => $machine_id, 'sub_product_id' => $so_spid])->value('id');
 
-        if ($getData->operation_type === "Fixed_ICT") {
+        if ($getData->operation_type === 'Fixed_ICT') {
             return $getData->fixed_ICT;
         }
 
-        if ($getData->operation_type === "Manual_ICT" || $getData->operation_type === "Manual") {
+        if ($getData->operation_type === 'Manual_ICT' || $getData->operation_type === 'Manual') {
             return $salesOrderProductOperatonDetails->cycle_time;
         }
 
-        if ($parameter1 === "Material") {
+        if ($parameter1 === 'Material') {
 
             $getVal = $salesOrderProduct->material;
             $getVal2 = $salesOrderProduct->size1;
@@ -191,12 +203,11 @@ class MyHelper
                 return 'NA';
             }
 
-
-            $materials  = DB::table('ict_material')
+            $materials = DB::table('ict_material')
                 ->select("$getVal as cycleTime", 'diameter_start_range', 'diameter_end_range')
                 // ->where('operation_id', $operationid)
                 // ->whereIn('sub_product_id', [$so_spid])
-                //->where($getVal, '!=', '')
+                // ->where($getVal, '!=', '')
                 // ->whereRaw("FIND_IN_SET(?, REPLACE(REPLACE(`machine_id`, '\"', ''), ' ', '')) > 0", [$machine_id])
                 ->where('ict_id', $getMapId)
                 ->get();
@@ -224,13 +235,13 @@ class MyHelper
             return 'NA';
         }
 
-        if ($parameter1 === "Lw = (OD - ID)/2") {
+        if ($parameter1 === 'Lw = (OD - ID)/2') {
 
             $getVal = $salesOrderProduct->size1;
             $getVal2 = $salesOrderProduct->size2;
 
             // ✅ Ensure numeric values (avoid non-numeric warning)
-            if (!is_numeric($getVal) || !is_numeric($getVal2)) {
+            if (! is_numeric($getVal) || ! is_numeric($getVal2)) {
                 return 'NA'; // or handle as needed (e.g., skip / throw error)
             }
 
@@ -244,15 +255,17 @@ class MyHelper
 
             if (in_array($operationid, [93, 94, 95, 99, 111])) {
                 $thicknessRecords = DB::table('ict_thickness')
-                    ->select("cycle_time", "thickness")
+                    ->select('cycle_time', 'thickness')
                     ->where('operation', $operationid)
                     ->get();
 
                 $thicknessRecord = $thicknessRecords->first(function ($item) use ($gotVal) {
                     if (strpos($item->thickness, '-') !== false) {
                         [$min, $max] = explode('-', $item->thickness);
+
                         return $gotVal >= (int) $min && $gotVal <= (int) $max;
                     }
+
                     return false;
                 });
 
@@ -262,13 +275,13 @@ class MyHelper
             }
         }
 
-        if ($parameter1 === "Ww = (OD-BORE)/2") {
+        if ($parameter1 === 'Ww = (OD-BORE)/2') {
 
             $getVal = $salesOrderProduct->size1;
             $getVal2 = $salesOrderProduct->size2;
 
             // ✅ Ensure numeric values (avoid non-numeric warning)
-            if (!is_numeric($getVal) || !is_numeric($getVal2)) {
+            if (! is_numeric($getVal) || ! is_numeric($getVal2)) {
                 return 'NA'; // or handle as needed (e.g., skip / throw error)
             }
 
@@ -278,22 +291,24 @@ class MyHelper
             if (in_array($operationid, [81, 83])) {
 
                 $thicknessRecords = DB::table('ict_thickness')
-                    ->select("cycle_time", "thickness")
+                    ->select('cycle_time', 'thickness')
                     ->where('operation', $operationid)
                     ->get();
 
                 $thicknessRecord = $thicknessRecords->first(function ($item) use ($gotVal) {
                     if (strpos($item->thickness, '-') !== false) {
                         [$min, $max] = explode('-', $item->thickness);
+
                         return $gotVal >= (int) $min && $gotVal <= (int) $max;
                     }
+
                     return false;
                 });
 
                 if ($thicknessRecord) {
                     return $thicknessRecord->cycle_time;
                 }
-            } else if (in_array($operationid, [85, 87])) {
+            } elseif (in_array($operationid, [85, 87])) {
 
                 $thickness = $gotVal; // parameter1_value
                 $bore = $salesOrderProduct->size3;
@@ -308,56 +323,57 @@ class MyHelper
 
                 if ($thickness > 0 && $thickness < 30) {
                     $cycleTime2 = '10';
-                } else 	if ($thickness > 31 && $thickness < 60) {
+                } elseif ($thickness > 31 && $thickness < 60) {
                     $cycleTime2 = '15';
-                } else 	if ($thickness > 61 && $thickness < 90) {
+                } elseif ($thickness > 61 && $thickness < 90) {
                     $cycleTime2 = '20';
-                } else 	if ($thickness > 91 && $thickness < 130) {
+                } elseif ($thickness > 91 && $thickness < 130) {
                     $cycleTime2 = '25';
-                } else 	if ($thickness > 131 && $thickness < 150) {
+                } elseif ($thickness > 131 && $thickness < 150) {
                     $cycleTime2 = '30';
                 }
-                return ($cycleTime + $cycleTime2);
-            } else if (in_array($operationid, [86, 88])) {
+
+                return $cycleTime + $cycleTime2;
+            } elseif (in_array($operationid, [86, 88])) {
 
                 $param1 = $gotVal; // parameter1_value
                 $od_param2 = $salesOrderProduct->size1;
 
                 if ($param1 > 0 && $param1 < 30) {
                     $cycleTime = '10';
-                } else 	if ($param1 > 31 && $param1 < 60) {
+                } elseif ($param1 > 31 && $param1 < 60) {
                     $cycleTime = '15';
-                } else 	if ($param1 > 61 && $param1 < 90) {
+                } elseif ($param1 > 61 && $param1 < 90) {
                     $cycleTime = '20';
-                } else 	if ($param1 > 91 && $param1 < 130) {
+                } elseif ($param1 > 91 && $param1 < 130) {
                     $cycleTime = '25';
-                } else 	if ($param1 > 131 && $param1 < 150) {
+                } elseif ($param1 > 131 && $param1 < 150) {
                     $cycleTime = '30';
                 }
 
                 if ($od_param2 > 0 && $od_param2 < 30) {
                     $cycleTime2 = '10';
-                } else 	if ($od_param2 > 31 && $od_param2 < 60) {
+                } elseif ($od_param2 > 31 && $od_param2 < 60) {
                     $cycleTime2 = '15';
-                } else 	if ($od_param2 > 61 && $od_param2 < 90) {
+                } elseif ($od_param2 > 61 && $od_param2 < 90) {
                     $cycleTime2 = '20';
-                } else 	if ($od_param2 > 91 && $od_param2 < 130) {
+                } elseif ($od_param2 > 91 && $od_param2 < 130) {
                     $cycleTime2 = '25';
-                } else 	if ($od_param2 > 131 && $od_param2 < 150) {
+                } elseif ($od_param2 > 131 && $od_param2 < 150) {
                     $cycleTime2 = '30';
                 }
 
-                return ($cycleTime + $cycleTime2);
+                return $cycleTime + $cycleTime2;
             }
         }
 
-        if ($parameter1 === "OD" || $parameter2 === "Thickness") {
+        if ($parameter1 === 'OD' || $parameter2 === 'Thickness') {
 
             $bore = $salesOrderProduct->size1;
             $thickness = $salesOrderProduct->size3;
 
             // ✅ Ensure numeric values (avoid non-numeric warning)
-            if (!is_numeric($bore) || !is_numeric($thickness)) {
+            if (! is_numeric($bore) || ! is_numeric($thickness)) {
                 return 'NA'; // or handle as needed (e.g., skip / throw error)
             }
 
@@ -372,12 +388,12 @@ class MyHelper
             return $cycleTime;
         }
 
-        if ($parameter1 === "Thickness" || $parameter1 === "OD") {
+        if ($parameter1 === 'Thickness' || $parameter1 === 'OD') {
 
             $getVal = $salesOrderProduct->size3;
 
             // ✅ Ensure numeric values (avoid non-numeric warning)
-            if (!is_numeric($getVal)) {
+            if (! is_numeric($getVal)) {
                 return 'NA'; // or handle as needed (e.g., skip / throw error)
             }
 
@@ -397,15 +413,17 @@ class MyHelper
             }
 
             $thicknessRecords = DB::table('ict_thickness')
-                ->select("cycle_time", "thickness")
+                ->select('cycle_time', 'thickness')
                 ->where('operation', $operationid)
                 ->get();
 
             $thicknessRecord = $thicknessRecords->first(function ($item) use ($getVal) {
                 if (strpos($item->thickness, '-') !== false) {
                     [$min, $max] = explode('-', $item->thickness);
+
                     return $getVal >= (int) $min && $getVal <= (int) $max;
                 }
+
                 return false;
             });
 
@@ -415,7 +433,7 @@ class MyHelper
         }
     }
 
-    public static function getCycleTimeForTMR($operationid, $so_id, $so_pid, $so_spid, $machine_id, $passId = Null)
+    public static function getCycleTimeForTMR($operationid, $so_id, $so_pid, $so_spid, $machine_id, $passId = null)
     {
 
         $getData = SubproductWiseOperation::where(['product_master_id' => $so_pid, 'subproduct_id' => $so_spid, 'operation_id' => $operationid])->first();
@@ -435,19 +453,19 @@ class MyHelper
 
         $getMapId = IdealCycleTime::where(['operation_id' => $operationid, 'machine_id' => $machine_id])->value('id');
 
-        if ($getData->operation_type === "Fixed_ICT") {
+        if ($getData->operation_type === 'Fixed_ICT') {
             return $getData->fixed_ICT;
         }
 
-        if ($getData->operation_type === "Manual_ICT" || $getData->operation_type === "Manual") {
-            if (!empty($salesOrderProductOperatonDetails->cycle_time)) {
+        if ($getData->operation_type === 'Manual_ICT' || $getData->operation_type === 'Manual') {
+            if (! empty($salesOrderProductOperatonDetails->cycle_time)) {
                 return $salesOrderProductOperatonDetails->cycle_time;
             } else {
                 return 'NA';
             }
         }
 
-        if ($getData->operation_type === "NA") {
+        if ($getData->operation_type === 'NA') {
             return 'NA';
         }
 
@@ -468,7 +486,7 @@ class MyHelper
         }
 
         // Cutting
-        if ($parameter1 === "Material" && $parameter2 === "Outer Diameter") {
+        if ($parameter1 === 'Material' && $parameter2 === 'Outer Diameter') {
 
             $getVal = $salesOrderProduct->material;
             $getVal2 = $size1;
@@ -496,7 +514,7 @@ class MyHelper
                 return 'NA';
             }
 
-            $materials  = DB::table('ict_material')
+            $materials = DB::table('ict_material')
                 ->select("$getVal as cycleTime", 'diameter_start_range', 'diameter_end_range')
                 ->where('ict_id', $getMapId)
                 ->get();
@@ -525,19 +543,21 @@ class MyHelper
         }
 
         // U Drilling
-        if ($parameter1 === "Thickness") {
+        if ($parameter1 === 'Thickness') {
 
             $getVal = $size3;
             $thicknessRecords = DB::table('ict_thickness')
-                ->select("cycle_time", "thickness")
+                ->select('cycle_time', 'thickness')
                 ->where('operation', $operationid)
                 ->get();
 
             $thicknessRecord = $thicknessRecords->first(function ($item) use ($getVal) {
                 if (strpos($item->thickness, '-') !== false) {
                     [$min, $max] = explode('-', $item->thickness);
+
                     return $getVal >= (int) $min && $getVal <= (int) $max;
                 }
+
                 return false;
             });
 
@@ -547,7 +567,7 @@ class MyHelper
         }
 
         // CNC Blanking - 1
-        if ($parameter1 === "Bore (ID)" && $parameter2 === "Thickness") {
+        if ($parameter1 === 'Bore (ID)' && $parameter2 === 'Thickness') {
 
             $thickness = $size2; // parameter1_value
             $bore = $size3;
@@ -573,7 +593,7 @@ class MyHelper
                 $getVal2 = $size2;
 
                 // ✅ Ensure numeric values (avoid non-numeric warning)
-                if (!is_numeric($getVal) || !is_numeric($getVal2)) {
+                if (! is_numeric($getVal) || ! is_numeric($getVal2)) {
                     return 'NA'; // or handle as needed (e.g., skip / throw error)
                 }
 
@@ -587,7 +607,7 @@ class MyHelper
                     ->value('cycle_time'); // gets the single value
 
                 return $cycleTime;
-            } 
+            }
         }
 
         // CNC Blanking - 4
@@ -627,7 +647,7 @@ class MyHelper
             $getVal = $salesOrderProductOperatonDetails->cycle_time_value2; // parameter1_value
 
             // ✅ Ensure numeric values (avoid non-numeric warning)
-            if (!is_numeric($getVal)) {
+            if (! is_numeric($getVal)) {
                 return 'NA'; // or handle as needed (e.g., skip / throw error)
             }
 
@@ -639,8 +659,10 @@ class MyHelper
             $thicknessRecord = $cycleTime->first(function ($item) use ($getVal) {
                 if (strpos($item->length, '-') !== false) {
                     [$min, $max] = explode('-', $item->length);
+
                     return $getVal >= (int) $min && $getVal <= (int) $max;
                 }
+
                 return false;
             });
 
@@ -655,7 +677,7 @@ class MyHelper
             $secondValue = $salesOrderProductOperatonDetails->cycle_time_value2; // parameter2_value
 
             // ✅ Ensure numeric values (avoid non-numeric warning)
-            if (!is_numeric($firstValue) || !is_numeric($secondValue)) {
+            if (! is_numeric($firstValue) || ! is_numeric($secondValue)) {
                 return 'NA'; // or handle as needed
             }
 
@@ -695,7 +717,7 @@ class MyHelper
             $thickness = $size3;
             $keyway = $salesOrderProductOperatonDetails->kw_size1;
 
-            if (!is_numeric($thickness) || !is_numeric($keyway)) {
+            if (! is_numeric($thickness) || ! is_numeric($keyway)) {
                 return 'NA'; // or handle as needed
             }
 
@@ -710,16 +732,17 @@ class MyHelper
             if ($cycleTime) {
                 return $cycleTime;
             }
+
             return 'NA';
         }
 
-        if ($parameter1 === "Lw = (OD - ID)/2") {
+        if ($parameter1 === 'Lw = (OD - ID)/2') {
 
             $getVal = $size1;
             $getVal2 = $size2;
 
             // ✅ Ensure numeric values (avoid non-numeric warning)
-            if (!is_numeric($getVal) || !is_numeric($getVal2)) {
+            if (! is_numeric($getVal) || ! is_numeric($getVal2)) {
                 return 'NA'; // or handle as needed (e.g., skip / throw error)
             }
 
@@ -736,23 +759,26 @@ class MyHelper
                 $thicknessRecord = $thicknessRecords->first(function ($item) use ($gotVal) {
                     if (strpos($item->thickness, '-') !== false) {
                         [$min, $max] = explode('-', $item->thickness);
+
                         return $gotVal >= (int) $min && $gotVal <= (int) $max;
                     }
+
                     return false;
                 });
 
                 if ($thicknessRecord) {
                     return $thicknessRecord->cycle_time;
                 }
-             } else if (in_array($operationid, [125, 126])) {
+            } elseif (in_array($operationid, [125, 126])) {
 
                 $cycleTime = 1234566;
+
                 return $cycleTime;
             }
         }
 
         // Bore Turning With Under Cut - Single Side
-        if ($parameter1 === "Thickness" && $parameter2 === "Bore") {
+        if ($parameter1 === 'Thickness' && $parameter2 === 'Bore') {
 
             $thickness = $size3; // parameter1_value
             $bore = $size2;
@@ -771,13 +797,13 @@ class MyHelper
             }
         }
 
-        if ($parameter1 === "Thickness" && $parameter2 === "(Kw + Kd +Kd) x T") {
+        if ($parameter1 === 'Thickness' && $parameter2 === '(Kw + Kd +Kd) x T') {
 
             $kw_size1 = $salesOrderProduct->kw_size1;
             $kw_depth = $salesOrderProduct->kw_depth;
             $param2 = ($kw_size1 + $kw_depth + $kw_depth) * $size3; // (kw_size1 + kw_depth + kw_depth) x size3
 
-            if (!is_numeric($param2)) {
+            if (! is_numeric($param2)) {
                 return 'NA'; // or handle as needed (e.g., skip / throw error)
             }
 
@@ -788,15 +814,18 @@ class MyHelper
             $thicknessRecord = $cycleTime->first(function ($item) use ($size3) {
                 if (strpos($item->length, '-') !== false) {
                     [$min, $max] = explode('-', $item->length);
+
                     return $size3 >= (int) $min && $size3 <= (int) $max;
                 }
+
                 return false;
             });
+
             // return $kw_size1 .'---'. $kw_depth.'---'.$size3;
-            return ($param2 / $thicknessRecord->cycle_time);
+            return $param2 / $thicknessRecord->cycle_time;
         }
 
-        if ($parameter1 === "Bearing Seat Size" && $parameter2 === "Bearing Seat Depth") {
+        if ($parameter1 === 'Bearing Seat Size' && $parameter2 === 'Bearing Seat Depth') {
 
             $cycleTime = DB::table('ict_bearing_seat')
                 ->select('seat_size', 'seat_depth', 'cycle_time')
@@ -812,11 +841,11 @@ class MyHelper
                 [$minSize, $maxSize] = array_map('trim', explode('-', $item->seat_size));
                 [$minDepth, $maxDepth] = array_map('trim', explode('-', $item->seat_depth));
 
-                return $bs1_dia >= (float)$minSize && $bs1_dia <= (float)$maxSize && $bs1_depth >= (float)$minDepth && $bs1_depth <= (float)$maxDepth;
+                return $bs1_dia >= (float) $minSize && $bs1_dia <= (float) $maxSize && $bs1_depth >= (float) $minDepth && $bs1_depth <= (float) $maxDepth;
             }))->cycle_time ?? null;
         }
 
-        if ($parameter1 === "Corners") {
+        if ($parameter1 === 'Corners') {
 
             $corner = $salesOrderProductOperatonDetails->cycle_time;
             $cornerRecord = DB::table('ict_tapping')
@@ -851,39 +880,38 @@ class MyHelper
 
         $getMapId = IdealCycleTime::where(['operation_id' => $operationid, 'machine_id' => $machine_id, 'sub_product_id' => $so_spid])->value('id');
 
-        if ($getData->operation_type === "Fixed_ICT") {
+        if ($getData->operation_type === 'Fixed_ICT') {
             return $getData->fixed_ICT;
         }
 
         // if ($getData->operation_type === "Manual_ICT" || $getData->operation_type === "ManualIn") {
-        if ($getData->operation_type === "Manual_ICT") {
+        if ($getData->operation_type === 'Manual_ICT') {
             return $salesOrderProductOperatonDetails->cycle_time;
         }
 
-        if ($getData->operation_type === "NA") {
+        if ($getData->operation_type === 'NA') {
             return 'NA';
         }
 
-        if (($parameter1 === "Outer Diameter" && $parameter2 === "Total Length")
-            || ($parameter1 === "Blade Thickness" && $parameter2 === "Blade Length")
-            || ($parameter1 === "Blade Length" && $parameter2 === "Blade Width")
-            || ($parameter1 === "Counter Size" && $parameter2 === "Counter Depth")
-            || ($parameter1 === "Elliptical Hole size" && $parameter2 === "Blade Thickness")
-            || ($parameter1 === "Elliptical Counter size" && $parameter2 === "Counter Depth")
-            || ($parameter1 === "Keyway size" && $parameter2 === "Blade Thickness")
-            || ($parameter1 === "Blade Radius" && $parameter2 === "Blade Thickness")
-            || ($parameter1 === "Blade Thickness & Center Radius" && $parameter2 === "Blade Length")
-            || ($parameter1 === "Hole Size" && $parameter2 === "Blade Thickness")
-            || ($parameter1 === "Blade Width" && $parameter2 === "Blade Length")
-            || ($parameter1 === "Blade Width" && $parameter2 === "Blade Thickness")
-
+        if (($parameter1 === 'Outer Diameter' && $parameter2 === 'Total Length')
+            || ($parameter1 === 'Blade Thickness' && $parameter2 === 'Blade Length')
+            || ($parameter1 === 'Blade Length' && $parameter2 === 'Blade Width')
+            || ($parameter1 === 'Counter Size' && $parameter2 === 'Counter Depth')
+            || ($parameter1 === 'Elliptical Hole size' && $parameter2 === 'Blade Thickness')
+            || ($parameter1 === 'Elliptical Counter size' && $parameter2 === 'Counter Depth')
+            || ($parameter1 === 'Keyway size' && $parameter2 === 'Blade Thickness')
+            || ($parameter1 === 'Blade Radius' && $parameter2 === 'Blade Thickness')
+            || ($parameter1 === 'Blade Thickness & Center Radius' && $parameter2 === 'Blade Length')
+            || ($parameter1 === 'Hole Size' && $parameter2 === 'Blade Thickness')
+            || ($parameter1 === 'Blade Width' && $parameter2 === 'Blade Length')
+            || ($parameter1 === 'Blade Width' && $parameter2 === 'Blade Thickness')
 
         ) {
 
             $getVal = $salesOrderProduct->size1;
             $getVal2 = $salesOrderProduct->size3;
 
-            if ($getData->operation_type === "ManualIn") {
+            if ($getData->operation_type === 'ManualIn') {
                 $getVal = $salesOrderProductOperatonDetails->cycle_time;
                 $getVal2 = $salesOrderProductOperatonDetails->cycle_time_value2;
             }
@@ -910,7 +938,7 @@ class MyHelper
                     ->where('operation', $operationid)->where('table_parts', '2')
                     ->value('cycle_time_minutes'); // gets the single value 2
 
-                return ($cycleTime1 + $cycleTime2);
+                return $cycleTime1 + $cycleTime2;
             }
 
             $cycleTime = DB::table('ict_rmr_2matrix')
@@ -949,13 +977,13 @@ class MyHelper
                     ->where('table_parts', '2')
                     ->value('total_cycle_time');
 
-                return ($cycleTime + $cycleTime2);
+                return $cycleTime + $cycleTime2;
             }
 
             return $cycleTime;
         }
 
-        if ($parameter1 === "Outer Diameter") {
+        if ($parameter1 === 'Outer Diameter') {
 
             $getVal = $salesOrderProduct->size1;
 

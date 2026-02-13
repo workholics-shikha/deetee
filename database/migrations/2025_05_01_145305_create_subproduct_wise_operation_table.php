@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('subproduct_id');
             $table->string('operation_id');
             $table->string('operation_name');
-            $table->string('unit');    
+            $table->string('unit');
             $table->timestamps();
         });
     }

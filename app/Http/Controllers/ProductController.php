@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ProductMasters, SubProduct};
+use App\Models\ProductMasters;
+use App\Models\SubProduct;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-
     public function index()
     {
-        $data = ProductMasters::with('subProducts')  // eager-load all sub-products 
-                 ->paginate(PAGE_NO);              // paginate products
+        $data = ProductMasters::with('subProducts')  // eager-load all sub-products
+            ->paginate(PAGE_NO);              // paginate products
 
-        $count['totalproduct']       = ProductMasters::count();
-        $count['totalsubProduct']    = SubProduct::count();
+        $count['totalproduct'] = ProductMasters::count();
+        $count['totalsubProduct'] = SubProduct::count();
         $count['unavailableProduct'] = ProductMasters::whereNot('status', 'Available')->count();
-        $count['totalGroup']         = ProductMasters::groupBy('group')->count();
+        $count['totalGroup'] = ProductMasters::groupBy('group')->count();
         $rowCount = $data->total();
+
         return view('product.index', compact('data', 'count', 'rowCount'));
     }
 
@@ -36,12 +37,12 @@ class ProductController extends Controller
             })
             ->paginate(PAGE_NO);
 
-            $rowCount = $data->total();
+        $rowCount = $data->total();
 
         return response()->json([
-            'html'       => view('product.search-table', compact('data','rowCount'))->render(),
+            'html' => view('product.search-table', compact('data', 'rowCount'))->render(),
             'pagination' => (string) $data->links(),
-        'rowCount' => $rowCount 
+            'rowCount' => $rowCount,
         ]);
     }
 }

@@ -60,7 +60,7 @@ class User extends Authenticatable
     public function getProfileImageAttribute($value)
     {
         if ($value) {
-            return asset('uploads/profile_image/' . $value);
+            return asset('uploads/profile_image/'.$value);
         }
 
         return asset(NO_USER_IMG);
@@ -69,7 +69,7 @@ class User extends Authenticatable
     public function getUserQrCodeAttribute($value)
     {
         if ($value) {
-            return asset('storage/user-qrcodes/' . $value);
+            return asset('storage/user-qrcodes/'.$value);
         }
 
         return asset(DEFAULT_QR);

@@ -2,17 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ErpSalesOrder, PassSheet, MachineMaster, ProductMasters, SubProduct, OperationMaster, Role, SalesOrderProduct, SOProductOperationDetails, SubproductWiseOperation, User};
+use App\Exports\SalesOrderTrackingExport;
+use App\Models\ErpSalesOrder;
+use App\Models\MachineMaster;
+use App\Models\OperationMaster;
+use App\Models\PassSheet;
+use App\Models\ProductMasters;
+use App\Models\Role;
+use App\Models\SalesOrderProduct;
+use App\Models\SOProductOperationDetails;
+use App\Models\SubProduct;
+use App\Models\User;
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{DB, Storage, File};
-use App\Exports\SalesOrderTrackingExport;
-use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ImportController extends Controller
 {
-
     public function importMachineCSV(Request $request)
     {
         $request->validate([
@@ -25,14 +35,15 @@ class ImportController extends Controller
         // Optional: skip header if needed
         foreach (array_slice($data, 1) as $row) {
             MachineMaster::create([
-                'unit_number'   => $row[0] ?? null,
-                'unit_name'     => $row[1] ?? null,
-                'machine'       => $row[2] ?? null,
-                'machine_type'  => $row[3] ?? null,
-                'section'       => $row[4] ?? null,
-                'sub_section'   => $row[5] ?? null,
+                'unit_number' => $row[0] ?? null,
+                'unit_name' => $row[1] ?? null,
+                'machine' => $row[2] ?? null,
+                'machine_type' => $row[3] ?? null,
+                'section' => $row[4] ?? null,
+                'sub_section' => $row[5] ?? null,
             ]);
         }
+
         return back()->with('success', 'Machines imported successfully!');
     }
 
@@ -48,14 +59,15 @@ class ImportController extends Controller
         // Optional: skip header if needed
         foreach (array_slice($data, 1) as $row) {
             ProductMasters::create([
-                'unit_number'           => $row[0] ?? null,
-                'unit'                  => $row[1] ?? null,
-                'group'                 => $row[2] ?? null,
-                'erp_product'           => $row[3] ?? null,
-                'erp_nomenclature'      => $row[4] ?? null,
+                'unit_number' => $row[0] ?? null,
+                'unit' => $row[1] ?? null,
+                'group' => $row[2] ?? null,
+                'erp_product' => $row[3] ?? null,
+                'erp_nomenclature' => $row[4] ?? null,
                 'product_modified_name' => $row[5] ?? null,
             ]);
         }
+
         return back()->with('success', 'Products imported successfully!');
     }
 
@@ -71,14 +83,15 @@ class ImportController extends Controller
         // Optional: skip header if needed
         foreach (array_slice($data, 1) as $row) {
 
-            $product_master_id  = ProductMasters::where('erp_product', 'like', "%$row[0]%")->first();
-            $product_name       = $product_master_id->id;
+            $product_master_id = ProductMasters::where('erp_product', 'like', "%$row[0]%")->first();
+            $product_name = $product_master_id->id;
 
             SubProduct::create([
                 'product_master_id' => $product_name ?? null,
-                'sub_product_name'  => $row[1] ?? null,
+                'sub_product_name' => $row[1] ?? null,
             ]);
         }
+
         return back()->with('success', 'Products imported successfully!');
     }
 
@@ -88,10 +101,10 @@ class ImportController extends Controller
             'operation_csv_file' => 'required|mimes:csv,txt',
         ]);
 
-        $file  = $request->file('operation_csv_file');
-        $data  = array_map('str_getcsv', file($file->getRealPath()));
+        $file = $request->file('operation_csv_file');
+        $data = array_map('str_getcsv', file($file->getRealPath()));
 
-        //== Optional: skip header if needed ==//
+        // == Optional: skip header if needed ==//
         foreach (array_slice($data, 1) as $row) {
 
             $operationName = $row[0];
@@ -111,22 +124,24 @@ class ImportController extends Controller
                 'parameter1' => $row[4] ?? null,
                 'parameter2' => $row[5] ?? null,
                 'parameter3' => $row[6] ?? null,
-                'parameter4' => $row[7] ?? null
+                'parameter4' => $row[7] ?? null,
             ]);
         }
+
         return back()->with('success', 'Operations imported successfully!');
     }
 
-    function generateEmail($name, $domain = "example.com")
+    public function generateEmail($name, $domain = 'example.com')
     {
         // Convert name to lowercase and remove special characters
         $cleanName = strtolower(preg_replace('/[^a-z0-9]/i', '', str_replace(' ', '.', $name)));
-        return $cleanName . '@' . $domain;
+
+        return $cleanName.'@'.$domain;
     }
 
-    function generatePhoneNumber()
+    public function generatePhoneNumber()
     {
-        return '9' . str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+        return '9'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
     }
 
     public function importUsersCSV(Request $request)
@@ -136,21 +151,21 @@ class ImportController extends Controller
         $file = $request->file('user_csv_file');
         $data = array_map('str_getcsv', file($file->getRealPath()));
 
-        //== Optional: skip header if needed ==//
+        // == Optional: skip header if needed ==//
         foreach (array_slice($data, 1) as $row) {
 
             $getRoleId = Role::where('name', 'like', "%$row[2]%")->value('id');
 
             User::create([
-                'name'          => $row[0] ?? null,
-                'username'      => $row[1] ?? null,
-                'designation'   => $row[2] ?? null,
-                'department'    => $row[3] ?? null,
-                'unit'          => $row[4] ?? null,
-                'unit_name'     => $row[5] ?? null,
+                'name' => $row[0] ?? null,
+                'username' => $row[1] ?? null,
+                'designation' => $row[2] ?? null,
+                'department' => $row[3] ?? null,
+                'unit' => $row[4] ?? null,
+                'unit_name' => $row[5] ?? null,
                 'employee_group' => $row[6] ?? null,
-                'email'         => $row[7] ?? $this->generateEmail($row[0]),
-                'role'          => $getRoleId ?? null,
+                'email' => $row[7] ?? $this->generateEmail($row[0]),
+                'role' => $getRoleId ?? null,
             ]);
         }
 
@@ -165,10 +180,10 @@ class ImportController extends Controller
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $nameQR = $user->id . '-' . time() . '.png';
+            $nameQR = $user->id.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'user-qrcodes/' . $nameQR; // unique filename
+            $path = 'user-qrcodes/'.$nameQR; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -185,11 +200,11 @@ class ImportController extends Controller
     {
         $request->validate(['subproductoperation_csv_file' => 'required|mimes:csv,txt']);
 
-        $file  = $request->file('subproductoperation_csv_file');
-        $data  = array_map('str_getcsv', file($file->getRealPath()));
+        $file = $request->file('subproductoperation_csv_file');
+        $data = array_map('str_getcsv', file($file->getRealPath()));
 
         foreach (array_slice($data, 1) as $row) {
-            if (!empty($row[0]) && !empty($row[3])) {
+            if (! empty($row[0]) && ! empty($row[3])) {
                 $operationName = $row[3];
 
                 $operationName = str_replace(' - ', '-', $operationName);
@@ -199,7 +214,7 @@ class ImportController extends Controller
                 $operationName = str_replace('+ ', '+', $operationName);
                 $operationName = str_replace(' +', '+', $operationName);
 
-                $operation = OperationMaster::select('operation_name', 'id', 'unit')->where('operation_name', 'like', "%$operationName%")->where('unit', 'like', "RMR")->first();
+                $operation = OperationMaster::select('operation_name', 'id', 'unit')->where('operation_name', 'like', "%$operationName%")->where('unit', 'like', 'RMR')->first();
 
                 $unit = $operationid = '';
 
@@ -212,11 +227,11 @@ class ImportController extends Controller
 
                 DB::table('subproduct_wise_operation')->insert([
                     'product_master_id' => $row[0] ?? null,
-                    'subproduct_id'     => $row[1] ?? null,
-                    'operation_id'      => $operationid,
-                    'operation_name'    => $row[3] ?? null,
-                    'unit'              => $unit,
-                    'sub_operations'    => $row[4] ?? null,
+                    'subproduct_id' => $row[1] ?? null,
+                    'operation_id' => $operationid,
+                    'operation_name' => $row[3] ?? null,
+                    'unit' => $unit,
+                    'sub_operations' => $row[4] ?? null,
                 ]);
             }
         }
@@ -229,11 +244,11 @@ class ImportController extends Controller
         $request->validate(['cycle_csv_file' => 'required|mimes:csv,txt']);
 
         $file = $request->file('cycle_csv_file');
-        $handle = fopen($file->getRealPath(), "r");
+        $handle = fopen($file->getRealPath(), 'r');
 
         $header = fgetcsv($handle); // skip header
 
-        while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
+        while (($row = fgetcsv($handle, 1000, ',')) !== false) {
 
             DB::table('ict_bore_thickness_values')->insert([
                 'bore_min' => $row[0] ?? null,
@@ -245,10 +260,11 @@ class ImportController extends Controller
                 'sub_product_id' => $row[6] ?? null,
                 'table_count' => $row[7] ?? null,
                 'thickness_min' => $row[0] ?? null,
-                'thickness_max' => $row[1] ?? null
+                'thickness_max' => $row[1] ?? null,
             ]);
         }
         fclose($handle);
+
         return back()->with('success', 'Data imported successfully!');
     }
 
@@ -271,10 +287,10 @@ class ImportController extends Controller
                 ->build();
 
             // Clean and lowercase the filename
-            $machine_name = $machine->machine ?? 'machine-' . $machine->id;
+            $machine_name = $machine->machine ?? 'machine-'.$machine->id;
             $safeName = Str::slug(strtolower($machine_name), '-');
-            $fileName = $safeName . '-' . time() . '.png';
-            $path = 'machine-qrcodes/' . $fileName; // relative to 'storage/app/public'
+            $fileName = $safeName.'-'.time().'.png';
+            $path = 'machine-qrcodes/'.$fileName; // relative to 'storage/app/public'
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -289,17 +305,17 @@ class ImportController extends Controller
         // Insert each machine, generate its QR code, and update the machine_qr_code field
         foreach ($products as $product) {
 
-            // == Generate the QR code 
+            // == Generate the QR code
             $result = Builder::create()
-                ->data($product->id . ';Product')
+                ->data($product->id.';Product')
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $product->unit . '-' . $product->erp_nomenclature . '-' . $product->group . '-' . time() . '.png';
+            $name = $product->unit.'-'.$product->erp_nomenclature.'-'.$product->group.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'product-qrcodes/' . $name; // unique filename
+            $path = 'product-qrcodes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -318,21 +334,21 @@ class ImportController extends Controller
         // Insert each machine, generate its QR code, and update the machine_qr_code field
         foreach ($operations as $operation) {
             // Insert the machine record and get its IDph
-            $jsonData   = ['id' => $operation->id, 'type' => 'operation', 'operation_name' => $operation->operation_name];
+            $jsonData = ['id' => $operation->id, 'type' => 'operation', 'operation_name' => $operation->operation_name];
 
             $jsonString = json_encode($jsonData);
 
             // Generate the QR code
             $result = Builder::create()
-                ->data($operation->id . ';Operation')
+                ->data($operation->id.';Operation')
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $operation->id . '-' . time() . '.png';
+            $name = $operation->id.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'operation-qr-codes/' . $name; // unique filename
+            $path = 'operation-qr-codes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -353,9 +369,9 @@ class ImportController extends Controller
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $salesOrder->so_no . '-' . time() . '.png';
+            $name = $salesOrder->so_no.'-'.time().'.png';
 
-            $path = 'so-qrcodes/' . $name; // unique filename
+            $path = 'so-qrcodes/'.$name; // unique filename
 
             Storage::disk('public')->put($path, $result->getString());
             ErpSalesOrder::where('id', $salesOrder->id)->update(['so_qr_code' => $name]);
@@ -374,10 +390,10 @@ class ImportController extends Controller
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $nameQR = $user->id . '-' . time() . '.png';
+            $nameQR = $user->id.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'user-qrcodes/' . $nameQR; // unique filename
+            $path = 'user-qrcodes/'.$nameQR; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -404,20 +420,20 @@ class ImportController extends Controller
 
             // Clean file name to avoid special characters
             $safeName = preg_replace('/[^A-Za-z0-9\-]/', '_', $qr_value);
-            $fileName = $safeName . '-' . time() . '.png';
-            $relativePath = 'storage/generic-qrcodes/' . $fileName;
+            $fileName = $safeName.'-'.time().'.png';
+            $relativePath = 'storage/generic-qrcodes/'.$fileName;
             $fullPath = public_path($relativePath);
 
             // Ensure directory exists
             $directory = dirname($fullPath);
-            if (!File::exists($directory)) {
+            if (! File::exists($directory)) {
                 File::makeDirectory($directory, 0755, true);
             }
 
             // Save file to public directory
             file_put_contents($fullPath, $result->getString());
 
-            $path = 'generic-qrcodes/' . $fileName;
+            $path = 'generic-qrcodes/'.$fileName;
 
             // Save to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -429,13 +445,13 @@ class ImportController extends Controller
     public function qrGenerateSoProduct()
     {
         $subProducts = SalesOrderProduct::get();
-        if (!empty($subProducts)) {
+        if (! empty($subProducts)) {
             foreach ($subProducts as $products) {
 
                 $product = ProductMasters::where(['id' => $products->product_id])
                     ->first(['id', 'product_flow', 'cycle_flow']);
 
-                $product_status  = ($product &&
+                $product_status = ($product &&
                     strtolower($product->product_flow) === 'available' &&
                     strtolower($product->cycle_flow) === 'available')
                     ? 'Available'
@@ -457,7 +473,7 @@ class ImportController extends Controller
             if ($operation) {
                 $originalQr = $operation->getRawOriginal('operation_qr_code'); // ← real value
 
-                if (!empty($originalQr)) {
+                if (! empty($originalQr)) {
                     SOProductOperationDetails::where('id', $details->id)
                         ->update(['operation_qr_code' => $originalQr]);
                 }
@@ -474,36 +490,36 @@ class ImportController extends Controller
 
             // Generate the QR code
             $result = Builder::create()
-                ->data('OPN' . $operation->id)
+                ->data('OPN'.$operation->id)
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
-            $name = $operation->id . '-' . time() . '.png';
+            $name = $operation->id.'-'.time().'.png';
             // Path where you want to save the QR code image
-            $path = 'operation-qr-codes/' . $name; // unique filename
+            $path = 'operation-qr-codes/'.$name; // unique filename
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
             // Update the machine record with the QR code path
             DB::table('operation_masters')->where('id', $operation->id)->update(['operation_qr_code' => $name]);
         }
         exit;
-        //========== end - Operations
+        // ========== end - Operations
 
         // for Machines
         $machines = DB::table('machine_master')->get();
         foreach ($machines as $machine) {
             // Generate the QR code
             $result = Builder::create()
-                ->data('MAC' . $machine->id)
+                ->data('MAC'.$machine->id)
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
             // Clean and lowercase the filename
-            $machine_name = $machine->machine ?? 'machine-' . $machines->id;
+            $machine_name = $machine->machine ?? 'machine-'.$machines->id;
             $safeName = Str::slug(strtolower($machine_name), '-');
-            $fileName = $safeName . '-' . time() . '.png';
-            $path = 'machine-qrcodes/' . $fileName; // relative to 'storage/app/public'
+            $fileName = $safeName.'-'.time().'.png';
+            $path = 'machine-qrcodes/'.$fileName; // relative to 'storage/app/public'
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -512,39 +528,38 @@ class ImportController extends Controller
                 ->where('id', $machine->id)
                 ->update(['machine_qr_code' => $fileName]);
         }
-        //========== end - Machines
-
+        // ========== end - Machines
 
         // for Sales Order
         $erpSalesOrder = ErpSalesOrder::get();
         foreach ($erpSalesOrder as $salesOrder) {
             // Generate the QR code
             $result = Builder::create()
-                ->data('SO' . $salesOrder->id)
+                ->data('SO'.$salesOrder->id)
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $salesOrder->so_no . '-' . time() . '.png';
-            $path = 'so-qrcodes/' . $name; // unique-filename
+            $name = $salesOrder->so_no.'-'.time().'.png';
+            $path = 'so-qrcodes/'.$name; // unique-filename
             Storage::disk('public')->put($path, $result->getString());
             ErpSalesOrder::where('id', $salesOrder->id)->update(['so_qr_code' => $name]);
         }
-        //========== end - Sales Order
+        // ========== end - Sales Order
         // for Products
         $products = DB::table('product_masters')->get();
         foreach ($products as $product) {
 
-            // == Generate the QR code 
+            // == Generate the QR code
             $result = Builder::create()
-                ->data('PRO' . $product->id)
+                ->data('PRO'.$product->id)
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = strtolower($product->unit) . '-' . strtolower($product->erp_nomenclature) . '-' . strtolower($product->group) . '-' . time() . '.png';
+            $name = strtolower($product->unit).'-'.strtolower($product->erp_nomenclature).'-'.strtolower($product->group).'-'.time().'.png';
             // Path where you want to save the QR code image
-            $path = 'product-qrcodes/' . $name; // unique filename
+            $path = 'product-qrcodes/'.$name; // unique filename
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
 
@@ -553,7 +568,7 @@ class ImportController extends Controller
                 ->where('id', $product->id)
                 ->update(['product_qr_code' => $name]);
         }
-        //========== end - Products
+        // ========== end - Products
         // for Users/Operators
         $users = User::where('id', '!=', '1')->get();
         foreach ($users as $user) {
@@ -564,20 +579,20 @@ class ImportController extends Controller
             }
             // Generate the QR code
             $result = Builder::create()
-                ->data($user_prefix . $user->username)
+                ->data($user_prefix.$user->username)
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
-            $nameQR = $user->id . '-' . time() . '.png';
+            $nameQR = $user->id.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'user-qrcodes/' . $nameQR; // unique filename
+            $path = 'user-qrcodes/'.$nameQR; // unique filename
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
             // Update the machine record with the QR code path
             DB::table('users')->where('id', $user->id)->update(['user_qr_code' => $nameQR]);
         }
-        //========== end - Users/Operators
+        // ========== end - Users/Operators
 
     }
 
@@ -586,18 +601,18 @@ class ImportController extends Controller
         // Generate the QR code
         $passSheet = PassSheet::whereNull('pass_sheet_qr_code')->get();
 
-        if (!empty($passSheet)) {
+        if (! empty($passSheet)) {
             foreach ($passSheet as $sheet) {
                 $result = Builder::create()
-                    ->data($sheet->id . ';PassScan')
+                    ->data($sheet->id.';PassScan')
                     ->size(300) // Set size in pixels
                     ->margin(10) // Set margin in pixels
                     ->build();
 
-                $name = $sheet->id . '-' . time() . '.png';
+                $name = $sheet->id.'-'.time().'.png';
 
                 // Path where you want to save the QR code image
-                $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+                $path = 'so-pass-sheet-qrcodes/'.$name; // unique filename
 
                 // Save the QR code image to storage (public disk)
                 Storage::disk('public')->put($path, $result->getString());
@@ -608,16 +623,16 @@ class ImportController extends Controller
         }
 
         $subProducts = SalesOrderProduct::get();
-        if (!empty($subProducts)) {
+        if (! empty($subProducts)) {
             foreach ($subProducts as $products) {
                 $result = Builder::create()
-                    ->data('PRO' . $products->id)
+                    ->data('PRO'.$products->id)
                     ->size(300) // Set size in pixels
                     ->margin(10) // Set margin in pixels
                     ->build();
 
-                $qr_code_name = $products->cpoitemid . '-' . time() . '.png';
-                $path = 'so-product-qrcodes/' . $qr_code_name; // unique filename
+                $qr_code_name = $products->cpoitemid.'-'.time().'.png';
+                $path = 'so-product-qrcodes/'.$qr_code_name; // unique filename
 
                 Storage::disk('public')->put($path, $result->getString());
                 SalesOrderProduct::where('id', $products->id)->update(['so_product_qr_code' => $qr_code_name]);
@@ -625,7 +640,7 @@ class ImportController extends Controller
         }
     }
 
-    function addPassSheetDetails()
+    public function addPassSheetDetails()
     {
 
         $subProducts = SalesOrderProduct::where('measureunit', 'SET')
@@ -634,10 +649,10 @@ class ImportController extends Controller
 
         foreach ($subProducts as $details) {
 
-            $erp_response = callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $details->cpoitemid);
+            $erp_response = callErpApi(ERP_LINK.'/OH_showCPOItemPass/'.$details->cpoitemid);
             $itemjson = $erp_response->json();
 
-            if (!empty($itemjson)) {
+            if (! empty($itemjson)) {
                 foreach ($itemjson as $item) {
 
                     $passNos = splitPassNo($item['pass_no']);
@@ -645,29 +660,29 @@ class ImportController extends Controller
                     foreach ($passNos as $passNo) {
 
                         PassSheet::insert([
-                            'so_id'         => $details->so_id,
+                            'so_id' => $details->so_id,
                             'subproduct_pid' => $details->id,
                             'subproduct_id' => $details->sub_product_id,
-                            'cpoitemid'     => $item['cpoitemid'],
-                            'sr_no'         => $item['sr_no'],
-                            'pass_no'       => $passNo,
-                            'mrk_pass_no'   => $item['mrk_pass_no'],
-                            'drawing_no'    => $item['drawing_no'],
-                            'size1'         => $item['size1'],
-                            'size2'         => $item['size2'],
-                            'size3'         => $item['size3'],
-                            'qty'           => $item['qty'],
-                            'material'      => $item['material'],
-                            'hardness'      => $item['hardness'],
-                            'bs1_dia'       => $item['bs1_dia'], // for calculation
-                            'bs1_depth'     => $item['bs1_depth'], // for calculation
-                            'bs1_bore'      => $item['bs1_bore'],
-                            'bs2_dia'       => $item['bs2_dia'],
-                            'bs2_depth'     => $item['bs2_depth'],
-                            'remarks'       => $item['remarks'],
+                            'cpoitemid' => $item['cpoitemid'],
+                            'sr_no' => $item['sr_no'],
+                            'pass_no' => $passNo,
+                            'mrk_pass_no' => $item['mrk_pass_no'],
+                            'drawing_no' => $item['drawing_no'],
+                            'size1' => $item['size1'],
+                            'size2' => $item['size2'],
+                            'size3' => $item['size3'],
+                            'qty' => $item['qty'],
+                            'material' => $item['material'],
+                            'hardness' => $item['hardness'],
+                            'bs1_dia' => $item['bs1_dia'], // for calculation
+                            'bs1_depth' => $item['bs1_depth'], // for calculation
+                            'bs1_bore' => $item['bs1_bore'],
+                            'bs2_dia' => $item['bs2_dia'],
+                            'bs2_depth' => $item['bs2_depth'],
+                            'remarks' => $item['remarks'],
                             'revisioncount' => $item['revisioncount'],
-                            'created_at'    => now(),
-                            'updated_at'    => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
                         ]);
                     }
                 }
@@ -677,18 +692,18 @@ class ImportController extends Controller
         // Generate the QR code
         $passSheet = PassSheet::whereNull('pass_sheet_qr_code')->get();
 
-        if (!empty($passSheet)) {
+        if (! empty($passSheet)) {
             foreach ($passSheet as $sheet) {
                 $result = Builder::create()
-                    ->data($sheet->id . ';PassScan')
+                    ->data($sheet->id.';PassScan')
                     ->size(300) // Set size in pixels
                     ->margin(10) // Set margin in pixels
                     ->build();
 
-                $name = $sheet->id . '-' . time() . '.png';
+                $name = $sheet->id.'-'.time().'.png';
 
                 // Path where you want to save the QR code image
-                $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+                $path = 'so-pass-sheet-qrcodes/'.$name; // unique filename
 
                 // Save the QR code image to storage (public disk)
                 Storage::disk('public')->put($path, $result->getString());
@@ -698,5 +713,4 @@ class ImportController extends Controller
             }
         }
     }
-
 }

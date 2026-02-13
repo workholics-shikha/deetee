@@ -14,7 +14,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         // $schedule->command('sales:fetch-orders')->dailyAt('00:00'); // Runs daily at midnight
-        $schedule->command('sales:fetch-orders')->everyMinute(); 
+        $schedule->command('sales:fetch-orders')->everyMinute();
     }
 
     /**

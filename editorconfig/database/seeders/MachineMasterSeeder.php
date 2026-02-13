@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use Endroid\QrCode\Builder\Builder;
-use Illuminate\Support\Facades\{Storage, DB};
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class MachineMasterSeeder extends Seeder
 {
@@ -318,7 +319,7 @@ class MachineMasterSeeder extends Seeder
                     'machine_type' => 'Stress Relieve',
                     'section' => 'Production',
                     'sub_section' => 'CNC',
-                ],           
+                ],
 
             ]
         );
@@ -339,10 +340,10 @@ class MachineMasterSeeder extends Seeder
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $machine->machine . '-' . time() . '.png';
+            $name = $machine->machine.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'machine-qrcodes/' . $name; // unique filename
+            $path = 'machine-qrcodes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());

@@ -46,7 +46,7 @@ class Handler extends ExceptionHandler
             //
         });
     }
- 
+
     protected function unauthenticated($request, AuthenticationException $exception)
     {
         // Always return JSON for API routes
@@ -59,5 +59,4 @@ class Handler extends ExceptionHandler
         // Fallback for web routes
         return redirect()->guest(route('login'));
     }
-
 }

@@ -730,7 +730,6 @@ class MasterWiseOperationSeeder extends Seeder
 
                 ['machine_id' => 150, 'operation_id' => '112'],
                 ['machine_id' => 151, 'operation_id' => '112'],
-                 
 
             ],
         );

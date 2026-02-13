@@ -17,18 +17,18 @@ class ProductMasters extends Model
         'erp_nomenclature',
         'product_modified_name',
         'product_qr_code',
-        'status'
+        'status',
     ];
 
     protected $hidden = [
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     public function getProfileImageAttribute($value)
     {
         if ($value) {
-            return asset('uploads/profile_image/' . $value);
+            return asset('uploads/profile_image/'.$value);
         }
 
         return asset(NO_USER_IMG);
@@ -37,7 +37,7 @@ class ProductMasters extends Model
     public function getProductQrCodeAttribute($value)
     {
         if ($value) {
-            return asset('storage/product-qrcodes/' . $value);
+            return asset('storage/product-qrcodes/'.$value);
         }
 
         return asset(DEFAULT_QR);

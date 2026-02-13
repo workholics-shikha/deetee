@@ -2,23 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ErpSalesOrder, MachineMaster, OperationMaster, ProductMasters, SOProductOperationDetails, SubProduct, User};
-use Illuminate\Http\Request;
-use Endroid\QrCode\Builder\Builder;
-use Illuminate\Support\Facades\{Storage, DB, File};
+use App\Models\ErpSalesOrder;
+use App\Models\MachineMaster;
+use App\Models\OperationMaster;
+use App\Models\ProductMasters;
+use App\Models\SOProductOperationDetails;
+use App\Models\SubProduct;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Str;
+use Endroid\QrCode\Builder\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Str;
 
 class QRCodeController extends Controller
 {
     public function index()
     {
 
-        $data['operator']     =  User::operator()->with('roleName')->paginate(PAGE_NO);
-        $data['machines']     =  MachineMaster::paginate(PAGE_NO);
-        $data['products']     =  SubProduct::with('product')->paginate(PAGE_NO);
-        $data['operations']   =  OperationMaster::with('machines')->paginate(PAGE_NO);
-        $data['genericQr']    =  DB::table('generic_qrcodes')->paginate(PAGE_NO);
+        $data['operator'] = User::operator()->with('roleName')->paginate(PAGE_NO);
+        $data['machines'] = MachineMaster::paginate(PAGE_NO);
+        $data['products'] = SubProduct::with('product')->paginate(PAGE_NO);
+        $data['operations'] = OperationMaster::with('machines')->paginate(PAGE_NO);
+        $data['genericQr'] = DB::table('generic_qrcodes')->paginate(PAGE_NO);
 
         return view('qr-codes.index', compact('data'));
     }
@@ -26,30 +34,29 @@ class QRCodeController extends Controller
     public function fetchModal(Request $request)
     {
 
-        $id     =   $request->id;
-        $type   =   $request->type; // Operator, SO, Machine,  
+        $id = $request->id;
+        $type = $request->type; // Operator, SO, Machine,
 
-        $operations   = OperationMaster::find($id);
-        $operator     = User::find($id);
-        $machines     = MachineMaster::find($id);
-        // $products     = SubProduct::with('product')->find($id);
-        $products     = ProductMasters::find($id);
+        $operations = OperationMaster::find($id);
+        $operator = User::find($id);
+        $machines = MachineMaster::find($id);
+        $products = ProductMasters::find($id);
 
-        if ($type   ==   'Operations') {
+        if ($type == 'Operations') {
             $qrCode = $operations->operation_qr_code;
-            $id     = $operations->id;
+            $id = $operations->id;
         }
-        if ($type   ==   'Operator') {
+        if ($type == 'Operator') {
             $qrCode = $operator->user_qr_code;
-            $id     = $operator->id;
+            $id = $operator->id;
         }
-        if ($type   ==   'Machine') {
+        if ($type == 'Machine') {
             $qrCode = $machines->machine_qr_code;
-            $id     = $machines->id;
+            $id = $machines->id;
         }
-        if ($type   ==   'Product') {
+        if ($type == 'Product') {
             $qrCode = $products->product_qr_code;
-            $id     = $products->id;
+            $id = $products->id;
         }
 
         return view('qr-codes.qr-code-modal', compact('qrCode', 'id', 'type'));
@@ -59,18 +66,17 @@ class QRCodeController extends Controller
     public function regenerateQrCard(Request $request)
     {
 
-        $id     =   $request->id;
-        $type   =   $request->type;
+        $id = $request->id;
+        $type = $request->type;
 
-        $operations   = OperationMaster::find($id);
-        $operator     = User::find($id);
-        $machines     = MachineMaster::find($id);
-        $products     = ProductMasters::find($id);
-        // $products     = SubProduct::with('product')->find($id);
+        $operations = OperationMaster::find($id);
+        $operator = User::find($id);
+        $machines = MachineMaster::find($id);
+        $products = ProductMasters::find($id);
 
-        if ($type    ==   'Operations') {
-            $qrCode  =  $operations->operation_qr_code;
-            $id      =  $operations->id;
+        if ($type == 'Operations') {
+            $qrCode = $operations->operation_qr_code;
+            $id = $operations->id;
 
             deleteImage($qrCode);
 
@@ -81,9 +87,9 @@ class QRCodeController extends Controller
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $operations->id . '-' . time() . '.png';
+            $name = $operations->id.'-'.time().'.png';
 
-            $path = 'operation-qr-codes/' . $name; // unique filename
+            $path = 'operation-qr-codes/'.$name; // unique filename
 
             Storage::disk('public')->put($path, $result->getString());
 
@@ -92,9 +98,9 @@ class QRCodeController extends Controller
             SOProductOperationDetails::where('operation_id', $operations->id)->update(['operation_qr_code' => $name]);
         }
 
-        if ($type   ==   'Operator') {
+        if ($type == 'Operator') {
             $qrCode = $operator->user_qr_code;
-            $id     = $operator->id;
+            $id = $operator->id;
 
             deleteImage($qrCode);
 
@@ -105,10 +111,10 @@ class QRCodeController extends Controller
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $operator->id . '-' . time() . '.png';
+            $name = $operator->id.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'user-qrcodes/' . $name; // unique filename
+            $path = 'user-qrcodes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -119,9 +125,9 @@ class QRCodeController extends Controller
                 ->update(['user_qr_code' => $name]);
         }
 
-        if ($type   ==   'Machine') {
+        if ($type == 'Machine') {
             $qrCode = $machines->machine_qr_code;
-            $id     = $machines->id;
+            $id = $machines->id;
 
             deleteImage($qrCode);
 
@@ -132,10 +138,10 @@ class QRCodeController extends Controller
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $machines->machine . '-' . time() . '.png';
+            $name = $machines->machine.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'machine-qrcodes/' . $name; // unique filename
+            $path = 'machine-qrcodes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -146,23 +152,23 @@ class QRCodeController extends Controller
                 ->update(['machine_qr_code' => $name]);
         }
 
-        if ($type   ==   'Product') {
+        if ($type == 'Product') {
             $qrCode = $products->product_qr_code;
-            $id     = $products->id;
+            $id = $products->id;
 
             deleteImage($qrCode);
 
-            // == Generate the QR code 
+            // == Generate the QR code
             $result = Builder::create()
                 ->data($id)
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $products->unit . '-' . $products->erp_nomenclature . '-' . $products->group . '-' . time() . '.png';
+            $name = $products->unit.'-'.$products->erp_nomenclature.'-'.$products->group.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'product-qrcodes/' . $name; // unique filename
+            $path = 'product-qrcodes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -172,7 +178,7 @@ class QRCodeController extends Controller
 
         // Return success response with token and user information
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'QR regerated successfully',
         ]);
     }
@@ -180,38 +186,38 @@ class QRCodeController extends Controller
     public function deactivateQrCard(Request $request)
     {
 
-        $id     =   $request->id;
-        $type   =   $request->type; // Operator, SO, Machine, Products
+        $id = $request->id;
+        $type = $request->type; // Operator, SO, Machine, Products
 
-        $salesOrder   = ErpSalesOrder::find($id);
-        $operator     = User::where('role', 'operator')->find($id);
-        $machines     = MachineMaster::find($id);
-        $products     = SubProduct::with('product')->find($id);
+        $salesOrder = ErpSalesOrder::find($id);
+        $operator = User::where('role', 'operator')->find($id);
+        $machines = MachineMaster::find($id);
+        $products = SubProduct::with('product')->find($id);
 
-        if ($type    ==   'SO') {
-            $qrCode  =  $salesOrder->so_qr_code;
-            $id      =  $salesOrder->id;
+        if ($type == 'SO') {
+            $qrCode = $salesOrder->so_qr_code;
+            $id = $salesOrder->id;
 
             ErpSalesOrder::where('id', $salesOrder->id)->update(['so_qr_code' => null]);
         }
 
-        if ($type   ==   'Operator') {
+        if ($type == 'Operator') {
             $qrCode = $operator->user_qr_code;
-            $id     = $operator->id;
+            $id = $operator->id;
 
             User::where('id', $operator->id)->update(['user_qr_code' => null]);
         }
 
-        if ($type   ==   'Machine') {
+        if ($type == 'Machine') {
             $qrCode = $machines->machine_qr_code;
-            $id     = $machines->id;
+            $id = $machines->id;
 
             MachineMaster::where('id', $machines->id)->update(['machine_qr_code' => null]);
         }
 
-        if ($type   ==   'Product') {
+        if ($type == 'Product') {
             $qrCode = $products->product_qr_code;
-            $id     = $products->id;
+            $id = $products->id;
 
             ProductMasters::where('id', $products->id)->update(['product_qr_code' => null]);
         }
@@ -220,7 +226,7 @@ class QRCodeController extends Controller
 
         // Return success response with token and user information
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'QR deactived successfully',
         ]);
     }
@@ -229,30 +235,30 @@ class QRCodeController extends Controller
     public function deleteQrCard(Request $request)
     {
 
-        $id     =   $request->id;
-        $type   =   $request->type; // Operator, SO, Machine, Products
+        $id = $request->id;
+        $type = $request->type; // Operator, SO, Machine, Products
 
-        $operations   = OperationMaster::find($id);
-        $operator     = User::where('role', 'operator')->find($id);
-        $machines     = MachineMaster::find($id);
-        $products     = SubProduct::with('product')->find($id);
+        $operations = OperationMaster::find($id);
+        $operator = User::where('role', 'operator')->find($id);
+        $machines = MachineMaster::find($id);
+        $products = SubProduct::with('product')->find($id);
 
-        if ($type    ==   'Operations') {
-            $qrCode  =  $operations->operation_qr_code;
+        if ($type == 'Operations') {
+            $qrCode = $operations->operation_qr_code;
             OperationMaster::where('id', $operations->id)->update(['operation_qr_code' => null]);
         }
 
-        if ($type   ==   'Operator') {
+        if ($type == 'Operator') {
             $qrCode = $operator->user_qr_code;
             User::where('id', $operator->id)->update(['user_qr_code' => null]);
         }
 
-        if ($type   ==   'Machine') {
+        if ($type == 'Machine') {
             $qrCode = $machines->machine_qr_code;
             MachineMaster::where('id', $machines->id)->update(['machine_qr_code' => null]);
         }
 
-        if ($type   ==   'Product') {
+        if ($type == 'Product') {
             $qrCode = $products->product_qr_code;
             ProductMasters::where('id', $products->id)->update(['product_qr_code' => null]);
         }
@@ -261,17 +267,17 @@ class QRCodeController extends Controller
 
         // Return success response with token and user information
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'QR deleted successfully',
         ]);
     }
 
     public function search(Request $request)
     {
-        $search    = $request->input('search'); // Get the search term from the request
+        $search = $request->input('search'); // Get the search term from the request
         $activeTab = $request->input('activeTab'); // Get the current tab from the request
-        $data      = [];
-        $datav     = null;
+        $data = [];
+        $datav = null;
 
         if ($activeTab == 'operator') {
             $query = User::operator()->with('roleName');
@@ -283,7 +289,7 @@ class QRCodeController extends Controller
             $data = $data['operator'] = $query->paginate(PAGE_NO);
         } elseif ($activeTab == 'operations') {
 
-            $query =  OperationMaster::with('machines')
+            $query = OperationMaster::with('machines')
 
                 ->when($search, function ($query, $search) {
                     $query->where('operation_name', 'like', "%$search%");
@@ -315,13 +321,13 @@ class QRCodeController extends Controller
                         $subQuery->where('unit', 'LIKE', "%{$search}%");
                     });
             });
-            $data =  $data['products'] = $query->paginate(PAGE_NO);
+            $data = $data['products'] = $query->paginate(PAGE_NO);
         }
 
         // Return HTML for table rows and pagination links
         return response()->json([
-            'html'       => view('qr-codes.search-table', compact('data', 'activeTab'))->render(),
-            'pagination' =>  (string) $data->links()
+            'html' => view('qr-codes.search-table', compact('data', 'activeTab'))->render(),
+            'pagination' => (string) $data->links(),
         ]);
     }
 
@@ -339,28 +345,28 @@ class QRCodeController extends Controller
 
         // Clean file name to avoid special characters
         $safeName = preg_replace('/[^A-Za-z0-9\-]/', '_', $qr_value);
-        $fileName = $safeName . '-' . time() . '.png';
-        $relativePath = 'storage/generic-qrcodes/' . $fileName;
+        $fileName = $safeName.'-'.time().'.png';
+        $relativePath = 'storage/generic-qrcodes/'.$fileName;
         $fullPath = public_path($relativePath);
 
         // Ensure directory exists
         $directory = dirname($fullPath);
-        if (!File::exists($directory)) {
+        if (! File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
 
         // Save file to public directory
         file_put_contents($fullPath, $result->getString());
 
-        $path = 'generic-qrcodes/' . $fileName;
+        $path = 'generic-qrcodes/'.$fileName;
 
         // Save to storage (public disk)
         Storage::disk('public')->put($path, $result->getString());
 
         // Insert DB record
         $qrGenerate = DB::table('generic_qrcodes')->insert([
-            'code'       => $qr_value,
-            'qr_code'    => $fileName,
+            'code' => $qr_value,
+            'qr_code' => $fileName,
             'qr_use_for' => $qr_use_for,
             'created_at' => now(),
             'updated_at' => now(),
@@ -375,18 +381,19 @@ class QRCodeController extends Controller
 
     public function genericQRs()
     {
-        $data =  DB::table('generic_qrcodes')->get();
+        $data = DB::table('generic_qrcodes')->get();
+
         return view('admin/genericQRs', compact('data'));
     }
 
-    //deleteGenericQR
+    // deleteGenericQR
     public function deleteGenericQR($id)
     {
         // Fetch the record
         $generic_qr = DB::table('generic_qrcodes')->where('id', $id)->first();
 
         // Check if record exists
-        if (!$generic_qr) {
+        if (! $generic_qr) {
             return redirect()->back()->with('error', 'QR not found!');
         }
 
@@ -398,28 +405,32 @@ class QRCodeController extends Controller
 
     public function qrPdfPreview(Request $request)
     {
-        $data =  DB::table('generic_qrcodes')->get();
+        $data = DB::table('generic_qrcodes')->get();
         if (isset($_GET['pdf']) && $_GET['pdf'] == 'true') {
-            $pdf =  Pdf::setOptions([
+            $pdf = Pdf::setOptions([
                 'isPhpEnabled' => true,
                 'isRemoteEnabled' => true,
             ])->loadView('qr-codes.pdf.qr-pdf', compact('data'));
+
             return $pdf->stream('document.pdf');
         }
+
         return view('qr-codes.qr-pdf-preview', compact('data'));
     }
 
     public function machinePdfPreview($id)
     {
-        $data =  MachineMaster::with('operations')->find($id);
+        $data = MachineMaster::with('operations')->find($id);
 
         if (isset($_GET['pdf']) && $_GET['pdf'] == 'true') {
-            $pdf =  Pdf::setOptions([
+            $pdf = Pdf::setOptions([
                 'isPhpEnabled' => true,
                 'isRemoteEnabled' => true,
             ])->loadView('qr-codes.pdf.machine-pdf', compact('data'));
+
             return $pdf->stream('document.pdf');
         }
+
         return view('qr-codes.machine-pdf-preview', compact('data'));
     }
 
@@ -432,7 +443,7 @@ class QRCodeController extends Controller
         foreach ($machines as $machine) {
 
             $machine_id = $machine->id;
-            $machine_name = $machine->machine ?? 'machine-' . $machine_id;
+            $machine_name = $machine->machine ?? 'machine-'.$machine_id;
 
             // Generate QR code (store machine_id or any info you want)
             $result = Builder::create()
@@ -443,8 +454,8 @@ class QRCodeController extends Controller
 
             // Clean and lowercase the filename
             $safeName = Str::slug(strtolower($machine_name), '-');
-            $fileName = $safeName . '-' . time() . '.png';
-            $path = 'machine-qrcodes/' . $fileName; // relative to 'storage/app/public'
+            $fileName = $safeName.'-'.time().'.png';
+            $path = 'machine-qrcodes/'.$fileName; // relative to 'storage/app/public'
 
             // Save file to storage/app/public/machine-qrcodes
             Storage::disk('public')->put($path, $result->getString());
@@ -457,7 +468,7 @@ class QRCodeController extends Controller
         }
 
         return response()->json([
-            'message' => "✅ Successfully generated QR codes for {$generatedCount} machine(s)."
+            'message' => "✅ Successfully generated QR codes for {$generatedCount} machine(s).",
         ]);
     }
 
@@ -476,21 +487,21 @@ class QRCodeController extends Controller
                 ->build();
 
             // Clean file name to avoid special characters
-           
+
             $fileName = $machine->qr_code;
-            $relativePath = 'storage/generic-qrcodes/' . $fileName;
+            $relativePath = 'storage/generic-qrcodes/'.$fileName;
             $fullPath = public_path($relativePath);
 
             // Ensure directory exists
             $directory = dirname($fullPath);
-            if (!File::exists($directory)) {
+            if (! File::exists($directory)) {
                 File::makeDirectory($directory, 0755, true);
             }
 
             // Save file to public directory
             file_put_contents($fullPath, $result->getString());
 
-            $path = 'generic-qrcodes/' . $fileName;
+            $path = 'generic-qrcodes/'.$fileName;
 
             // Save to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -499,13 +510,13 @@ class QRCodeController extends Controller
             DB::table('generic_qrcodes')
                 ->where('id', $machine->id)
                 ->update([
-                    'qr_code'    => $fileName,
+                    'qr_code' => $fileName,
                     'updated_at' => now(),
                 ]);
         }
 
         return response()->json([
-            'message' => "✅ Successfully generated QR codes for {$generatedCount}."
+            'message' => "✅ Successfully generated QR codes for {$generatedCount}.",
         ]);
     }
 }

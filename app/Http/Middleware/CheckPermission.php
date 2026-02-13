@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class CheckPermission
 {
@@ -14,12 +13,11 @@ class CheckPermission
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle($request, Closure $next, $permission)
-{
-    if (!hasPermission($permission)) {
-        abort(403, 'Access denied.');
+    {
+        if (! hasPermission($permission)) {
+            abort(403, 'Access denied.');
+        }
+
+        return $next($request);
     }
-
-    return $next($request);
-}
-
 }

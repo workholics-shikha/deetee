@@ -41,7 +41,6 @@ class Kernel extends HttpKernel
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
-       
 
     ];
 
@@ -67,5 +66,4 @@ class Kernel extends HttpKernel
         'permission' => \App\Http\Middleware\CheckPermission::class,
         'no_cache' => \App\Http\Middleware\NoCache::class,
     ];
-
 }

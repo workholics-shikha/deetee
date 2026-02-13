@@ -1,21 +1,21 @@
 <?php
 
-Define('ERP_LINK'       , 'http://43.205.13.23/deetee/public/api/get');
+define('ERP_LINK', 'http://43.205.13.23/deetee/public/api/get');
 
-Define('ERP_USERNAME'   , 'sitaram11');
+define('ERP_USERNAME', 'sitaram11');
 
-Define('ERP_PASSWORD'   , 'DT@123#$$#$$$$');
+define('ERP_PASSWORD', 'DT@123#$$#$$$$');
 
-Define('MAIN_LOGO'      , 'assets/images/logo.png');
+define('MAIN_LOGO', 'assets/images/logo.png');
 
-Define('NO_USER_IMG'    , 'assets/images/Usericonn.png');
+define('NO_USER_IMG', 'assets/images/Usericonn.png');
 
-Define('NO_MACHINE_IMG' , 'assets/images/machineImg.png');
+define('NO_MACHINE_IMG', 'assets/images/machineImg.png');
 
-Define('DEFAULT_IMAGE'  , 'assets/images/default-image.jpg');
+define('DEFAULT_IMAGE', 'assets/images/default-image.jpg');
 
-Define('PAGE_NO'        , 10);
+define('PAGE_NO', 10);
 
-Define('SUPPORT_EMAIL'  , "deetee@deeteegroup.com");
+define('SUPPORT_EMAIL', 'deetee@deeteegroup.com');
 
-Define('DEFAULT_QR'     , "assets/images/QRImg.png");
+define('DEFAULT_QR', 'assets/images/QRImg.png');

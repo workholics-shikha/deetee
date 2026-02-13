@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ErpSalesOrder, PassSheet, SalesOrderProduct, SalesOrderTracking, SOProductOperationDetails, SubProduct, SubproductWiseOperation};
-use Illuminate\Support\Facades\DB;
+use App\Models\ErpSalesOrder;
+use App\Models\PassSheet;
+use App\Models\SalesOrderProduct;
+use App\Models\SalesOrderTracking;
+use App\Models\SOProductOperationDetails;
+use App\Models\SubProduct;
+use App\Models\SubproductWiseOperation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SubProductOperationController extends Controller
 {
-
     public function route_card_details($id, $pass_no = null)
     {
         $pass_sheet = PassSheet::select('id', 'pass_no', 'pass_sheet_qr_code', 'size1', 'size2', 'size3')->where('id', $pass_no)->first();
@@ -38,7 +43,7 @@ class SubProductOperationController extends Controller
         $firstOp = $operations[0] ?? [];
         $salesOrderProduct = SalesOrderProduct::find($firstOp['soProductId'] ?? null);
 
-        if (!$salesOrderProduct) {
+        if (! $salesOrderProduct) {
             return response()->json([
                 'status' => false,
                 'message' => 'Sales order product not found.',
@@ -52,13 +57,13 @@ class SubProductOperationController extends Controller
                 $cycleTime = $operation['cycleTime'] ?? null;
                 $opId = $operation['id'] ?? null;
 
-                if (in_array($operationType, ["ManualIn", "Manual_ICT"]) && !empty($cycleTime)) {
+                if (in_array($operationType, ['ManualIn', 'Manual_ICT']) && ! empty($cycleTime)) {
                     $soOpTable = SOProductOperationDetails::where([
                         'operation_id' => $opId,
                         'sales_order_product_id' => $salesOrderProduct->id,
                         'so_id' => $salesOrderProduct->so_id,
                         'product_id' => $salesOrderProduct->product_id,
-                        'sub_product_id' => $salesOrderProduct->sub_product_id
+                        'sub_product_id' => $salesOrderProduct->sub_product_id,
                     ])->first();
 
                     if ($soOpTable) {
@@ -70,9 +75,11 @@ class SubProductOperationController extends Controller
             }
 
             DB::commit();
+
             return response()->json(['status' => true, 'message' => 'Cycle Time Updated Successfully.']);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -83,7 +90,7 @@ class SubProductOperationController extends Controller
 
         $salesOrderProduct = SalesOrderProduct::find($tbSOProductId);
 
-        if (!$salesOrderProduct) {
+        if (! $salesOrderProduct) {
             return response()->json([
                 'status' => false,
                 'message' => 'Sales order product not found.',
@@ -94,7 +101,7 @@ class SubProductOperationController extends Controller
         $salesOrderProduct->save();
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'Route Card Locked Successfully.',
         ]);
     }

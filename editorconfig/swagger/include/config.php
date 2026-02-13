@@ -1,7 +1,7 @@
 <?php
 
-$baseUrl='weblaunchpad.in/deetee';
-$siteUrl='https://weblaunchpad.in/deetee/';
+$baseUrl = 'weblaunchpad.in/deetee';
+$siteUrl = 'https://weblaunchpad.in/deetee/';
 
 return [
 
@@ -9,12 +9,12 @@ return [
 
     'swaggerVersion' => '1.0',
 
-    'basePath'=>$baseUrl.'/api',
+    'basePath' => $baseUrl.'/api',
 
-    'basePathSwagger'=>$baseUrl.'swagger/include',
+    'basePathSwagger' => $baseUrl.'swagger/include',
 
-    'apiUrl'=> $baseUrl.'/api',
+    'apiUrl' => $baseUrl.'/api',
 
-    'baseUrl'=>$baseUrl,
+    'baseUrl' => $baseUrl,
 
 ];

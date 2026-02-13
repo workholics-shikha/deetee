@@ -21,12 +21,12 @@ return new class extends Migration
             $table->string('76_100');
             $table->string('101_125');
             $table->string('126_150');
-            $table->string('0_50');	
+            $table->string('0_50');
             $table->string('0_100');
-            $table->string('51_100');	
-            $table->string('101_150');	
-            $table->string('151_200');	
-            $table->string('201_250');	
+            $table->string('51_100');
+            $table->string('101_150');
+            $table->string('151_200');
+            $table->string('201_250');
             $table->string('251_300');
             $table->timestamps();
         });

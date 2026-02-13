@@ -41,3 +41,9 @@ JOIN sales_order_products sop
  AND sop.cpoitemid = ps.cpoitemid
 SET ps.subproduct_pid = sop.id
 WHERE ps.subproduct_pid IS NULL;
+
+-- //===================
+
+INSERT INTO `subproduct_wise_operation` (`id`, `s_no`, `product_master_id`, `subproduct_id`, `operation_id`, `operation_name`, `sub_operations`, `unit`, `parameter1_label`, `parameter1_value`, `parameter2_label`, `parameter2_value`, `parameter1_value_set`, `parameter2_value_set`, `operation_type`, `fixed_ICT`, `created_at`, `updated_at`, `operation_availabilty`) VALUES (NULL, NULL, '2', '6', '22', 'Grinding-1', 'Bore Semi-final & Final Grinding of coupling <br> Both side journal final & Berral semi final grinding only of roll.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1');
+
+INSERT INTO `subproduct_wise_operation` (`id`, `s_no`, `product_master_id`, `subproduct_id`, `operation_id`, `operation_name`, `sub_operations`, `unit`, `parameter1_label`, `parameter1_value`, `parameter2_label`, `parameter2_value`, `parameter1_value_set`, `parameter2_value_set`, `operation_type`, `fixed_ICT`, `created_at`, `updated_at`, `operation_availabilty`) VALUES (NULL, NULL, '2', '6', '23', 'Grinding-2', 'Berral grinding with coupling <br> Journal Dia & Facing grinding - Both Side.', 'RMR', 'Outer Diameter', 'size1', 'Total Length', 'size3', NULL, NULL, '', NULL, NULL, NULL, '1');

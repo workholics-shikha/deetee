@@ -22,27 +22,29 @@ class MachineMaster extends Model
         'tracking_id',
         'machine_qr_code',
         'machine_status',
-        'machine_image'
+        'machine_image',
     ];
 
     protected $hidden = [
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     public function getMachineImageAttribute($value)
     {
         if ($value) {
-            return asset('uploads/machine_image/' . $value);
+            return asset('uploads/machine_image/'.$value);
         }
+
         return asset(NO_MACHINE_IMG);
     }
 
     public function getMachineQrCodeAttribute1($value)
     {
         if ($value) {
-            return asset('storage/machine-qrcodes/' . $value);
+            return asset('storage/machine-qrcodes/'.$value);
         }
+
         return asset(DEFAULT_QR);
     }
 
@@ -61,10 +63,12 @@ class MachineMaster extends Model
         if ($value) {
             if (app()->runningInConsole()) {
                 // For PDF (CLI / DomPDF), use file path
-                return public_path('storage/machine-qrcodes/' . $value);
+                return public_path('storage/machine-qrcodes/'.$value);
             }
-            return asset('storage/machine-qrcodes/' . $value); // For browser
+
+            return asset('storage/machine-qrcodes/'.$value); // For browser
         }
+
         return asset(DEFAULT_QR);
     }
 }

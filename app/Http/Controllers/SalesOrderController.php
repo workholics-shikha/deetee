@@ -2,27 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{
-    ErpSalesOrder,
-    SalesOrderProduct,
-    SOProductOperationDetails,
-    SubProduct,
-    PassSheet,
-    ProductMasters,
-    SalesOrderTracking,
-    SubproductWiseOperation
-};
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Storage, DB, Log};
+use App\Models\ErpSalesOrder;
+use App\Models\PassSheet;
+use App\Models\ProductMasters;
+use App\Models\SalesOrderProduct;
+use App\Models\SalesOrderTracking;
+use App\Models\SOProductOperationDetails;
+use App\Models\SubProduct;
+use App\Models\SubproductWiseOperation;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SalesOrderController extends Controller
 {
-
     public function index(Request $request)
     {
         $record = ErpSalesOrder::where('so_status', '!=', 'Closed')->where('scr_status', 'Scrutinized')->orderBy('so_date', 'desc');
         $data = $record->paginate(PAGE_NO);
+
         return view('sales-order.index', compact('data'));
     }
 
@@ -40,6 +39,7 @@ class SalesOrderController extends Controller
             });
         }
         $data = $getData->paginate(PAGE_NO);
+
         return response()->json([
             'html' => view('sales-order.search-table', compact('data'))->render(),
             'pagination' => (string) $data->links(),
@@ -61,6 +61,7 @@ class SalesOrderController extends Controller
 
         $container['title'] = 'Printable PDF';
         $pdf = Pdf::setOptions(['isPhpEnabled' => true, 'isRemoteEnabled' => true])->loadView('sales-order.pdf.product-list-sheet-print', $container);
+
         return $pdf->stream('document.pdf');
     }
 
@@ -78,6 +79,7 @@ class SalesOrderController extends Controller
 
         $container['title'] = 'Printable PDF';
         $pdf = Pdf::setOptions(['isPhpEnabled' => true, 'isRemoteEnabled' => true])->loadView('sales-order.pdf.qr-pdf', $container);
+
         return $pdf->stream('document.pdf');
     }
 
@@ -86,6 +88,7 @@ class SalesOrderController extends Controller
         $data = SalesOrderProduct::find($request->id);
         $saleOrder = ErpSalesOrder::where('so_id', $data->so_id)->first();
         $pass_sheet = PassSheet::where('cpoitemid', $data->cpoitemid)->get();
+
         return view('sales-order.pass-sheet-preview', compact('data', 'saleOrder', 'pass_sheet'));
     }
 
@@ -95,14 +98,15 @@ class SalesOrderController extends Controller
         $container['saleOrder'] = ErpSalesOrder::where('so_id', $container['data']->so_id)->first();
         $container['pass_sheet'] = PassSheet::where('cpoitemid', $container['data']->cpoitemid)->get();
         $container['title'] = 'Printable PDF';
-        $pdf =  Pdf::setOptions(['isPhpEnabled' => true, 'isRemoteEnabled' => true])->loadView('sales-order.pdf.pass-sheet-pdf', $container);
+        $pdf = Pdf::setOptions(['isPhpEnabled' => true, 'isRemoteEnabled' => true])->loadView('sales-order.pdf.pass-sheet-pdf', $container);
+
         return $pdf->stream('document.pdf');
     }
 
     public function fetch_sub_product(Request $request)
     {
         $data = SalesOrderProduct::find($request->id);
-        $saleOrder  = ErpSalesOrder::where('so_id', $data->so_id)->first();
+        $saleOrder = ErpSalesOrder::where('so_id', $data->so_id)->first();
         $unit = $saleOrder->industry; // calls getIndustryAttribute()
         $ids = [44, 45, 46, 47, 49, 53, 56, 59, 61, 62, 64];
 
@@ -117,6 +121,7 @@ class SalesOrderController extends Controller
             $subProducts = SubProduct::whereIn('product_master_id', $getProductId)->with('product')->get();
         }
         $so_no = $saleOrder->so_no;
+
         return view('sales-order.sub-product-modal', compact('data', 'so_no', 'subProducts'));
     }
 
@@ -124,6 +129,7 @@ class SalesOrderController extends Controller
     {
         $getRolls = SalesOrderTracking::where(['operation_id' => $id, 'so_id' => $so_id])->groupBy('operation_id');
         $getOperationData = SalesOrderTracking::where(['operation_id' => $id])->get();
+
         return view('sales-order.tracking', compact('getRolls', 'getOperationData'));
     }
 
@@ -136,9 +142,9 @@ class SalesOrderController extends Controller
 
         if ($type === 'SET') {
             $passSheets = PassSheet::where([
-                'cpoitemid'      => $sop->cpoitemid,
-                'so_id'          => $sop->so_id,
-                'subproduct_id'  => $sop->sub_product_id,
+                'cpoitemid' => $sop->cpoitemid,
+                'so_id' => $sop->so_id,
+                'subproduct_id' => $sop->sub_product_id,
             ])->get(['id', 'qty']);
 
             if ($passSheets->isEmpty()) {
@@ -148,10 +154,10 @@ class SalesOrderController extends Controller
             foreach ($passSheets as $sheet) {
                 for ($i = 1; $i <= (int) $sheet->qty; $i++) {
                     $rows[] = [
-                        'pass_sheet_id'  => $sheet->id,
-                        'quantity'       => $i,        // each row represents 1 unit
-                        'status'         => 'not-started',
-                        'updated_by'     => 0,
+                        'pass_sheet_id' => $sheet->id,
+                        'quantity' => $i,        // each row represents 1 unit
+                        'status' => 'not-started',
+                        'updated_by' => 0,
                         'completed_date' => null,     // better than ''
                     ];
                 }
@@ -159,13 +165,14 @@ class SalesOrderController extends Controller
         } else { // NOS or other measure‑unit
             for ($i = 1; $i <= $sop->soquantity; $i++) {
                 $rows[] = [
-                    'quantity'   => $i,
-                    'status'     => 'not-started',
+                    'quantity' => $i,
+                    'status' => 'not-started',
                     'updated_by' => 0,
-                    'completed_date' => ''
+                    'completed_date' => '',
                 ];
             }
         }
+
         return $rows;
     }
 
@@ -175,9 +182,9 @@ class SalesOrderController extends Controller
             // Validate the request
             $validated = $request->validate([
                 'routecardid' => 'required|integer',
-                'odid'        => 'required|integer',
-                'type'        => 'required|string',
-                'reviewText'  => 'required|string|max:1000',
+                'odid' => 'required|integer',
+                'type' => 'required|string',
+                'reviewText' => 'required|string|max:1000',
             ]);
 
             $trackingId = $request->odid;
@@ -188,33 +195,33 @@ class SalesOrderController extends Controller
             // 1️⃣ Update main tracking
             // =======================
             $review = SalesOrderTracking::find($trackingId);
-            if (!$review) {
+            if (! $review) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Tracking record not found.'
+                    'message' => 'Tracking record not found.',
                 ], 404);
             }
 
             $review->roll_status = $reviewType;
-            $review->comment     = $reviewText;
+            $review->comment = $reviewText;
             $review->save();
 
             // =======================
             // 2️⃣ Get related details
             // =======================
-            $trackingDetails   = $review;
-            $so_product_id     = $trackingDetails->so_pid_primary;
-            $pass_id           = $trackingDetails->pass_id ?? 0;
-            $current_roll      = (int) $trackingDetails->quantity_processed;
-            $operator_id       = $trackingDetails->operator_id;
+            $trackingDetails = $review;
+            $so_product_id = $trackingDetails->so_pid_primary;
+            $pass_id = $trackingDetails->pass_id ?? 0;
+            $current_roll = (int) $trackingDetails->quantity_processed;
+            $operator_id = $trackingDetails->operator_id;
 
             $so_product_details = SalesOrderProduct::select('id', 'so_id', 'poquantity', 'sub_product_id', 'product_id', 'measureunit')
                 ->find($so_product_id);
 
-            if (!$so_product_details) {
+            if (! $so_product_details) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Sales order product not found.'
+                    'message' => 'Sales order product not found.',
                 ], 404);
             }
 
@@ -222,30 +229,30 @@ class SalesOrderController extends Controller
             // 3️⃣ Find operation detail
             // =======================
             $operationDetails = SOProductOperationDetails::where([
-                'so_id'                 => $trackingDetails->so_id,
+                'so_id' => $trackingDetails->so_id,
                 'sales_order_product_id' => $so_product_id,
-                'product_id'            => $so_product_details->product_id,
-                'sub_product_id'        => $so_product_details->sub_product_id,
-                'operation_id'          => $trackingDetails->operation_id
+                'product_id' => $so_product_details->product_id,
+                'sub_product_id' => $so_product_details->sub_product_id,
+                'operation_id' => $trackingDetails->operation_id,
             ])->first(['id', 'processed_qty', 'qty']);
 
-            if (!$operationDetails || !$operationDetails->processed_qty) {
+            if (! $operationDetails || ! $operationDetails->processed_qty) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Operation details not found or no processed data.'
+                    'message' => 'Operation details not found or no processed data.',
                 ], 404);
             }
 
             $processedQty = json_decode($operationDetails->processed_qty, true);
-            if (!is_array($processedQty)) {
+            if (! is_array($processedQty)) {
                 Log::error('Invalid JSON in processed_qty', [
                     'operation_detail_id' => $operationDetails->id,
-                    'value' => $operationDetails->processed_qty
+                    'value' => $operationDetails->processed_qty,
                 ]);
 
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Invalid JSON data in processed_qty.'
+                    'message' => 'Invalid JSON data in processed_qty.',
                 ], 500);
             }
 
@@ -255,22 +262,22 @@ class SalesOrderController extends Controller
             $updated = false;
             foreach ($processedQty as &$item) {
                 $item['pass_sheet_id'] = $item['pass_sheet_id'] ?? 0;
-                $item['quantity']      = $item['quantity'] ?? 0;
+                $item['quantity'] = $item['quantity'] ?? 0;
 
                 $itemPassId = (int) $item['pass_sheet_id'];
-                $itemQty    = (int) $item['quantity'];
+                $itemQty = (int) $item['quantity'];
 
                 if ($reviewType === 'rework' || $reviewType === 'approved') {
                     if ($pass_id > 0) {
                         if ($itemPassId == $pass_id && $itemQty == $current_roll) {
-                            $item['status']     = $reviewType;
+                            $item['status'] = $reviewType;
                             $item['updated_by'] = $operator_id;
                             $updated = true;
                             break;
                         }
                     } else {
                         if ($itemQty == $current_roll) {
-                            $item['status']     = $reviewType;
+                            $item['status'] = $reviewType;
                             $item['updated_by'] = $operator_id;
                             $updated = true;
                             break;
@@ -287,12 +294,6 @@ class SalesOrderController extends Controller
                 $operationDetails->processed_qty = json_encode($processedQty, JSON_UNESCAPED_UNICODE);
                 $operationDetails->save();
 
-                Log::info('Operation updated successfully', [
-                    'operation_detail_id' => $operationDetails->id,
-                    'updated_by' => $operator_id,
-                    'review_type' => $reviewType,
-                    'current_roll' => $current_roll,
-                ]);
             } else {
                 Log::warning('No matching item found for update', [
                     'operation_detail_id' => $operationDetails->id,
@@ -306,10 +307,10 @@ class SalesOrderController extends Controller
             // =======================
             DB::table('rc_review')->insert([
                 'so_track_id' => $trackingId,
-                'review_for'  => $reviewType,
-                'review'      => $reviewText,
-                'review_by'   => auth()->id() ?? 0,
-                'created_at'  => now(),
+                'review_for' => $reviewType,
+                'review' => $reviewText,
+                'review_by' => auth()->id() ?? 0,
+                'created_at' => now(),
             ]);
 
             return response()->json([
@@ -318,20 +319,21 @@ class SalesOrderController extends Controller
                 'data' => [
                     'operation_detail_id' => $operationDetails->id,
                     'updated' => $updated,
-                    'review_type' => $reviewType
-                ]
+                    'review_type' => $reviewType,
+                ],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             Log::error('Error in operationReview', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Server error: ' . $e->getMessage()
+                'message' => 'Server error: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -369,7 +371,7 @@ class SalesOrderController extends Controller
     {
         // DB::transaction(function () {
 
-        $products = SalesOrderProduct::whereBetween('sub_product_id', [34, 42])
+        $products = SalesOrderProduct::where('sub_product_id', 6)
             ->whereNotNull('sub_product_id')->orderBy('id')->take(10)
             ->get();
 
@@ -383,7 +385,7 @@ class SalesOrderController extends Controller
             // Already added operations
             $usedOperationIds = SOProductOperationDetails::where([
                 'sub_product_id' => $data->sub_product_id,
-                'so_id' => $data->so_id
+                'so_id' => $data->so_id,
             ])
                 ->pluck('operation_id')
                 ->toArray();
@@ -418,20 +420,20 @@ class SalesOrderController extends Controller
 
                 SOProductOperationDetails::firstOrCreate(
                     [
-                        'so_id'          => $data->so_id,
+                        'so_id' => $data->so_id,
                         'sub_product_id' => $data->sub_product_id,
-                        'operation_id'   => $operationId,
+                        'operation_id' => $operationId,
                     ],
                     [
-                        'so_no'             => ErpSalesOrder::where('so_id', $data->so_id)->value('so_no') ?? '',
+                        'so_no' => ErpSalesOrder::where('so_id', $data->so_id)->value('so_no') ?? '',
                         'sales_order_product_id' => $data->id,
-                        'product_id'        => $op->product_master_id,
-                        'operation_name'    => $op->operation_name,
-                        'operation_stage'   => $op->sub_operations,
+                        'product_id' => $op->product_master_id,
+                        'operation_name' => $op->operation_name,
+                        'operation_stage' => $op->sub_operations,
                         'operation_qr_code' => $opMaster->operation_qr_code ?? '',
-                        'operation_status'  => $opMaster->parameter_input ?? '',
-                        'qty'               => $data->soquantity,
-                        'processed_qty'     => json_encode($processedQtyRows),
+                        'operation_status' => $opMaster->parameter_input ?? '',
+                        'qty' => $data->soquantity,
+                        'processed_qty' => json_encode($processedQtyRows),
                     ]
                 );
             }
@@ -457,7 +459,7 @@ class SalesOrderController extends Controller
 
         $typeOfProduct = $salesOrderProduct->measureunit; // e.g. SET / NOS
         if ($typeOfProduct === 'SET') {
-            // if not added only 
+            // if not added only
             $checkPass = PassSheet::where(['so_id' => $salesOrderProduct->so_id, 'subproduct_id' => $so_pid])->find('id');
             if (empty($checkPass)) {
                 addPassSheetDetails($salesOrderProduct->cpoitemid, $salesOrderProduct->so_id);
@@ -497,11 +499,11 @@ class SalesOrderController extends Controller
 
             /* ------------ Data needed when we first create the row -------- */
             $createData = [
-                'so_no'             => $soNo,
-                'product_id'        => $op->product_master_id,
-                'sub_product_id'    => $op->subproduct_id,
-                'operation_name'    => $op->operation_name,
-                'operation_stage'   => $op->sub_operations,
+                'so_no' => $soNo,
+                'product_id' => $op->product_master_id,
+                'sub_product_id' => $op->subproduct_id,
+                'operation_name' => $op->operation_name,
+                'operation_stage' => $op->sub_operations,
                 'operation_qr_code' => $opMaster->operation_qr_code ?? '',
                 'operation_status' => $opMaster->parameter_input ?? '',
                 'qty' => $salesOrderProduct->soquantity, // ← set only on create
@@ -515,14 +517,14 @@ class SalesOrderController extends Controller
             if (! $detail->wasRecentlyCreated) {
                 $detail->fill([
                     // update anything *except* qty
-                    'so_no'             => $soNo,
-                    'product_id'        => $op->product_master_id,
-                    'sub_product_id'    => $op->subproduct_id,
-                    'operation_name'    => $op->operation_name,
-                    'operation_stage'   => $op->sub_operations,
+                    'so_no' => $soNo,
+                    'product_id' => $op->product_master_id,
+                    'sub_product_id' => $op->subproduct_id,
+                    'operation_name' => $op->operation_name,
+                    'operation_stage' => $op->sub_operations,
                     'operation_qr_code' => $opMaster->operation_qr_code ?? '',
-                    'operation_status'  => $opMaster->parameter_input ?? '',
-                    'processed_qty'     => json_encode($processedQtyRows),
+                    'operation_status' => $opMaster->parameter_input ?? '',
+                    'processed_qty' => json_encode($processedQtyRows),
                 ])->save();
             }
         }
@@ -530,7 +532,7 @@ class SalesOrderController extends Controller
         /* -----------------------------------------------------------------
            | 4.  Redirect to the correct screen
         *----------------------------------------------------------------- */
-        return redirect('admin/sales-order-details/' . $orderId);
+        return redirect('admin/sales-order-details/'.$orderId);
     }
 
     public function pass_sheet($sop_id)
@@ -544,6 +546,7 @@ class SalesOrderController extends Controller
         if ($pass_sheet->isEmpty()) {
             $pass_sheet = PassSheet::where(['cpoitemid' => $data->cpoitemid, 'so_id' => $data->so_id])->get();
         }
+
         return view('sales-order.pass-sheet', compact('data', 'so', 'subProductName', 'pass_sheet', 'sop_id'));
     }
 
@@ -585,14 +588,13 @@ class SalesOrderController extends Controller
         print_r($getSOProducts);
         exit;
 
-
         $rows = [];
 
         if ($type === 'SET') {
             $passSheets = PassSheet::where([
-                'cpoitemid'      => $sop->cpoitemid,
-                'so_id'          => $sop->so_id,
-                'subproduct_id'  => $sop->sub_product_id,
+                'cpoitemid' => $sop->cpoitemid,
+                'so_id' => $sop->so_id,
+                'subproduct_id' => $sop->sub_product_id,
             ])->get(['id', 'qty']);
 
             if ($passSheets->isEmpty()) {
@@ -602,10 +604,10 @@ class SalesOrderController extends Controller
             foreach ($passSheets as $sheet) {
                 for ($i = 1; $i <= (int) $sheet->qty; $i++) {
                     $rows[] = [
-                        'pass_sheet_id'  => $sheet->id,
-                        'quantity'       => $i,        // each row represents 1 unit
-                        'status'         => 'not-started',
-                        'updated_by'     => 0,
+                        'pass_sheet_id' => $sheet->id,
+                        'quantity' => $i,        // each row represents 1 unit
+                        'status' => 'not-started',
+                        'updated_by' => 0,
                         'completed_date' => null,     // better than ''
                     ];
                 }
@@ -613,19 +615,20 @@ class SalesOrderController extends Controller
         } else { // NOS or other measure‑unit
             for ($i = 1; $i <= $sop->soquantity; $i++) {
                 $rows[] = [
-                    'quantity'   => $i,
-                    'status'     => 'not-started',
+                    'quantity' => $i,
+                    'status' => 'not-started',
                     'updated_by' => 0,
-                    'completed_date' => ''
+                    'completed_date' => '',
                 ];
             }
         }
+
         return $rows;
     }
 
     public function buildProcessedQtyRowsNew()
     {
-        $items = DB::select("
+        $items = DB::select('
                 SELECT
                     sopod.id AS sopod_id,
                     sopod.sales_order_product_id,
@@ -643,7 +646,7 @@ class SalesOrderController extends Controller
                 AND sopod.qty <> 0
                 AND (sopod.qty1 IS NULL OR sopod.qty1 <> sopod.qty)
                 ORDER BY sopod.id ASC
-            ");
+            ');
 
         foreach ($items as $row) {
 
@@ -654,7 +657,7 @@ class SalesOrderController extends Controller
 
             // decode existing JSON safely
             $existing = [];
-            if (!empty($row->processed_qty)) {
+            if (! empty($row->processed_qty)) {
                 $decoded = json_decode($row->processed_qty, true);
                 if (is_array($decoded)) {
                     $existing = $decoded;
@@ -664,9 +667,13 @@ class SalesOrderController extends Controller
             // index existing rows by quantity so we can preserve status/updated_by/etc.
             $byQty = [];
             foreach ($existing as $e) {
-                if (!is_array($e) || !isset($e['quantity'])) continue;
+                if (! is_array($e) || ! isset($e['quantity'])) {
+                    continue;
+                }
                 $q = (int) $e['quantity'];
-                if ($q > 0) $byQty[$q] = $e;
+                if ($q > 0) {
+                    $byQty[$q] = $e;
+                }
             }
 
             $newRows = [];
@@ -674,8 +681,8 @@ class SalesOrderController extends Controller
             if ($row->measureunit === 'SET') {
 
                 $passSheets = PassSheet::where([
-                    'cpoitemid'     => $row->cpoitemid,
-                    'so_id'         => $row->so_id,
+                    'cpoitemid' => $row->cpoitemid,
+                    'so_id' => $row->so_id,
                     'subproduct_id' => $row->sub_product_id,
                 ])->get(['id', 'qty']);
 
@@ -684,26 +691,28 @@ class SalesOrderController extends Controller
                     for ($i = 1; $i <= $targetQty; $i++) {
                         $old = $byQty[$i] ?? [];
                         $newRows[] = [
-                            'quantity'       => $i,
-                            'status'         => $old['status'] ?? 'not-started',
-                            'updated_by'     => (int)($old['updated_by'] ?? 0),
+                            'quantity' => $i,
+                            'status' => $old['status'] ?? 'not-started',
+                            'updated_by' => (int) ($old['updated_by'] ?? 0),
                             'completed_date' => $old['completed_date'] ?? null,
-                            'pass_sheet_id'  => $old['pass_sheet_id'] ?? null,
+                            'pass_sheet_id' => $old['pass_sheet_id'] ?? null,
                         ];
                     }
                 } else {
                     // Build sequential quantities across all pass sheets, but cap at targetQty
                     $seq = 1;
                     foreach ($passSheets as $sheet) {
-                        for ($i = 1; $i <= (int)$sheet->qty; $i++) {
-                            if ($seq > $targetQty) break 2;
+                        for ($i = 1; $i <= (int) $sheet->qty; $i++) {
+                            if ($seq > $targetQty) {
+                                break 2;
+                            }
 
                             $old = $byQty[$seq] ?? [];
                             $newRows[] = [
-                                'pass_sheet_id'  => (int) $sheet->id,
-                                'quantity'       => $seq,
-                                'status'         => $old['status'] ?? 'not-started',
-                                'updated_by'     => (int)($old['updated_by'] ?? 0),
+                                'pass_sheet_id' => (int) $sheet->id,
+                                'quantity' => $seq,
+                                'status' => $old['status'] ?? 'not-started',
+                                'updated_by' => (int) ($old['updated_by'] ?? 0),
                                 'completed_date' => $old['completed_date'] ?? null,
                             ];
                             $seq++;
@@ -714,10 +723,10 @@ class SalesOrderController extends Controller
                     for (; $seq <= $targetQty; $seq++) {
                         $old = $byQty[$seq] ?? [];
                         $newRows[] = [
-                            'pass_sheet_id'  => $old['pass_sheet_id'] ?? null,
-                            'quantity'       => $seq,
-                            'status'         => $old['status'] ?? 'not-started',
-                            'updated_by'     => (int)($old['updated_by'] ?? 0),
+                            'pass_sheet_id' => $old['pass_sheet_id'] ?? null,
+                            'quantity' => $seq,
+                            'status' => $old['status'] ?? 'not-started',
+                            'updated_by' => (int) ($old['updated_by'] ?? 0),
                             'completed_date' => $old['completed_date'] ?? null,
                         ];
                     }
@@ -727,9 +736,9 @@ class SalesOrderController extends Controller
                 for ($i = 1; $i <= $targetQty; $i++) {
                     $old = $byQty[$i] ?? [];
                     $newRows[] = [
-                        'quantity'       => $i,
-                        'status'         => $old['status'] ?? 'not-started',
-                        'updated_by'     => (int)($old['updated_by'] ?? 0),
+                        'quantity' => $i,
+                        'status' => $old['status'] ?? 'not-started',
+                        'updated_by' => (int) ($old['updated_by'] ?? 0),
                         'completed_date' => $old['completed_date'] ?? null,
                     ];
                 }
@@ -748,7 +757,7 @@ class SalesOrderController extends Controller
 
     public function syncProcessedQtyJsonByQty()
     {
-        $items = DB::select("
+        $items = DB::select('
             SELECT
                 sopod.id AS sopod_id,
                 sopod.qty,
@@ -764,7 +773,7 @@ class SalesOrderController extends Controller
             AND sopod.qty <> 0
             AND (sopod.qty1 IS NULL OR sopod.qty1 <> sopod.qty)
             ORDER BY sopod.id ASC
-        ");
+        ');
 
         $updatedIds = [];
         $skippedIds = []; // skipped because we'd delete in-progress/partial/completed beyond qty
@@ -778,17 +787,23 @@ class SalesOrderController extends Controller
 
             // decode existing JSON safely
             $existing = [];
-            if (!empty($row->processed_qty)) {
+            if (! empty($row->processed_qty)) {
                 $decoded = json_decode($row->processed_qty, true);
-                if (is_array($decoded)) $existing = $decoded;
+                if (is_array($decoded)) {
+                    $existing = $decoded;
+                }
             }
 
             // index by quantity
             $byQty = [];
             foreach ($existing as $e) {
-                if (!is_array($e) || !isset($e['quantity'])) continue;
+                if (! is_array($e) || ! isset($e['quantity'])) {
+                    continue;
+                }
                 $q = (int) $e['quantity'];
-                if ($q > 0) $byQty[$q] = $e;
+                if ($q > 0) {
+                    $byQty[$q] = $e;
+                }
             }
 
             $oldMaxQty = empty($byQty) ? 0 : max(array_keys($byQty));
@@ -796,10 +811,13 @@ class SalesOrderController extends Controller
             // block shrinking if it would delete active states
             if ($targetQty < $oldMaxQty) {
                 for ($q = $targetQty + 1; $q <= $oldMaxQty; $q++) {
-                    if (!isset($byQty[$q])) continue;
-                    $st = strtolower((string)($byQty[$q]['status'] ?? ''));
+                    if (! isset($byQty[$q])) {
+                        continue;
+                    }
+                    $st = strtolower((string) ($byQty[$q]['status'] ?? ''));
                     if (in_array($st, ['in-progress', 'partial', 'completed'], true)) {
                         $skippedIds[] = $row->sopod_id;
+
                         continue 2;
                     }
                 }
@@ -814,9 +832,9 @@ class SalesOrderController extends Controller
                     $newRows[] = $rowData;
                 } else {
                     $newRows[] = [
-                        'quantity'       => $q,
-                        'status'         => 'not-started',
-                        'updated_by'     => 0,
+                        'quantity' => $q,
+                        'status' => 'not-started',
+                        'updated_by' => 0,
                         'completed_date' => null,
                     ];
                 }
@@ -825,8 +843,8 @@ class SalesOrderController extends Controller
             // SET: attach pass_sheet_id only if missing
             if ($row->measureunit === 'SET') {
                 $passSheets = PassSheet::where([
-                    'cpoitemid'     => $row->cpoitemid,
-                    'so_id'         => $row->so_id,
+                    'cpoitemid' => $row->cpoitemid,
+                    'so_id' => $row->so_id,
                     'subproduct_id' => $row->sub_product_id,
                 ])->get(['id', 'qty']);
 
@@ -834,14 +852,16 @@ class SalesOrderController extends Controller
                     $map = [];
                     $seq = 1;
                     foreach ($passSheets as $sheet) {
-                        for ($i = 1; $i <= (int)$sheet->qty; $i++) {
-                            if ($seq > $targetQty) break 2;
-                            $map[$seq] = (int)$sheet->id;
+                        for ($i = 1; $i <= (int) $sheet->qty; $i++) {
+                            if ($seq > $targetQty) {
+                                break 2;
+                            }
+                            $map[$seq] = (int) $sheet->id;
                             $seq++;
                         }
                     }
                     foreach ($newRows as &$nr) {
-                        $q = (int)$nr['quantity'];
+                        $q = (int) $nr['quantity'];
                         if (empty($nr['pass_sheet_id']) && isset($map[$q])) {
                             $nr['pass_sheet_id'] = $map[$q];
                         }
@@ -854,7 +874,7 @@ class SalesOrderController extends Controller
             $oldJson = json_encode(array_values($existing));
             $newJson = json_encode($newRows);
 
-            if ($oldJson === $newJson && (int)$row->qty === (int)($row->qty1 ?? 0)) {
+            if ($oldJson === $newJson && (int) $row->qty === (int) ($row->qty1 ?? 0)) {
                 // nothing really changed (qty1 not selected in query; ignore if you want)
                 continue;
             }
@@ -863,7 +883,7 @@ class SalesOrderController extends Controller
                 ->where('id', $row->sopod_id)
                 ->update([
                     'processed_qty' => $newJson,
-                    'qty1'          => $targetQty,
+                    'qty1' => $targetQty,
                 ]);
 
             if ($affected > 0) {
@@ -873,21 +893,19 @@ class SalesOrderController extends Controller
 
         return [
             'updated_count' => count($updatedIds),
-            'updated_ids'   => $updatedIds,
+            'updated_ids' => $updatedIds,
             'skipped_count' => count($skippedIds),
-            'skipped_ids'   => $skippedIds,
+            'skipped_ids' => $skippedIds,
         ];
     }
 
     public function getAllSoids()
     {
 
-
         $getData = SalesOrderProduct::where(['measureunit' => 'SET'])->whereNotNull('sub_product_id')->groupBy('so_id')->pluck('so_id')->toArray();
 
-
-        echo "<pre>";
-        // print_r($getData); 
+        echo '<pre>';
+        // print_r($getData);
 
         $soIds = [
             12192,
@@ -962,7 +980,7 @@ class SalesOrderController extends Controller
             13505,
             13516,
             13525,
-            13552
+            13552,
         ];
 
         // $rows = DB::table('sales_order_product_operation_details')
@@ -974,7 +992,7 @@ class SalesOrderController extends Controller
             })->groupBy('so_id')
             ->pluck('so_id')->toArray();
 
-        echo "<pre>";
+        echo '<pre>';
         print_r($rows);
 
         // $allUnique = array_values(array_unique(array_merge($getData, $rows)));
@@ -985,10 +1003,8 @@ class SalesOrderController extends Controller
         print_r($filtered);
         exit;
 
-
         $common = array_values(array_intersect($getData, $rows));
-        //print_r($common);
-
+        // print_r($common);
 
         exit;
 
@@ -1040,11 +1056,11 @@ class SalesOrderController extends Controller
 
         foreach ($passSheetDetails as $details) {
             $html .= '<tr>
-                <td>' . $details->id . '</td>
-                <td>' . $details->pass_sheet_id . '</td>
-                <td>' . $details->so_id . '</td>
-                <td>' . $details->processed_qty . '</td>
-                <td>' . $details->created_at . '</td>
+                <td>'.$details->id.'</td>
+                <td>'.$details->pass_sheet_id.'</td>
+                <td>'.$details->so_id.'</td>
+                <td>'.$details->processed_qty.'</td>
+                <td>'.$details->created_at.'</td>
               </tr>';
         }
 
@@ -1053,7 +1069,7 @@ class SalesOrderController extends Controller
         echo $html;
     }
 
-    function fixPassSheetIdsForSO1()
+    public function fixPassSheetIdsForSO1()
     {
         // all ids
         /*   $soIds = [
@@ -1061,9 +1077,9 @@ class SalesOrderController extends Controller
         ];
 
         // for-testing
-        $soIds = [ 13177, 13219, 13235, 13250, 13304, 13309, 13312, 13361 ]; 
-        
-        Under Scrutiny - 13309, 13312, 
+        $soIds = [ 13177, 13219, 13235, 13250, 13304, 13309, 13312, 13361 ];
+
+        Under Scrutiny - 13309, 13312,
 
         DELETE FROM `sales_order_product_operation_details` WHERE `so_id` IN (13309, 13312, );
         DELETE FROM `pass_sheets` WHERE `so_id` IN (13309, 13312, );
@@ -1132,7 +1148,7 @@ class SalesOrderController extends Controller
             13304,
             13309,
             13312,
-            13361
+            13361,
         ];
 
         DB::transaction(function () use ($soIds) {
@@ -1168,7 +1184,7 @@ class SalesOrderController extends Controller
                 foreach ($opRows as $row) {
 
                     $json = json_decode($row->processed_qty, true);
-                    if (!is_array($json)) {
+                    if (! is_array($json)) {
                         continue;
                     }
 
@@ -1197,7 +1213,7 @@ class SalesOrderController extends Controller
                     DB::table('sales_order_product_operation_details')
                         ->where('id', $row->id)
                         ->update([
-                            'processed_qty' => json_encode($json)
+                            'processed_qty' => json_encode($json),
                         ]);
                 }
 
@@ -1205,15 +1221,15 @@ class SalesOrderController extends Controller
              | 3️⃣ Update sales_order_trackings.pass_id
              | Map OLD completed → NEW completed
              ---------------------------------------------------- */
-                if (!empty($oldCompletedIds) && !empty($newCompletedIds)) {
+                if (! empty($oldCompletedIds) && ! empty($newCompletedIds)) {
 
                     DB::table('sales_order_trackings')
                         ->where('so_id', $soId)
                         ->whereIn('pass_id', $oldCompletedIds)
                         ->update([
-                            'pass_id' => DB::raw("
+                            'pass_id' => DB::raw('
                             CASE pass_id
-                            " . collect($oldCompletedIds)
+                            '.collect($oldCompletedIds)
                                 ->values()
                                 ->map(function ($oldId, $i) use ($newCompletedIds) {
                                     return isset($newCompletedIds[$i])
@@ -1221,16 +1237,16 @@ class SalesOrderController extends Controller
                                         : null;
                                 })
                                 ->filter()
-                                ->implode(' ') . "
+                                ->implode(' ').'
                             END
-                        ")
+                        '),
                         ]);
                 }
             }
         });
     }
 
-    function fixPassSheetIdsForSO2()
+    public function fixPassSheetIdsForSO2()
     {
         $soIds = [
             12192,
@@ -1291,7 +1307,7 @@ class SalesOrderController extends Controller
             13304,
             13309,
             13312,
-            13361
+            13361,
         ];
 
         $soIds = [13269];
@@ -1328,7 +1344,7 @@ class SalesOrderController extends Controller
                     }
 
                     $json = json_decode($row->processed_qty, true);
-                    if (!is_array($json)) {
+                    if (! is_array($json)) {
                         continue;
                     }
 
@@ -1365,22 +1381,22 @@ class SalesOrderController extends Controller
                     DB::table('sales_order_product_operation_details')
                         ->where('id', $row->id)
                         ->update([
-                            'processed_qty' => json_encode($json)
+                            'processed_qty' => json_encode($json),
                         ]);
 
                     /* ------------------------------------------------
                  | 5️⃣ Update sales_order_trackings PER PRODUCT
                  ------------------------------------------------ */
-                    if (!empty($oldCompletedIds) && !empty($newCompletedIds)) {
+                    if (! empty($oldCompletedIds) && ! empty($newCompletedIds)) {
 
                         DB::table('sales_order_trackings')
                             ->where('so_id', $soId)
                             ->where('so_pid_primary', $row->sales_order_product_id) // 🔥 KEY FIX
                             ->whereIn('pass_id', $oldCompletedIds)
                             ->update([
-                                'pass_id' => DB::raw("
+                                'pass_id' => DB::raw('
                                 CASE pass_id
-                                " . collect($oldCompletedIds)
+                                '.collect($oldCompletedIds)
                                     ->values()
                                     ->map(function ($oldId, $i) use ($newCompletedIds) {
                                         return isset($newCompletedIds[$i])
@@ -1388,9 +1404,9 @@ class SalesOrderController extends Controller
                                             : null;
                                     })
                                     ->filter()
-                                    ->implode(' ') . "
+                                    ->implode(' ').'
                                 END
-                            ")
+                            '),
                             ]);
                     }
                 }
@@ -1398,9 +1414,9 @@ class SalesOrderController extends Controller
         });
     }
 
-    function fixPassSheetIdsForSO()
+    public function fixPassSheetIdsForSO()
     {
-        //echo "hello"; exit;
+        // echo "hello"; exit;
         $soIds = [13269]; // keep single SO while testing
         $soIds = [
             12192,
@@ -1461,7 +1477,7 @@ class SalesOrderController extends Controller
             13304,
             13309,
             13312,
-            13361
+            13361,
         ];
 
         DB::transaction(function () use ($soIds) {
@@ -1494,7 +1510,7 @@ class SalesOrderController extends Controller
                     }
 
                     $json = json_decode($row->processed_qty, true);
-                    if (!is_array($json)) {
+                    if (! is_array($json)) {
                         continue;
                     }
 
@@ -1531,22 +1547,22 @@ class SalesOrderController extends Controller
                     DB::table('sales_order_product_operation_details')
                         ->where('id', $row->id)
                         ->update([
-                            'processed_qty' => json_encode($json)
+                            'processed_qty' => json_encode($json),
                         ]);
 
                     /* ------------------------------------------------
                  | 5️⃣ Update sales_order_trackings (CORRECTLY)
                  ------------------------------------------------ */
-                    if (!empty($oldCompletedIds) && !empty($newCompletedIds)) {
+                    if (! empty($oldCompletedIds) && ! empty($newCompletedIds)) {
 
                         DB::table('sales_order_trackings')
                             ->where('so_id', $soId)
                             ->where('so_pid_primary', $row->sales_order_product_id) // ✅ FIXED
                             ->whereIn('pass_id', $oldCompletedIds)
                             ->update([
-                                'pass_id' => DB::raw("
+                                'pass_id' => DB::raw('
                                 CASE pass_id
-                                " . collect($oldCompletedIds)
+                                '.collect($oldCompletedIds)
                                     ->values()
                                     ->map(function ($oldId, $i) use ($newCompletedIds) {
                                         return isset($newCompletedIds[$i])
@@ -1554,9 +1570,9 @@ class SalesOrderController extends Controller
                                             : null;
                                     })
                                     ->filter()
-                                    ->implode(' ') . "
+                                    ->implode(' ').'
                                 END
-                            ")
+                            '),
                             ]);
                     }
                 }
@@ -1601,7 +1617,7 @@ class SalesOrderController extends Controller
          | 2️⃣ Decode existing JSON safely
          ------------------------------------------------- */
             $existing = [];
-            if (!empty($row->processed_qty)) {
+            if (! empty($row->processed_qty)) {
                 $decoded = json_decode($row->processed_qty, true);
                 if (is_array($decoded)) {
                     $existing = $decoded;
@@ -1615,9 +1631,9 @@ class SalesOrderController extends Controller
             foreach ($existing as $e) {
                 if (
                     isset($e['pass_sheet_id'], $e['quantity'])
-                    && (int)$e['quantity'] > 0
+                    && (int) $e['quantity'] > 0
                 ) {
-                    $key = $e['pass_sheet_id'] . ':' . (int)$e['quantity'];
+                    $key = $e['pass_sheet_id'].':'.(int) $e['quantity'];
                     $existingMap[$key] = $e;
                 }
             }
@@ -1629,9 +1645,9 @@ class SalesOrderController extends Controller
             $changed = false;
 
             foreach ($passSheets as $sheet) {
-                for ($q = 1; $q <= (int)$sheet->qty; $q++) {
+                for ($q = 1; $q <= (int) $sheet->qty; $q++) {
 
-                    $key = $sheet->id . ':' . $q;
+                    $key = $sheet->id.':'.$q;
 
                     if (isset($existingMap[$key])) {
                         // KEEP EXACT OLD DATA
@@ -1639,10 +1655,10 @@ class SalesOrderController extends Controller
                     } else {
                         // ADD MISSING ONLY
                         $final[] = [
-                            'pass_sheet_id'  => (int)$sheet->id,
-                            'quantity'       => $q,
-                            'status'         => 'not-started',
-                            'updated_by'     => 0,
+                            'pass_sheet_id' => (int) $sheet->id,
+                            'quantity' => $q,
+                            'status' => 'not-started',
+                            'updated_by' => 0,
                             'completed_date' => null,
                         ];
                         $changed = true;
@@ -1650,7 +1666,7 @@ class SalesOrderController extends Controller
                 }
             }
 
-            if (!$changed) {
+            if (! $changed) {
                 continue;
             }
 
@@ -1662,6 +1678,7 @@ class SalesOrderController extends Controller
             if (strlen($json) > 65000) {
                 // This means your column is NOT LONGTEXT
                 $skipped[] = $row->sopod_id;
+
                 continue;
             }
 
@@ -1676,10 +1693,9 @@ class SalesOrderController extends Controller
 
         return [
             'updated_count' => count($updated),
-            'updated_ids'   => $updated,
+            'updated_ids' => $updated,
             'skipped_count' => count($skipped),
-            'skipped_ids'   => $skipped,
+            'skipped_ids' => $skipped,
         ];
     }
-    
 }

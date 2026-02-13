@@ -2,52 +2,59 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{MachineMaster, ErpSalesOrder, User, MachineHealthMonitoring, SalesOrderTracking, SOProductOperationDetails};
-use Illuminate\Support\Facades\{Auth, DB};
+use App\Models\ErpSalesOrder;
+use App\Models\MachineHealthMonitoring;
+use App\Models\MachineMaster;
+use App\Models\SalesOrderTracking;
+use App\Models\SOProductOperationDetails;
+use App\Models\User;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
-use Carbon\{Carbon, CarbonPeriod};
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-
     public function profile()
     {
         $data = Auth::user();
+
         return view('admin.profile', compact('data'));
     }
 
     public function index_old(Request $request)
     {
-        $total_machines  = MachineMaster::count();
+        $total_machines = MachineMaster::count();
         $sales_order = ErpSalesOrder::count();
         $operators = User::where('role', 'operator')->count();
-        $unit   = $request->input('unit'); // e.g., 'TMR', 'RMR'
+        $unit = $request->input('unit'); // e.g., 'TMR', 'RMR'
         $unitId = null;
 
         // Map unit name to unit_id for SalesOrderTracking (if needed)
         if ($unit) {
             $unitMap = [
                 'Tooling' => 1,
-                'RMR'     => 2,
-                'TMR'     => 3,
+                'RMR' => 2,
+                'TMR' => 3,
             ];
             $unitId = $unitMap[$unit] ?? null;
         }
 
         // ==== Date Filters ===
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         if ($startDate && $endDate) {
             $fromDate = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($endDate)->endOfDay();
+            $toDate = Carbon::parse($endDate)->endOfDay();
         } elseif ($startDate) {
             $fromDate = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($startDate)->endOfDay();
+            $toDate = Carbon::parse($startDate)->endOfDay();
         } else {
             // Default last 7 days
             $fromDate = now()->subDays(9)->startOfDay();
-            $toDate   = now()->endOfDay();
+            $toDate = now()->endOfDay();
         }
 
         // ==== Machine Downtime (total) with unit filter ===
@@ -60,7 +67,7 @@ class DashboardController extends Controller
         }
 
         $machineDowntime = $machineDowntimeQuery
-            ->select(DB::raw("SEC_TO_TIME(SUM(TIMESTAMPDIFF(SECOND, start_date_time, COALESCE(end_date_time, NOW())))) as total_time"))
+            ->select(DB::raw('SEC_TO_TIME(SUM(TIMESTAMPDIFF(SECOND, start_date_time, COALESCE(end_date_time, NOW())))) as total_time'))
             ->value('total_time');
 
         $machineDowntime = $machineDowntime ?: '00:00:00';
@@ -97,8 +104,6 @@ class DashboardController extends Controller
         foreach ($productionData as $rawDate => $count) { // Changed $total to $count
             $key = Carbon::parse($rawDate)->format('d M');
             $mappedProduction[$key] = (int) $count; // Use $count here
-
-            \Log::info("Date: $rawDate, Key: $key, Count: $count"); // Debug logging
         }
 
         $production = array_values(array_replace($defaultMap, $mappedProduction));
@@ -122,6 +127,7 @@ class DashboardController extends Controller
             ->get()
             ->mapWithKeys(function ($row) {
                 $key = Carbon::parse($row->date)->format('d M');
+
                 return [$key => round($row->total_seconds / 60, 2)];
             })
             ->toArray();
@@ -159,40 +165,40 @@ class DashboardController extends Controller
     {
         // ================= BASIC COUNTS =================
         $total_machines = MachineMaster::count();
-        $sales_order    = ErpSalesOrder::count();
-        $operators      = User::where('role', 'operator')->count();
+        $sales_order = ErpSalesOrder::count();
+        $operators = User::where('role', 'operator')->count();
 
         // ================= UNIT FILTER =================
-        $unit   = $request->input('unit');
+        $unit = $request->input('unit');
         $unitId = null;
 
         if ($unit) {
             $unitMap = [
                 'Tooling' => 1,
-                'RMR'     => 2,
-                'TMR'     => 3,
+                'RMR' => 2,
+                'TMR' => 3,
             ];
             $unitId = $unitMap[$unit] ?? null;
         }
 
         // ================= DATE FILTER =================
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         if ($startDate && $endDate) {
             $fromDate = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($endDate)->endOfDay();
+            $toDate = Carbon::parse($endDate)->endOfDay();
         } elseif ($startDate) {
             $fromDate = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($startDate)->endOfDay();
+            $toDate = Carbon::parse($startDate)->endOfDay();
         } else {
             $fromDate = now()->subDays(9)->startOfDay();
-            $toDate   = now()->endOfDay();
+            $toDate = now()->endOfDay();
         }
 
         // ================= DATE RANGE MAP =================
-        $period     = CarbonPeriod::create($fromDate, $toDate);
-        $labels     = [];
+        $period = CarbonPeriod::create($fromDate, $toDate);
+        $labels = [];
         $defaultMap = [];
 
         foreach ($period as $date) {
@@ -246,7 +252,6 @@ class DashboardController extends Controller
             $key = Carbon::parse($rawDate)->format('d M');
             $mappedProduction[$key] = (int) $count; // Use $count here
 
-            \Log::info("Date: $rawDate, Key: $key, Count: $count"); // Debug logging
         }
 
         $production = array_values(array_replace($defaultMap, $mappedProduction));
@@ -269,7 +274,7 @@ class DashboardController extends Controller
             ->pluck('total_seconds', 'date')
             ->mapWithKeys(function ($seconds, $date) {
                 return [
-                    Carbon::parse($date)->format('d M') => round($seconds / 60, 2)
+                    Carbon::parse($date)->format('d M') => round($seconds / 60, 2),
                 ];
             })
             ->toArray();
@@ -300,5 +305,4 @@ class DashboardController extends Controller
             'toDate'
         ));
     }
-
 }

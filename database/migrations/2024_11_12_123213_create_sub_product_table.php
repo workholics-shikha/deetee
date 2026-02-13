@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('sub_product', function (Blueprint $table) {
             $table->id();
             $table->integer('product_master_id');
-            $table->text('sub_product_name'); 
-            $table->enum('product_flow', ['Available','Outsourced','Not Available','Not Applicable'])->default('Available');
-            $table->enum('cycle_flow', ['Available','Outsourced','Not Available','Not Applicable'])->default('Available');
+            $table->text('sub_product_name');
+            $table->enum('product_flow', ['Available', 'Outsourced', 'Not Available', 'Not Applicable'])->default('Available');
+            $table->enum('cycle_flow', ['Available', 'Outsourced', 'Not Available', 'Not Applicable'])->default('Available');
             $table->timestamps();
         });
     }

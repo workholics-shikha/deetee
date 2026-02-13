@@ -13,20 +13,20 @@ return new class extends Migration
     {
         Schema::create('sales_order_product_operation_details', function (Blueprint $table) {
             $table->id();
-            $table->integer("so_id");
-            $table->string("so_no",50)->nullable();
-            $table->integer("sales_order_product_id");
-            $table->integer("product_id");
-            $table->integer("sub_product_id");
-            $table->integer("operation_id")->nullable();
-            $table->string("operation_name")->nullable();
-            $table->string("operation_stage")->nullable();
-            $table->string("operation_qr_code");
-            $table->integer("qty");
-            $table->text("processed_qty")->nullable();
-            $table->string("operation_status",50)->nullable();
-            $table->enum('process_status', ['pending','in-process','completed'])->default('pending');
-            $table->enum('final_status', ['pending','in-process','completed'])->default('pending');
+            $table->integer('so_id');
+            $table->string('so_no', 50)->nullable();
+            $table->integer('sales_order_product_id');
+            $table->integer('product_id');
+            $table->integer('sub_product_id');
+            $table->integer('operation_id')->nullable();
+            $table->string('operation_name')->nullable();
+            $table->string('operation_stage')->nullable();
+            $table->string('operation_qr_code');
+            $table->integer('qty');
+            $table->text('processed_qty')->nullable();
+            $table->string('operation_status', 50)->nullable();
+            $table->enum('process_status', ['pending', 'in-process', 'completed'])->default('pending');
+            $table->enum('final_status', ['pending', 'in-process', 'completed'])->default('pending');
             $table->timestamps();
         });
     }

@@ -2,24 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{PassSheet, Role, SalesOrderProduct, SalesOrderTracking, User};
-use Illuminate\Http\Request;
+use App\Models\PassSheet;
+use App\Models\Role;
+use App\Models\SalesOrderProduct;
+use App\Models\SalesOrderTracking;
+use App\Models\User;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Endroid\QrCode\Builder\Builder;
-use Illuminate\Support\Facades\{Hash, Storage, DB, Http, Validator};
-use Carbon\{Carbon, CarbonPeriod};
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-
     public function index()
     {
         // ======= 'operator','admin','supervisor','HOD','unit_head','CEO' =======
-        $data['operator'] = User::operator()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
-        $data['supervisor'] = User::supervisor()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
-        $data['unit_head'] = User::UnitHead()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
-        $data['admin'] = User::admin()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
-        $data['hod'] = User::HOD()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
-        $data['ceo'] = User::CEO()->with('roleName')->orderBy('id','DESC')->paginate(PAGE_NO);
+        $data['operator'] = User::operator()->with('roleName')->orderBy('id', 'DESC')->paginate(PAGE_NO);
+        $data['supervisor'] = User::supervisor()->with('roleName')->orderBy('id', 'DESC')->paginate(PAGE_NO);
+        $data['unit_head'] = User::UnitHead()->with('roleName')->orderBy('id', 'DESC')->paginate(PAGE_NO);
+        $data['admin'] = User::admin()->with('roleName')->orderBy('id', 'DESC')->paginate(PAGE_NO);
+        $data['hod'] = User::HOD()->with('roleName')->orderBy('id', 'DESC')->paginate(PAGE_NO);
+        $data['ceo'] = User::CEO()->with('roleName')->orderBy('id', 'DESC')->paginate(PAGE_NO);
 
         return view('users.index', compact('data'));
     }
@@ -27,6 +35,7 @@ class UserController extends Controller
     public function operators()
     {
         $data = User::operator()->with('roleName')->paginate(PAGE_NO);
+
         return view('operator.index', compact('data'));
     }
 
@@ -43,7 +52,7 @@ class UserController extends Controller
 
         // Return HTML for table rows and pagination links
         return response()->json([
-            'html'       => view('operator.search-table', compact('data'))->render(),
+            'html' => view('operator.search-table', compact('data'))->render(),
             'pagination' => (string) $data->links(),
         ]);
     }
@@ -56,15 +65,15 @@ class UserController extends Controller
 
         if ($activeTab == 'administrators') {
             $query->admin();
-        } else if ($activeTab == 'executive') {
+        } elseif ($activeTab == 'executive') {
             $query->HOD();
-        } else if ($activeTab == 'unitHead') {
+        } elseif ($activeTab == 'unitHead') {
             $query->UnitHead();
-        } else if ($activeTab == 'planning') {
+        } elseif ($activeTab == 'planning') {
             $query->CEO();
-        } else if ($activeTab == 'supervisors') {
+        } elseif ($activeTab == 'supervisors') {
             $query->supervisor();
-        } else if ($activeTab == 'operator') {
+        } elseif ($activeTab == 'operator') {
             $query->operator();
         }
 
@@ -75,8 +84,9 @@ class UserController extends Controller
         });
 
         $data = $query->paginate(PAGE_NO);
+
         return response()->json([
-            'html'       => view('users.search-table', compact('data'))->render(),
+            'html' => view('users.search-table', compact('data'))->render(),
             'pagination' => (string) $data->links(),
         ]);
     }
@@ -87,6 +97,7 @@ class UserController extends Controller
         $department = User::select('department')->whereNotNull('department')->groupBy('department')->get();
         $designation = User::select('designation')->whereNotNull('designation')->groupBy('designation')->get();
         $employee_group = User::select('employee_group')->whereNotNull('employee_group')->groupBy('employee_group')->get();
+
         return view('users.add', compact('role', 'department', 'designation', 'employee_group'));
     }
 
@@ -136,8 +147,8 @@ class UserController extends Controller
             ->margin(10) // Set margin in pixels
             ->build();
 
-        $name = $user->id . '-' . time() . '.png';
-        $path = 'user-qrcodes/' . $name; // Path      
+        $name = $user->id.'-'.time().'.png';
+        $path = 'user-qrcodes/'.$name; // Path
         Storage::disk('public')->put($path, $result->getString());  // Save the QR code image to storage (public disk)
 
         // Update the machine record with the QR code path
@@ -146,10 +157,11 @@ class UserController extends Controller
             ->update(['user_qr_code' => $name]);
 
         // =================
-        if ($user)
+        if ($user) {
             return redirect()->route('admin.user.add')->with('success', 'User added successfully!');
-        else
+        } else {
             return back()->withErrors(['admin.user.add' => 'Invalid credentials or not authorized.'])->withInput();
+        }
     }
 
     public function edit($id)
@@ -159,6 +171,7 @@ class UserController extends Controller
         $department = User::select('department')->whereNotNull('department')->groupBy('department')->get();
         $designation = User::select('designation')->whereNotNull('designation')->groupBy('designation')->get();
         $employee_group = User::select('employee_group')->whereNotNull('employee_group')->groupBy('employee_group')->get();
+
         return view('users.edit', compact('user', 'role', 'department', 'designation', 'employee_group'));
     }
 
@@ -187,9 +200,9 @@ class UserController extends Controller
             $attachment = fileUpload($request->file('image'), 'profile_images'); // Custom image upload function
             $validated['profile_image'] = $attachment;
         }
-        $validated['designation'] = Role::where('id',$request->role)->value('name');
+        $validated['designation'] = Role::where('id', $request->role)->value('name');
 
-        if($request->password != ''){
+        if ($request->password != '') {
             $validated['password'] = Hash::make($request->password);
         }
         // Update user details
@@ -205,19 +218,20 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $user->delete();
+
         return redirect()->route('admin.users')->with('success', 'User deleted successfully!');
     }
 
-    function callErpApi($url)
+    public function callErpApi($url)
     {
         return $response = Http::withBasicAuth(ERP_USERNAME, ERP_PASSWORD)
             ->withHeaders([
-                'Accept'       => 'application/json',
+                'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ])->get($url);
 
-        echo "HTTP Status Code: " . $response->status() . "\n";
-        echo "Response: " . $response;
+        echo 'HTTP Status Code: '.$response->status()."\n";
+        echo 'Response: '.$response;
     }
 
     public function generateQR()
@@ -227,14 +241,14 @@ class UserController extends Controller
         foreach ($passSheet as $sheet) {
             // Generate the QR code
             $result = Builder::create()
-                ->data($sheet->id . ';PassScan')
+                ->data($sheet->id.';PassScan')
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $sheet->id . '-' . time() . '.png';
+            $name = $sheet->id.'-'.time().'.png';
             // Path where you want to save the QR code image
-            $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+            $path = 'so-pass-sheet-qrcodes/'.$name; // unique filename
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
             // Update the machine record with the QR code path
@@ -259,10 +273,10 @@ class UserController extends Controller
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $operation->id . '-' . time() . '.png';
+            $name = $operation->id.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'operation-qr-codes/' . $name; // unique filename
+            $path = 'operation-qr-codes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -277,15 +291,15 @@ class UserController extends Controller
         foreach ($passSheet as $sheet) {
             // Generate the QR code
             $result = Builder::create()
-                ->data($sheet->id . ';PassScan')
+                ->data($sheet->id.';PassScan')
                 ->size(300) // Set size in pixels
                 ->margin(10) // Set margin in pixels
                 ->build();
 
-            $name = $sheet->id . '-' . time() . '.png';
+            $name = $sheet->id.'-'.time().'.png';
 
             // Path where you want to save the QR code image
-            $path = 'so-pass-sheet-qrcodes/' . $name; // unique filename
+            $path = 'so-pass-sheet-qrcodes/'.$name; // unique filename
 
             // Save the QR code image to storage (public disk)
             Storage::disk('public')->put($path, $result->getString());
@@ -295,47 +309,47 @@ class UserController extends Controller
         }
 
         exit;
-        
+
         $salesOrderProduct = SalesOrderProduct::select('cpoitemid')->where(['scr_status' => 'Scrutinized', 'measureunit' => 'SET'])->get();
 
         // Insert each machine, generate its QR code, and update the machine_qr_code field
         foreach ($salesOrderProduct as $so_products) {
 
-            $product_response = $this->callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $so_products->cpoitemid);
+            $product_response = $this->callErpApi(ERP_LINK.'/OH_showCPOItemPass/'.$so_products->cpoitemid);
 
             // $itemjson = json_decode($product_response, true);
             $itemjson = $product_response->json();
 
-            if (!empty($itemjson)) {
+            if (! empty($itemjson)) {
 
                 foreach ($itemjson as $item) {
 
                     DB::table('pass_sheets')->insert([
-                        'cpoitemid'     => $item['cpoitemid'],
-                        'sr_no'         => $item['sr_no'],
-                        'pass_no'       => $item['pass_no'],
-                        'mrk_pass_no'   => $item['mrk_pass_no'],
-                        'drawing_no'    => $item['drawing_no'],
-                        'size1'         => $item['size1'],
-                        'size2'         => $item['size2'],
-                        'size3'         => $item['size3'],
-                        'qty'           => $item['qty'],
-                        'material'      => $item['material'],
-                        'hardness'      => $item['hardness'],
-                        'fin_wt'        => $item['fin_wt'],
-                        'bs1_dia'       => $item['bs1_dia'],
-                        'bs1_depth'     => $item['bs1_depth'],
-                        'bs1_bore'      => $item['bs1_bore'],
-                        'bs2_dia'       => $item['bs2_dia'],
-                        'bs2_depth'     => $item['bs2_depth'],
-                        'remarks'       => $item['remarks'],
+                        'cpoitemid' => $item['cpoitemid'],
+                        'sr_no' => $item['sr_no'],
+                        'pass_no' => $item['pass_no'],
+                        'mrk_pass_no' => $item['mrk_pass_no'],
+                        'drawing_no' => $item['drawing_no'],
+                        'size1' => $item['size1'],
+                        'size2' => $item['size2'],
+                        'size3' => $item['size3'],
+                        'qty' => $item['qty'],
+                        'material' => $item['material'],
+                        'hardness' => $item['hardness'],
+                        'fin_wt' => $item['fin_wt'],
+                        'bs1_dia' => $item['bs1_dia'],
+                        'bs1_depth' => $item['bs1_depth'],
+                        'bs1_bore' => $item['bs1_bore'],
+                        'bs2_dia' => $item['bs2_dia'],
+                        'bs2_depth' => $item['bs2_depth'],
+                        'remarks' => $item['remarks'],
                         'revisioncount' => $item['revisioncount'],
-                        'created_at'    => now(),
-                        'updated_at'    => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
- 
+
         }
         exit;
     }
@@ -348,12 +362,12 @@ class UserController extends Controller
         // Insert each machine, generate its QR code, and update the machine_qr_code field
         foreach ($salesOrderProduct as $so_products) {
 
-            $product_response = $this->callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $so_products->cpoitemid);
+            $product_response = $this->callErpApi(ERP_LINK.'/OH_showCPOItemPass/'.$so_products->cpoitemid);
 
             // $itemjson = json_decode($product_response, true);
             $itemjson = $product_response->json();
 
-            if (!empty($itemjson)) {
+            if (! empty($itemjson)) {
 
                 foreach ($itemjson as $item) {
 
@@ -364,58 +378,58 @@ class UserController extends Controller
                     foreach ($passNos as $passNo) {
 
                         DB::table('pass_sheets')->insert([
-                            'cpoitemid'     => $item['cpoitemid'],
-                            'sr_no'         => $item['sr_no'],
-                            'pass_no'       => $passNo,
-                            'mrk_pass_no'   => $item['mrk_pass_no'],
-                            'drawing_no'    => $item['drawing_no'],
-                            'size1'         => $item['size1'],
-                            'size2'         => $item['size2'],
-                            'size3'         => $item['size3'],
-                            'qty'           => $item['qty'],
-                            'material'      => $item['material'],
-                            'hardness'      => $item['hardness'],
-                            'fin_wt'        => $item['fin_wt'],
-                            'bs1_dia'       => $item['bs1_dia'],
-                            'bs1_depth'     => $item['bs1_depth'],
-                            'bs1_bore'      => $item['bs1_bore'],
-                            'bs2_dia'       => $item['bs2_dia'],
-                            'bs2_depth'     => $item['bs2_depth'],
-                            'remarks'       => $item['remarks'],
+                            'cpoitemid' => $item['cpoitemid'],
+                            'sr_no' => $item['sr_no'],
+                            'pass_no' => $passNo,
+                            'mrk_pass_no' => $item['mrk_pass_no'],
+                            'drawing_no' => $item['drawing_no'],
+                            'size1' => $item['size1'],
+                            'size2' => $item['size2'],
+                            'size3' => $item['size3'],
+                            'qty' => $item['qty'],
+                            'material' => $item['material'],
+                            'hardness' => $item['hardness'],
+                            'fin_wt' => $item['fin_wt'],
+                            'bs1_dia' => $item['bs1_dia'],
+                            'bs1_depth' => $item['bs1_depth'],
+                            'bs1_bore' => $item['bs1_bore'],
+                            'bs2_dia' => $item['bs2_dia'],
+                            'bs2_depth' => $item['bs2_depth'],
+                            'remarks' => $item['remarks'],
                             'revisioncount' => $item['revisioncount'],
-                            'created_at'    => now(),
-                            'updated_at'    => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
                         ]);
                     }
                 }
             }
         }
     }
- 
+
     public function details_old(Request $request, $id)
     {
         // === Date Filters ===
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
-  
+        $endDate = $request->input('to_date');
+
         // === Date Filters ===
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         if ($startDate && $endDate) {
             $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($endDate)->endOfDay();
+            $toDate = Carbon::parse($endDate)->endOfDay();
 
         } elseif ($startDate) {
             $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($startDate)->endOfDay();
+            $toDate = Carbon::parse($startDate)->endOfDay();
 
         } else {
             // default last 7 days (including today)
             $fromDate = $startOfDay = now()->subDays(6)->startOfDay();
-            $toDate   = now()->endOfDay();
+            $toDate = now()->endOfDay();
         }
- 
+
         // Days count
         $dayCount = $fromDate->diffInDays($toDate) + 1;
         $plannedRuntime = 1350 * $dayCount; // in minutes
@@ -427,7 +441,7 @@ class UserController extends Controller
             ->whereNotNull('end_date_time')
             ->where('roll_status', 'completed');
 
-        // ========= SO History (detail view) ========= 
+        // ========= SO History (detail view) =========
         $soHistory = (clone $baseQuery)
             ->select(
                 'so_id',
@@ -446,11 +460,11 @@ class UserController extends Controller
                 'soProduct:so_id,so_no',
                 'machine:id,machine',
                 'product:id,product_modified_name',
-                'subProduct:id,sub_product_name'
+                'subProduct:id,sub_product_name',
             ])
             ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
             ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id', 'pass_id')  // ✅ added missing groupBys
-            ->orderBy(DB::raw('DATE(end_date_time)'),'DESC')->get();
+            ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')->get();
 
         // === Production Graph (last 7 days) ===
         // Step 1: build date range
@@ -463,7 +477,7 @@ class UserController extends Controller
             $dates[$key] = 0;
         }
 
-        // Step 2: fetch data 
+        // Step 2: fetch data
         $data = (clone $baseQuery)
             ->select(
                 'so_id',
@@ -502,31 +516,31 @@ class UserController extends Controller
             'toDate'
         ));
     }
- 
+
     public function details(Request $request, $id)
     {
         // === Date Filters ===
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
-  
+        $endDate = $request->input('to_date');
+
         // === Date Filters ===
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         if ($startDate && $endDate) {
             $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($endDate)->endOfDay();
+            $toDate = Carbon::parse($endDate)->endOfDay();
 
         } elseif ($startDate) {
             $fromDate = $startOfDay = Carbon::parse($startDate)->startOfDay();
-            $toDate   = Carbon::parse($startDate)->endOfDay();
+            $toDate = Carbon::parse($startDate)->endOfDay();
 
         } else {
             // default last 7 days (including today)
             $fromDate = $startOfDay = now()->subDays(6)->startOfDay();
-            $toDate   = now()->endOfDay();
+            $toDate = now()->endOfDay();
         }
- 
+
         // Days count
         $dayCount = $fromDate->diffInDays($toDate) + 1;
         $plannedRuntime = 1350 * $dayCount; // in minutes
@@ -537,7 +551,7 @@ class UserController extends Controller
             ->where('operator_id', $id)
             ->whereNotNull('end_date_time')
             ->where('roll_status', 'completed');
-  
+
         // === Production Graph (last 7 days) ===
         // Step 1: build date range
         $period = CarbonPeriod::create($startOfDay, $toDate);
@@ -549,7 +563,7 @@ class UserController extends Controller
             $dates[$key] = 0;
         }
 
-        // Step 2: fetch data 
+        // Step 2: fetch data
         $data = (clone $baseQuery)
             ->select(
                 'so_id',
@@ -575,21 +589,11 @@ class UserController extends Controller
         // Step 4: merge
         $count7Days = array_replace($dates, $mappedData);
         $count7Days = array_values($count7Days);
-
         $user_data = User::find($id);
 
-        // SO history
-
-        
-        // ========= SO History (detail view) ========= 
+        // ========= SO History (detail view) =========
         $soHistory = (clone $baseQuery)
             ->select(
-                //'so_id',
-                //'operation_id',
-                //'machine_id',
-                // 'so_product_id',
-                // 'sub_product_id',
-               // 'pass_id',
                 DB::raw('MIN(start_date_time) as start_date'),
                 DB::raw('MAX(end_date_time) as end_date'),
                 DB::raw('SUM(time_taken) as time_taken_minutes'),
@@ -599,13 +603,10 @@ class UserController extends Controller
                 'operation:id,operation_name',
                 'soProduct:so_id,so_no',
                 'machine:id,machine',
-                // 'product:id,product_modified_name',
-                // 'subProduct:id,sub_product_name'
             ])
             ->whereBetween(DB::raw('DATE(end_date_time)'), [$fromDate->toDateString(), $toDate->toDateString()])
-            // ->groupBy('so_id', 'operation_id', 'machine_id', 'so_product_id', 'sub_product_id', 'pass_id')  // ✅ added missing groupBys
-            ->groupBy( 'quantity_processed' )  // ✅ added missing groupBys
-            ->orderBy(DB::raw('DATE(end_date_time)'),'DESC')->get();
+            ->groupBy('quantity_processed')  // ✅ added missing groupBys
+            ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC')->get();
 
         return view('operator.details', compact(
             'user_data',
@@ -617,5 +618,4 @@ class UserController extends Controller
             'toDate'
         ));
     }
-
 }

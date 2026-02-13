@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{SalesOrderTracking, SOProductOperationDetails};
+use App\Models\SalesOrderTracking;
+use App\Models\SOProductOperationDetails;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ReportsController extends Controller
 {
-
     public function index(Request $request)
     {
 
         set_time_limit(300); // seconds
         ini_set('max_execution_time', 300);
 
-        $unit      = $request->input('unit'); // 1-Tooling, 2-RMR, 3-TMR
-        $tab       = $request->input('tab');
+        $unit = $request->input('unit'); // 1-Tooling, 2-RMR, 3-TMR
+        $tab = $request->input('tab');
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         // === Default to last 7 days if no filter provided ===
         $fromDate = $startDate
@@ -32,7 +32,6 @@ class ReportsController extends Controller
 
         $defaultFromDate = now()->subDays(6)->startOfDay();
         $defaultToDate = now()->endOfDay();
-
 
         // ========= Tab 1 - MIS - Maintenance Overview =========
         $query1 = DB::table('machine_health_monitorings as m')
@@ -91,7 +90,7 @@ class ReportsController extends Controller
                 'machine:id,machine',
                 'product:id,product_modified_name',
                 'subProduct:id,sub_product_name',
-                'salesorderProducts:so_id,size1,size2,size3,hardness,material,soquantity'
+                'salesorderProducts:so_id,size1,size2,size3,hardness,material,soquantity',
             ])
             ->whereIn('sales_order_trackings.so_id', function ($query) {
                 $query->select('st.so_id')
@@ -118,7 +117,7 @@ class ReportsController extends Controller
                 DB::raw('MAX(sp.sub_product_name) as sub_product_name')
             )->with([
                 'soProduct:so_id,so_no,so_group,so_date',
-                'salesorderProducts:so_id,size1,size2,size3,soquantity,hardness,material'
+                'salesorderProducts:so_id,size1,size2,size3,soquantity,hardness,material',
             ])
             ->whereBetween(DB::raw('DATE(end_date_time)'), [$defaultFromDate->toDateString(), $defaultToDate->toDateString()])
             ->groupBy('so_id', 'so_product_id', 'sub_product_id', 'pass_id')
@@ -153,7 +152,6 @@ class ReportsController extends Controller
             ->orderBy(DB::raw('DATE(eso.so_date)'), 'DESC');
 
         $productionOverview = $production->get();
-
 
         // ========= Tab 3 - Maintenance History =========
         $query = DB::table('machine_health_monitorings as m')
@@ -206,7 +204,9 @@ class ReportsController extends Controller
                 $arr = json_decode($row->processed_qty, true) ?: [];
                 $completed = 0;
                 foreach ($arr as $it) {
-                    if (isset($it['status']) && $it['status'] === 'completed') $completed++;
+                    if (isset($it['status']) && $it['status'] === 'completed') {
+                        $completed++;
+                    }
                 }
                 $row->completed_qty = $completed;
                 $row->save();
@@ -216,25 +216,22 @@ class ReportsController extends Controller
 
     private function buildSoRollTrackingQuery(Request $request)
     {
-        $unit      = $request->input('unit');
+        $unit = $request->input('unit');
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         $fromDate = $startDate ? Carbon::parse($startDate)->startOfDay() : now()->subDays(6)->startOfDay();
-        $toDate   = $endDate   ? Carbon::parse($endDate)->endOfDay()     : now()->endOfDay();
+        $toDate = $endDate ? Carbon::parse($endDate)->endOfDay() : now()->endOfDay();
 
         $unitMap = ['Tooling' => 1, 'RMR' => 2, 'TMR' => 3];
-        $unitId  = $unitMap[$unit] ?? null;
-
-        \DB::enableQueryLog();
+        $unitId = $unitMap[$unit] ?? null;
 
         // run your query + render view here...
-
         $baseQuery = SalesOrderTracking::query()
             ->join('erp_sales_orders as eso', 'sales_order_trackings.so_id', '=', 'eso.so_id')
             ->whereNotNull('sales_order_trackings.end_date_time')
             ->whereBetween('sales_order_trackings.end_date_time', [$fromDate, $toDate])
-            ->when($unitId, fn($q) => $q->where('eso.so_unitid', $unitId))
+            ->when($unitId, fn ($q) => $q->where('eso.so_unitid', $unitId))
             ->where('sales_order_trackings.roll_status', 'completed'); // recommended
 
         $query = (clone $baseQuery)
@@ -257,7 +254,7 @@ class ReportsController extends Controller
                 'machine:id,machine',
                 'product:id,product_modified_name',
                 'subProduct:id,sub_product_name',
-                'salesorderProducts:so_id,size1,size2,size3,hardness,material,soquantity'
+                'salesorderProducts:so_id,size1,size2,size3,hardness,material,soquantity',
             ])
             ->groupBy(
                 'sales_order_trackings.so_id',
@@ -269,8 +266,6 @@ class ReportsController extends Controller
                 'pass_id'
             )
             ->orderBy(DB::raw('DATE(end_date_time)'), 'DESC');
-
-        \Log::info('query_count', ['count' => count(\DB::getQueryLog())]);
 
         return [$query, $fromDate, $toDate];
     }
@@ -296,21 +291,20 @@ class ReportsController extends Controller
         ]);
     }
 
-
     private function buildSoCompletionTrackingQuery(Request $request)
     {
-        $unit      = $request->input('unit');
+        $unit = $request->input('unit');
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         // Default last 7 days
         $fromDate = $startDate ? Carbon::parse($startDate)->startOfDay() : now()->subDays(6)->startOfDay();
-        $toDate   = $endDate   ? Carbon::parse($endDate)->endOfDay()     : now()->endOfDay();
+        $toDate = $endDate ? Carbon::parse($endDate)->endOfDay() : now()->endOfDay();
 
         $unitMap = [
             'Tooling' => 1,
-            'RMR'     => 2,
-            'TMR'     => 3,
+            'RMR' => 2,
+            'TMR' => 3,
         ];
 
         $unitId = $unitMap[$unit] ?? null;
@@ -323,7 +317,7 @@ class ReportsController extends Controller
             // IMPORTANT: use datetime range (index friendly)
             ->whereBetween('sales_order_trackings.end_date_time', [$fromDate, $toDate])
             // IMPORTANT: apply unit filter only if mapped id exists
-            ->when($unitId, fn($q) => $q->where('eso.so_unitid', $unitId))
+            ->when($unitId, fn ($q) => $q->where('eso.so_unitid', $unitId))
             ->select(
                 'sales_order_trackings.so_id',
                 'sales_order_trackings.so_product_id',
@@ -338,7 +332,7 @@ class ReportsController extends Controller
             )
             ->with([
                 'soProduct:so_id,so_no,so_group,so_date',
-                'salesorderProducts:so_id,size1,size2,size3,soquantity,hardness,material'
+                'salesorderProducts:so_id,size1,size2,size3,soquantity,hardness,material',
             ])
             ->groupBy(
                 'sales_order_trackings.so_id',
@@ -375,13 +369,13 @@ class ReportsController extends Controller
 
     private function buildMaintenanceHistoryQuery(Request $request): array
     {
-        $unit      = $request->input('unit');
+        $unit = $request->input('unit');
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         // Default last 7 days (change 6 to 9 if you want 10 days)
         $fromDate = $startDate ? Carbon::parse($startDate)->startOfDay() : now()->subDays(6)->startOfDay();
-        $toDate   = $endDate   ? Carbon::parse($endDate)->endOfDay()     : now()->endOfDay();
+        $toDate = $endDate ? Carbon::parse($endDate)->endOfDay() : now()->endOfDay();
 
         $query = DB::table('machine_health_monitorings as m')
             ->join('machine_master as mm', 'm.master_id', '=', 'mm.id')
@@ -396,7 +390,7 @@ class ReportsController extends Controller
                 'm.created_at',
                 DB::raw('TIMESTAMPDIFF(SECOND, m.start_date_time, COALESCE(m.end_date_time, NOW())) as total_seconds')
             )
-            ->when($unit, fn($q) => $q->where('mm.unit_name', $unit))
+            ->when($unit, fn ($q) => $q->where('mm.unit_name', $unit))
             ->whereBetween('m.start_date_time', [$fromDate, $toDate])
             ->orderByDesc('m.start_date_time');
 
@@ -426,13 +420,13 @@ class ReportsController extends Controller
 
     private function buildMaintenanceOverviewQuery(Request $request): array
     {
-        $unit      = $request->input('unit');       // Tooling/RMR/TMR (string)
+        $unit = $request->input('unit');       // Tooling/RMR/TMR (string)
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         // Default last 7 days (change 6 to 9 for 10 days)
         $fromDate = $startDate ? Carbon::parse($startDate)->startOfDay() : now()->subDays(6)->startOfDay();
-        $toDate   = $endDate   ? Carbon::parse($endDate)->endOfDay()     : now()->endOfDay();
+        $toDate = $endDate ? Carbon::parse($endDate)->endOfDay() : now()->endOfDay();
 
         $query = DB::table('machine_health_monitorings as m')
             ->join('machine_master as mm', 'm.master_id', '=', 'mm.id')
@@ -442,7 +436,7 @@ class ReportsController extends Controller
                 DB::raw('DATE(m.created_at) as created_date'),
                 DB::raw('SUM(TIMESTAMPDIFF(SECOND, m.start_date_time, COALESCE(m.end_date_time, NOW()))) as total_seconds')
             )
-            ->when($unit, fn($q) => $q->where('mm.unit_name', $unit))
+            ->when($unit, fn ($q) => $q->where('mm.unit_name', $unit))
             // ✅ index friendly (don’t wrap created_at in DATE() in WHERE)
             ->whereBetween('m.created_at', [$fromDate, $toDate])
             ->groupBy(DB::raw('DATE(m.created_at)'), 'm.monitor_for', 'mm.unit_name')
@@ -471,22 +465,21 @@ class ReportsController extends Controller
             'pagination' => (string) $maintenanceOverview->links(),
         ]);
     }
-    
-    
+
     private function buildProductionOverviewQuery(Request $request): array
     {
-        $unit      = $request->input('unit');
+        $unit = $request->input('unit');
         $startDate = $request->input('from_date');
-        $endDate   = $request->input('to_date');
+        $endDate = $request->input('to_date');
 
         // Default last 7 days (change 6 to 9 for 10 days)
         $fromDate = $startDate ? Carbon::parse($startDate)->startOfDay() : now()->subDays(6)->startOfDay();
-        $toDate   = $endDate   ? Carbon::parse($endDate)->endOfDay()     : now()->endOfDay();
+        $toDate = $endDate ? Carbon::parse($endDate)->endOfDay() : now()->endOfDay();
 
         $unitMap = [
             'Tooling' => 1,
-            'RMR'     => 2,
-            'TMR'     => 3,
+            'RMR' => 2,
+            'TMR' => 3,
         ];
         $unitId = $unitMap[$unit] ?? null;
 
@@ -505,11 +498,11 @@ class ReportsController extends Controller
             COUNT(*) as total_so,
             SUM(eso.soquantity) as total_quantity,
             COALESCE(MAX(spd_counts.completed_so_count), 0) as completed_so_count')
-            ->when($unitId, fn($q) => $q->where('eso.so_unitid', $unitId))
+            ->when($unitId, fn ($q) => $q->where('eso.so_unitid', $unitId))
             ->whereBetween('eso.so_date', [$fromDate, $toDate]) // ✅ no DATE() in WHERE
             ->groupBy(DB::raw('DATE(eso.so_date)'))
             ->orderByDesc(DB::raw('DATE(eso.so_date)'));
-  
+
         return [$query, $fromDate, $toDate];
     }
 
@@ -533,5 +526,4 @@ class ReportsController extends Controller
             'pagination' => (string) $productionOverview->links(),
         ]);
     }
-
 }

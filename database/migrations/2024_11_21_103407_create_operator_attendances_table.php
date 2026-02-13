@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('operator_attendances', function (Blueprint $table) {
-            $table->id(); 
+            $table->id();
             $table->integer('operator_id');
             $table->dateTime('start_date_time');
             $table->dateTime('end_date_time')->nullable();

@@ -11,15 +11,14 @@ class OperationsController extends Controller
     /**
      * Display a listing of the resource.
      */
-
     public function index(Request $request)
     {
         $search = trim($request->input('search', ''));
-        $page   = (int) $request->input('page', 1);
+        $page = (int) $request->input('page', 1);
 
-        $cacheKey = "operations_tmr:"
-            . md5($search) // normalize search
-            . ":page:{$page}";
+        $cacheKey = 'operations_tmr:'
+            .md5($search) // normalize search
+            .":page:{$page}";
 
         $operations = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($search) {
 
@@ -34,8 +33,8 @@ class OperationsController extends Controller
         });
 
         $container = [
-            'records'       => $operations,
-            'totalrecords'  => $operations->total(),
+            'records' => $operations,
+            'totalrecords' => $operations->total(),
         ];
 
         if ($request->ajax()) {

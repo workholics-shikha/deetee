@@ -10,31 +10,33 @@ class ErpSalesOrder extends Model
     use HasFactory;
 
     protected $fillable = [
-        "so_id",
-        "so_qr_code",
-        "so_customername", 
-        "so_no",
-        "so_group",
-        "so_unitname",
-        "so_deliverytimeline",
-        "so_cpodeliverytimeline",
-        "so_status",
-        "scr_status",
-        "so_date",
-        "so_unitid",
-        "so_groupid",
-        "soquantity"
+        'so_id',
+        'so_qr_code',
+        'so_customername',
+        'so_no',
+        'so_group',
+        'so_unitname',
+        'so_deliverytimeline',
+        'so_cpodeliverytimeline',
+        'so_status',
+        'scr_status',
+        'so_date',
+        'so_unitid',
+        'so_groupid',
+        'soquantity',
     ];
-      
+
     public function getSoQrCodeAttribute($value)
     {
         if ($value) {
             return asset('storage/so-qrcodes/'.$value);
         }
+
         return asset(DEFAULT_QR);
     }
-    
-    public function soProducts() {
+
+    public function soProducts()
+    {
         return $this->hasMany(SalesOrderProduct::class, 'so_id', 'so_id');
     }
 
@@ -49,5 +51,4 @@ class ErpSalesOrder extends Model
             default => 'Unknown',
         };
     }
- 
 }

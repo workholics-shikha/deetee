@@ -19,11 +19,11 @@ return new class extends Migration
             $table->string('machine_image', 100)->nullable();
             $table->string('machine_type', 100);
             $table->string('section', 100);
-            $table->string('sub_section', 100); 
-            $table->integer('operator_id')->nullable(); 
-            $table->integer('tracking_id')->nullable(); 
+            $table->string('sub_section', 100);
+            $table->integer('operator_id')->nullable();
+            $table->integer('tracking_id')->nullable();
             $table->text('machine_qr_code')->default('NA');
-            $table->enum('machine_status',['active', 'maintenance', 'in-working', 'breakdown'])->default('active');
+            $table->enum('machine_status', ['active', 'maintenance', 'in-working', 'breakdown'])->default('active');
             $table->timestamps();
         });
     }

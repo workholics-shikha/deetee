@@ -1,11 +1,11 @@
 <?php
 
 namespace App\Models;
-use Illuminate\Database\Eloquent\Model; 
+
+use Illuminate\Database\Eloquent\Model;
 
 class PassSheet extends Model
 {
-   
     protected $table = 'pass_sheets'; // Optional if using default naming
 
     protected $fillable = [
@@ -31,12 +31,11 @@ class PassSheet extends Model
         'remarks',
         'revisioncount',
         'pass_sheet_qr_code',
-        'subproduct_pid'
+        'subproduct_pid',
     ];
- 
+
     public function getPassSheetQrCodeAttribute($value)
     {
-        return $value ? asset('storage/so-pass-sheet-qrcodes/' . $value) : asset(DEFAULT_QR);
+        return $value ? asset('storage/so-pass-sheet-qrcodes/'.$value) : asset(DEFAULT_QR);
     }
-
 }
