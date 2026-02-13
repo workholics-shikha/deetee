@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\{AdminLoginController, DashboardController, MachineController, UserController, ProductController, QRCodeController, ReportsController, RouteCardController, SalesOrderController, SubProductOperationController, ImportController, NotificationController, OperationsController};
+use App\Http\Controllers\{AdminLoginController, DashboardController, MachineController, UserController, ProductController, QRCodeController, ReportsController, RouteCardController, SalesOrderController, SubProductOperationController, ImportController, NotificationController, OperationMasterController};
 use App\Http\Controllers\API\{ErpApiController};
 
 use Illuminate\Support\Facades\{Artisan, Route, DB};
@@ -153,10 +153,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('admin/qr-search',              [QRCodeController::class, 'search'])->name('admin.qr-search');
 
-    Route::get('admin/operations',             [OperationsController::class, 'index'])->name('admin.operations');
-
-    Route::get('admin/cycles',                 [OperationsController::class, 'cycles'])->name('admin.operations.cycles');
-
+    Route::get('admin/operations',             [OperationMasterController::class, 'index'])->name('admin.operations');
+ 
     Route::post('admin/calculateCycleTime',    [SalesOrderController::class, 'calculateCycleTime'])->name('admin.calculateCycleTime');
 
     Route::post('admin/submitCycleTime',       [SalesOrderController::class, 'submitCycleTime'])->name('admin.submitCycleTime');
