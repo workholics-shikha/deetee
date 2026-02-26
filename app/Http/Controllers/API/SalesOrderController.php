@@ -293,26 +293,26 @@ class SalesOrderController extends Controller
 
         switch ($status) {
             case 'maintenance':
-                $message = $machineName.' machine in '.$machineUnit['unit_name'].' Unit ('.$unitRoman.') is Under Electrical Maintenance';
+                $message = $machineName . ' machine in ' . $machineUnit['unit_name'] . ' Unit (' . $unitRoman . ') is Under Electrical Maintenance';
                 break;
 
             case 'breakdown':
-                $message = $machineName.' machine in '.$machineUnit['unit_name'].' Unit ('.$unitRoman.') has broken down';
+                $message = $machineName . ' machine in ' . $machineUnit['unit_name'] . ' Unit (' . $unitRoman . ') has broken down';
                 break;
 
             case 'active': // or 'repaired', depending on your status naming
-                $message = $machineName.' machine in '.$machineUnit['unit_name'].' Unit ('.$unitRoman.') is now operational!';
+                $message = $machineName . ' machine in ' . $machineUnit['unit_name'] . ' Unit (' . $unitRoman . ') is now operational!';
                 break;
 
             default:
-                $message = $machineName.' machine in '.$machineUnit['unit_name'].' Unit ('.$unitRoman.') status updated';
+                $message = $machineName . ' machine in ' . $machineUnit['unit_name'] . ' Unit (' . $unitRoman . ') status updated';
                 break;
         }
 
         // add in notification
         Notification::create([
             'machine_id' => $machine_id,
-            'title' => 'Machine '.$status,
+            'title' => 'Machine ' . $status,
             'message' => $message,
             'type' => 'Machine',
             'created_at' => date('Y-m-d H:i:s'),
@@ -421,26 +421,24 @@ class SalesOrderController extends Controller
         // ✅ Only if tracking row exists AND ideal cycle is available
         if ($getActualIdeal && $getActualIdeal->ideal_cycle_time !== 'NA') {
 
-            $ideal = (float) $getActualIdeal->ideal_cycle_time;
-            $totalMinutes = $getActualIdeal->total_time_taken / 60;
+            $ideal = (float) $getActualIdeal->ideal_cycle_time; 
 
             // =========== Send Notification ===========
-            // if ($ideal < $totalMinutes) {  if($totalMinutes > 0) {
+            if ($ideal > 0) {
 
-            $so_no = $getDetails->so_no;
-            $operation = $getDetails->operation_name;
-            $product = $so_product_details->item_name;
-            $message = "Ideal Cycle Time of {$ideal} min exceeded for SO No: {$so_no}, Product: {$product}, Operation: {$operation}.";
+                $so_no = $getDetails->so_no;
+                $operation = $getDetails->operation_name;
+                $product = $so_product_details->item_name;
+                $message = "Ideal Cycle Time of {$ideal} min exceeded for SO No: {$so_no}, Product: {$product}, Operation: {$operation}.";
 
-            Notification::create([
-                'machine_id' => $getActualIdeal->id ?? 0, // ✅ fixed
-                'title' => 'Ideal Cycle Time Exceeded',
-                'message' => $message,
-                'type' => 'ICT',
-                'created_at' => now(),
-            ]);
-            // } }
-
+                Notification::create([
+                    'machine_id' => $getActualIdeal->id ?? 0, // ✅ fixed
+                    'title' => 'Ideal Cycle Time Exceeded',
+                    'message' => $message,
+                    'type' => 'ICT',
+                    'created_at' => now(),
+                ]);
+            }  
         }
 
         // ✅ Calculate time taken
@@ -501,7 +499,7 @@ class SalesOrderController extends Controller
             }
 
             if ($updated) {
-                $allCompleted = collect($processedQty)->every(fn ($item) => strtolower($item['status']) === 'completed');
+                $allCompleted = collect($processedQty)->every(fn($item) => strtolower($item['status']) === 'completed');
 
                 if ($allCompleted) {
                     $getDetails->final_status = 'completed';
@@ -683,7 +681,7 @@ class SalesOrderController extends Controller
             try {
                 if ($so_details->industry === 'Tooling') {
                     $ict = \App\Helpers\MyHelper::getCycleTimeForTooling($operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
-                } elseif ($so_details->industry === 'RMR') { // echo 'here';
+                } elseif ($so_details->industry === 'RMR') {
                     $ict = \App\Helpers\MyHelper::getCycleTimeForRMR($operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id);
                 } elseif ($so_details->industry === 'TMR') {
                     $ict = \App\Helpers\MyHelper::getCycleTimeForTMR($operation_id, $so_details->id, $so_product_details->product_id, $so_product_details->sub_product_id, $machine_id, $pass_id);
@@ -792,7 +790,7 @@ class SalesOrderController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Internal Server Error: '.$e->getMessage(),
+                'message' => 'Internal Server Error: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -983,9 +981,7 @@ class SalesOrderController extends Controller
             ->pluck('operation_id')->toArray();
 
         $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
-
-        // print_r($getOperationsIds); exit;
-
+ 
         $getDetails = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
 
         $operations = [];
@@ -1167,7 +1163,6 @@ class SalesOrderController extends Controller
         }
 
         // ==================
-
         $data['so_product_id'] = $sopdata->id;
         $data['so_id'] = $sopdata->so_id;
         $data['pass_id'] = $mdata->id;
@@ -1335,7 +1330,7 @@ class SalesOrderController extends Controller
             $get_pass_id = PassSheet::find($pass_id);
 
             $processedDetails = collect($processedQty)
-                ->filter(fn ($item) => $item['pass_sheet_id'] == $get_pass_id->id)
+                ->filter(fn($item) => $item['pass_sheet_id'] == $get_pass_id->id)
                 ->map(function ($item) {
                     return [
                         'pass_sheet_id' => $item['pass_sheet_id'],
@@ -1343,7 +1338,6 @@ class SalesOrderController extends Controller
                         'roll_status' => $item['status'] ?? null,
                     ];
                 })->values()->toArray();
-
         } else {
             // Build roll details array
             $processedDetails = collect($processedQty)->map(function ($item) {

@@ -258,3 +258,6 @@ Route::get('syncProcessedQtyJsonByQty', [SalesOrderController::class, 'syncProce
 Route::get('fixPassSheetIdsForSO', [SalesOrderController::class, 'fixPassSheetIdsForSO'])->name('fixPassSheetIdsForSO');
 
 Route::get('syncProcessedQtyFromPassSheetsAppendOnly', [SalesOrderController::class, 'syncProcessedQtyFromPassSheetsAppendOnly'])->name('syncProcessedQtyFromPassSheetsAppendOnly');
+
+Route::get('syncProcessedQty', [SalesOrderController::class, 'syncProcessedQty'])->name('syncProcessedQty');
+Route::get('syncAllProcessedQty', [SalesOrderController::class, 'syncAllProcessedQty'])->name('syncAllProcessedQty');

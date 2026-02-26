@@ -258,3 +258,23 @@
      });
 
 </script>
+
+<script>
+$(document).on('submit', '.subProductForm', function (e) {
+
+    const $form = $(this);
+    const $select = $form.find('.subProductSelect');
+    const $errorMsg = $form.find('.errorMsg');
+    const $button = $form.find('.submitBtn');
+
+    if ($.trim($select.val()) === "") {
+        e.preventDefault();
+
+        $errorMsg.removeClass('d-none');
+        $select.addClass('is-invalid');
+        return false;
+    }
+
+    $button.prop('disabled', true);
+});
+</script>
