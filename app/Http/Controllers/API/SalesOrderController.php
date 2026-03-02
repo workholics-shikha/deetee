@@ -341,7 +341,7 @@ class SalesOrderController extends Controller
         };
     }
 
-    public function task_submit(Request $request)
+    public function task_submit1(Request $request)
     {
         // Validate input
         $validator = Validator::make($request->all(), [
@@ -407,7 +407,7 @@ class SalesOrderController extends Controller
                 'message' => 'Already completed',
                 'data' => [],
             ], 404);
-        }
+        }   
 
         // ✅ Get ideal cycle & total actual time
         $getActualIdeal = SalesOrderTracking::where([
@@ -421,24 +421,114 @@ class SalesOrderController extends Controller
         // ✅ Only if tracking row exists AND ideal cycle is available
         if ($getActualIdeal && $getActualIdeal->ideal_cycle_time !== 'NA') {
 
-            $ideal = (float) $getActualIdeal->ideal_cycle_time; 
+            $ideal = (float) $getActualIdeal->ideal_cycle_time;
 
             // =========== Send Notification ===========
             if ($ideal > 0) {
 
-                $so_no = $getDetails->so_no;
-                $operation = $getDetails->operation_name;
-                $product = $so_product_details->item_name;
-                $message = "Ideal Cycle Time of {$ideal} min exceeded for SO No: {$so_no}, Product: {$product}, Operation: {$operation}.";
+                // ==================
+                $query = SalesOrderTracking::where([
+                    'operation_id'   => $operation_id,
+                    'so_id'          => $so_product_details->so_id,
+                    'so_pid_primary' => $so_product_id,
+                ])->when($pass_id !== null, function ($q) use ($pass_id) {
+                    $q->where('pass_id', $pass_id);
+                });
+
+                $getOperationData = $query
+                    ->orderBy('quantity_processed')
+                    ->get();
+
+                if (!$getOperationData) {
+                    return;
+                }
+
+                if (!empty($getOperationData) && count($getOperationData) > 0)
+                    foreach ($getOperationData as $operation)
+
+                        $actualCT = 0;
+                $actualCT += $operation->time_taken;
+
+
+                // Calculate total time taken for this Roll (quantity_processed)
+                $totalTimeForRoll = $operation
+                    ->where('quantity_processed', $operation->quantity_processed)
+                    ->sum('time_taken');
+
+                // Format the total time (assuming time_taken is in seconds)
+                $hours = floor($totalTimeForRoll / 3600);
+                $minutes = floor(($totalTimeForRoll % 3600) / 60);
+                $seconds = $totalTimeForRoll % 60;
+                $formattedTotal = sprintf(
+                    '%02dh %02dm %02ds',
+                    $hours,
+                    $minutes,
+                    $seconds,
+                );
+
+                $idealCycleTimeMinutes = is_numeric($operation->ideal_cycle_time)
+                    ? (float) $operation->ideal_cycle_time
+                    : 0;
+                // in minutes
+                $actualCycleTimeMinutes = $totalTimeForRoll / 60; // in minutes
+
+                $ctEfficiency = 0;
+
+                if ($operation->ideal_cycle_time === 'NA') {
+                    $ctEfficiency = 'NA';
+                } else {
+                    $idealCycleTimeMinutes = (float) $operation->ideal_cycle_time;
+                    $actualCycleTimeMinutes = (float) ($totalTimeForRoll / 60);
+
+                    $ctEfficiency =
+                        $actualCycleTimeMinutes > 0
+                        ? round(
+                            $idealCycleTimeMinutes / $actualCycleTimeMinutes,
+                            2,
+                        )
+                        : 0;
+                }
+
+                // Convert ideal cycle time (minutes) to seconds
+                $idealTimeInSeconds = (float) $idealCycleTimeMinutes * 60;
+
+                // Difference: + = exceeded, - = faster
+                $gapInSeconds = (int) $totalTimeForRoll - (int) $idealTimeInSeconds;
+
+                $absGap = abs($gapInSeconds);
+                $hours = intdiv($absGap, 3600);
+                $minutes = intdiv($absGap % 3600, 60);
+                $seconds = $absGap % 60;
+
+                $formattedGap = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+                if ($gapInSeconds > 0) {
+                    $differenceText = "Exceeded by $formattedGap";
+                } elseif ($gapInSeconds < 0) {
+                    $differenceText = "Faster by $formattedGap";
+                } else {
+                    $differenceText = "On target";
+                }
+
+                /* ===========================
+                    FINAL MESSAGE
+                    =========================== */
+
+                $so_no        = $getDetails->so_no;
+                $operationName = $getDetails->operation_name;
+                $product      = $so_product_details->item_name;
+
+                $message = "Ideal Cycle Time {$differenceText}, SO No: {$so_no}, Product: {$product}, Operation: {$operationName}.";
 
                 Notification::create([
-                    'machine_id' => $getActualIdeal->id ?? 0, // ✅ fixed
-                    'title' => 'Ideal Cycle Time Exceeded',
-                    'message' => $message,
-                    'type' => 'ICT',
-                    'created_at' => now(),
+                    'machine_id'   => $getActualIdeal->id ?? 0,
+                    'title'        => 'Ideal Cycle Time Alert',
+                    'message'      => $message,
+                    'type'         => 'ICT',
+                    'gapInSeconds' => $gapInSeconds,
+                    'created_at'   => now(),
                 ]);
-            }  
+            }
         }
 
         // ✅ Calculate time taken
@@ -714,7 +804,6 @@ class SalesOrderController extends Controller
                 $tracking = SalesOrderTracking::create($data);
             } catch (\Exception $e) {
                 Log::error('operation_start - tracking insert failed', ['error' => $e->getMessage()]);
-
                 return response()->json(['status' => false, 'message' => 'Failed to create tracking record.'], 500);
             }
 
@@ -981,7 +1070,7 @@ class SalesOrderController extends Controller
             ->pluck('operation_id')->toArray();
 
         $getOperationsIds = MachineWiseOperation::where('machine_id', $machine_id)->whereIn('operation_id', $operationIds)->pluck('operation_id')->toArray();
- 
+
         $getDetails = SOProductOperationDetails::where(['so_id' => $so_product_details->so_id, 'sales_order_product_id' => $so_product_id])->whereIn('operation_id', $getOperationsIds)->get();
 
         $operations = [];
@@ -1356,5 +1445,168 @@ class SalesOrderController extends Controller
                 'roll_details' => $processedDetails,
             ],
         ]);
+    }
+
+    public function task_submit(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'so_product_id'   => 'required|integer|exists:sales_order_products,id',
+            'operation_id'    => 'required|integer|exists:operation_masters,id',
+            'current_roll_no' => 'nullable|integer',
+            'so_id'           => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation Error',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $so_id          = $request->so_id;
+        $so_product_id  = $request->so_product_id;
+        $operation_id   = $request->operation_id;
+        $current_roll_no = $request->current_roll_no;
+        $pass_id        = $request->pass_id;
+
+        $so_product_details = SalesOrderProduct::find($so_product_id);
+
+        if (!$so_product_details) {
+            return response()->json(['status' => false, 'message' => 'Invalid Product'], 404);
+        }
+
+        $getDetails = SOProductOperationDetails::where([
+            'so_id'                  => $so_product_details->so_id,
+            'sales_order_product_id' => $so_product_id,
+            'product_id'             => $so_product_details->product_id,
+            'sub_product_id'         => $so_product_details->sub_product_id,
+            'operation_id'           => $operation_id,
+        ])->first();
+
+        if (!$getDetails) {
+            return response()->json(['status' => false, 'message' => 'Operation not found'], 404);
+        }
+
+        // ================= FETCH CURRENT TRACKING ROW =================
+
+        $trackingQuery = SalesOrderTracking::where([
+            'so_pid_primary'     => $so_product_id,
+            'operation_id'       => $operation_id,
+            'quantity_processed' => $current_roll_no,
+        ]);
+
+        if (is_numeric($pass_id)) {
+            $trackingQuery->where('pass_id', (int) $pass_id);
+        } else {
+            $trackingQuery->whereNull('pass_id');
+        }
+
+        $tracking = $trackingQuery->orderByDesc('id')->first();
+
+        if (!$tracking) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Tracking record not found',
+            ], 404);
+        }
+ 
+        // ✅ Prevent double submission
+        if ($tracking->roll_status === 'completed') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Already completed',
+                'data' => [],
+            ], 404);
+        } 
+ 
+        // ================= CALCULATE DURATION =================
+
+        $start = Carbon::parse($tracking->start_date_time);
+        $end   = Carbon::now();
+        $durationInSeconds = $end->diffInSeconds($start);
+
+        $tracking->update([
+            'reason'        => 'completed',
+            'roll_status'   => 'completed',
+            'end_date_time' => $end,
+            'time_taken'    => $durationInSeconds,
+            'updated_at'    => now(),
+        ]);
+
+        // ================= CALCULATE TOTAL TIME FOR THIS ROLL =================
+
+        $totalTimeForRoll = SalesOrderTracking::where([
+            'so_id'              => $so_product_details->so_id,
+            'so_pid_primary'     => $so_product_id,
+            'operation_id'       => $operation_id,
+            'quantity_processed' => $current_roll_no,
+        ])
+            ->when($pass_id !== null, function ($q) use ($pass_id) {
+                $q->where('pass_id', $pass_id);
+            })
+            ->sum('time_taken');
+
+        // ================= CYCLE TIME CALCULATION =================
+
+        if (
+            $tracking->ideal_cycle_time !== 'NA' &&
+            is_numeric($tracking->ideal_cycle_time)
+        ) {
+
+            $idealSeconds  = (float) $tracking->ideal_cycle_time * 60;
+            $actualSeconds = (int) $totalTimeForRoll;
+
+            $gapInSeconds = $actualSeconds - $idealSeconds;
+
+            $absGap  = abs($gapInSeconds);
+            $hours   = intdiv($absGap, 3600);
+            $minutes = intdiv($absGap % 3600, 60);
+            $seconds = $absGap % 60;
+
+            $formattedGap = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+            if ($gapInSeconds > 0) {
+                $differenceText = "Exceeded by $formattedGap";
+            } elseif ($gapInSeconds < 0) {
+                $differenceText = "Faster by $formattedGap";
+            } else {
+                $differenceText = "On target";
+            }
+
+            $message = "Ideal Cycle Time {$differenceText}, SO No: {$getDetails->so_no}, Product: {$so_product_details->item_name}, Operation: {$getDetails->operation_name}.";
+
+            Notification::create([
+                'machine_id'   => $tracking->machine_id ?? 0,
+                'title'        => 'Ideal Cycle Time Alert',
+                'message'      => $message,
+                'type'         => 'ICT',
+                'gapInSeconds' => $gapInSeconds,
+                'created_at'   => now(),
+            ]);
+        }
+
+        // ================= UPDATE QTY STATUS =================
+
+        $processed_qty = min(
+            ((int) $getDetails->completed_qty) + 1,
+            (int) $getDetails->qty
+        );
+
+        $final_status = ($processed_qty >= $getDetails->qty)
+            ? 'completed'
+            : 'pending';
+
+        $getDetails->update([
+            'completed_qty' => $processed_qty,
+            'final_status'  => $final_status,
+            'process_status' => 'completed',
+            'updated_at'    => now(),
+        ]);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Operation Status Updated Successfully',
+        ], 200);
     }
 }

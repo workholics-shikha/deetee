@@ -21,8 +21,6 @@
                                         <a href="#" class="tab mb-0" onclick="openTab(event, 'CycleTimeAlerts')">
                                             <h6 class="text-445B64"> Cycle Time Alerts </h6>
                                         </a>
-
-                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -53,7 +51,6 @@
                                     <div class="table-responsive">
 
                                         {{-- ==== Operations Listing ==== --}}
-
                                         <div id="MaintenanceAlerts" class="tabcontent" style="display: block;">
                                             <table class="table rounded-3" id="myTable">
                                                 <thead>
@@ -94,8 +91,6 @@
                                                 <thead>
                                                     <tr>
                                                         <th scope="col" class="text-445B64 p-3"> Time </th>
-                                                        {{-- <th scope="col" class="text-445B64 p-3"> Product </th> --}}
-                                                        {{-- <th scope="col" class="text-445B64 p-3"> Sub Product </th> --}}
                                                         <th scope="col" class="text-445B64 p-3"> Message </th>
                                                     </tr>
                                                 </thead>
@@ -106,7 +101,6 @@
                                                                 <td class="p-3">
                                                                     {{ $cycle_time->created_at->format('d-m-Y h:i:s a') }}
                                                                 </td>
-                                                                {{-- <td class="p-3">  {{ $cycle_time->title }}</td> --}}
                                                                 <td class="p-3"> {{ $cycle_time->message }}</td>
                                                             </tr>
                                                         @endforeach
