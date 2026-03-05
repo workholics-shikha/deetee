@@ -18,14 +18,14 @@ class ErpApiController extends Controller
                 'Content-Type' => 'application/json',
             ])->get($url);
 
-        echo 'HTTP Status Code: '.$response->status()."\n";
-        echo 'Response: '.$response;
+        echo 'HTTP Status Code: ' . $response->status() . "\n";
+        echo 'Response: ' . $response;
     }
 
     // F2
     public function so_type_by_id($id)
     {
-        $response = $this->callErpApi(ERP_LINK.'/OH_SoTypeWithId/'.$id);
+        $response = $this->callErpApi(ERP_LINK . '/OH_SoTypeWithId/' . $id);
 
         return ['status' => $response->status(), 'data' => $response->json()];
     }
@@ -33,7 +33,7 @@ class ErpApiController extends Controller
     // F3
     public function material()
     {
-        $response = $this->callErpApi(ERP_LINK.'/OH_material');
+        $response = $this->callErpApi(ERP_LINK . '/OH_material');
 
         $data = $response->json();
 
@@ -43,7 +43,7 @@ class ErpApiController extends Controller
     // F6
     public function special_operation_by_id($id)
     {
-        $response = $this->callErpApi(ERP_LINK.'/OH_specialOperationWtihId/'.$id);
+        $response = $this->callErpApi(ERP_LINK . '/OH_specialOperationWtihId/' . $id);
 
         return ['status' => $response->status(), 'data' => $response->json()];
     }
@@ -51,7 +51,7 @@ class ErpApiController extends Controller
     // F10 ======== not working ==========
     public function cpo_items_by_id($id)
     {
-        $response = $this->callErpApi(ERP_LINK.'/cpoItemWithId/'.$id);
+        $response = $this->callErpApi(ERP_LINK . '/cpoItemWithId/' . $id);
 
         return ['status' => $response->status(), 'data' => $response->json()];
     }
@@ -59,7 +59,7 @@ class ErpApiController extends Controller
     // F14
     public function show_scrunity_with_so_id($id)
     {
-        $response = $this->callErpApi(ERP_LINK.'/OH_showSOScrutineyWithsoid/'.$id);
+        $response = $this->callErpApi(ERP_LINK . '/OH_showSOScrutineyWithsoid/' . $id);
 
         return ['status' => $response->status(), 'data' => $response->json()];
     }
@@ -67,7 +67,7 @@ class ErpApiController extends Controller
     // F15
     public function show_scrunity_with_cpo_item_id($id)
     {
-        $response = $this->callErpApi(ERP_LINK.'/OH_showSOScrutineyWithCpoitemid/'.$id);
+        $response = $this->callErpApi(ERP_LINK . '/OH_showSOScrutineyWithCpoitemid/' . $id);
 
         return ['status' => $response->status(), 'data' => $response->json()];
     }
@@ -75,7 +75,7 @@ class ErpApiController extends Controller
     // F16
     public function show_item_pass($id)
     {
-        $response = $this->callErpApi(ERP_LINK.'/OH_showCPOItemPass/'.$id);
+        $response = $this->callErpApi(ERP_LINK . '/OH_showCPOItemPass/' . $id);
 
         return ['status' => $response->status(), 'data' => $response->json()];
     }
@@ -83,7 +83,7 @@ class ErpApiController extends Controller
     public function so_list()
     {
         ini_set('max_execution_time', 300); // 300 seconds = 5 minutes
-        $response = $this->callErpApi(ERP_LINK.'/OH_showSO');
+        $response = $this->callErpApi(ERP_LINK . '/OH_showSO');
 
         $allData = $response->json();
         if (! empty($allData)) {
@@ -135,9 +135,9 @@ class ErpApiController extends Controller
                     ->margin(10) // Set margin in pixels
                     ->build();
 
-                $name = $salesOrder->so_no.'-'.time().'.png';
+                $name = $salesOrder->so_no . '-' . time() . '.png';
 
-                $path = 'so-qrcodes/'.$name; // unique filename
+                $path = 'so-qrcodes/' . $name; // unique filename
 
                 Storage::disk('public')->put($path, $result->getString());
                 ErpSalesOrder::where('id', $salesOrder->id)->update(['so_qr_code' => $name]);
