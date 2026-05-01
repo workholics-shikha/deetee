@@ -10,22 +10,6 @@
                 <div class="col-12">
                     <div class="card border-0 rounded-3 mb-4">
                         
-                        {{-- <div class="card-body px-0 pb-0">
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="tab-menu pb-0">
-                                        <a href="#" class="tab mb-0 active" onclick="openTab(event, 'About')">
-                                            <h6 class="text-0D161A mb-3">About</h6>
-                                        </a>
-                                        <a href="#" class="tab mb-0" onclick="openTab(event, 'Settings')">
-                                            <h6 class="text-0D161A mb-3">Settings</h6>
-                                        </a>
-
-                                    </div>
-                                </div>
-                            </div>
-                        </div> --}}
-
                     </div>
                     <!-- First card -->
                     <div class=" border-0 rounded-3">
@@ -76,26 +60,18 @@
                                                                     <tr>
                                                                         <td>Phone Number</td>
                                                                         <td>{{$data->phone}}</td>
-                                                                    </tr>
-                                                                    {{-- <tr>
-                                                                        <td>Experience</td>
-                                                                        <td>8 years</td>
-                                                                    </tr> --}}
+                                                                    </tr> 
                                                                     <tr>
                                                                         <td>Unit</td>
-                                                                        <td>RMR (Unit II)</td>
-                                                                    </tr>
-                                                                    {{-- <tr>
-                                                                        <td>Bank Account Number</td>
-                                                                        <td>EBP2534DF42</td>
-                                                                    </tr> --}}
+                                                                        <td>{{$data->unit_name}}</td>
+                                                                    </tr> 
                                                                     <tr>
-                                                                        <td>Address</td>
-                                                                        <td>{{$data->address}}</td>
+                                                                        <td>Department</td>
+                                                                        <td>{{$data->department}}</td>
                                                                     </tr>
                                                                     <tr>
-                                                                        <td>Skills</td>
-                                                                        <td>Blanking, Lathe</td>
+                                                                        <td>Designation</td>
+                                                                        <td>{{$data->designation}}</td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td>Status</td>
@@ -108,7 +84,6 @@
                                                 </div>
                                             </div>
                                         </div>
- 
                                     </div>
                                 </div>
                             </div>
@@ -158,8 +133,6 @@
             // Use history.replaceState to update the URL without reloading the page
             const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
             window.history.replaceState({}, "", newUrl);
-
         }
     </script>
-
 @stop

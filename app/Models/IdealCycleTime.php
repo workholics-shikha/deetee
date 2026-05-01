@@ -10,11 +10,12 @@ class IdealCycleTime extends Model
     use HasFactory;
 
     protected $table = 'ideal_cycle_time_parent';
+
     protected $fillable = [
-         
+
         'sub_product_id',
         'operation_id',
         'machine_id',
-       
+
     ];
 }

@@ -30,7 +30,7 @@ class User extends Authenticatable
         'shift',
         'user_qr_code',
         'profile_image',
-        'username', 
+        'username',
     ];
 
     /**
@@ -60,7 +60,7 @@ class User extends Authenticatable
     public function getProfileImageAttribute($value)
     {
         if ($value) {
-            return asset('uploads/profile_image/' . $value);
+            return asset('uploads/profile_image/'.$value);
         }
 
         return asset(NO_USER_IMG);
@@ -69,7 +69,7 @@ class User extends Authenticatable
     public function getUserQrCodeAttribute($value)
     {
         if ($value) {
-            return asset('storage/user-qrcodes/' . $value);
+            return asset('storage/user-qrcodes/'.$value);
         }
 
         return asset(DEFAULT_QR);
@@ -126,5 +126,10 @@ class User extends Authenticatable
         }
 
         return $value;
+    }
+
+    public function rolePermission()
+    {
+        return $this->belongsTo(Role::class, 'role', 'id');
     }
 }

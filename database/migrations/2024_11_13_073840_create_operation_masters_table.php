@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('operation_masters', function (Blueprint $table) {
             $table->id();
             $table->string('operation_name', 100);
-            $table->string('unit',20);
+            $table->string('unit', 20);
             $table->text('parameter_input')->nullable();
             $table->text('matrix')->nullable();
             $table->text('parameters')->nullable();

@@ -17,43 +17,58 @@ class MachineMaster extends Model
         'machine',
         'machine_type',
         'section',
-        'sub_section', 
+        'sub_section',
         'operator_id',
         'tracking_id',
         'machine_qr_code',
         'machine_status',
-        'machine_image'
+        'machine_image',
     ];
 
     protected $hidden = [
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     public function getMachineImageAttribute($value)
     {
         if ($value) {
-            return asset('uploads/machine_image/'. $value);
+            return asset('uploads/machine_image/'.$value);
         }
+
         return asset(NO_MACHINE_IMG);
+    }
+
+    public function getMachineQrCodeAttribute1($value)
+    {
+        if ($value) {
+            return asset('storage/machine-qrcodes/'.$value);
+        }
+
+        return asset(DEFAULT_QR);
+    }
+
+    public function operations()
+    {
+        return $this->belongsToMany(OperationMaster::class, 'machine_wise_operations', 'machine_id', 'operation_id');
+    }
+
+    public function getOperationListAttribute()
+    {
+        return $this->operations->pluck('operation_name')->implode(', ');
     }
 
     public function getMachineQrCodeAttribute($value)
     {
         if ($value) {
-            return asset('storage/machine-qrcodes/' . $value);
+            if (app()->runningInConsole()) {
+                // For PDF (CLI / DomPDF), use file path
+                return public_path('storage/machine-qrcodes/'.$value);
+            }
+
+            return asset('storage/machine-qrcodes/'.$value); // For browser
         }
+
         return asset(DEFAULT_QR);
     }
-    
-    public function operations()
-    {
-        return $this->belongsToMany(OperationMaster::class, 'machine_wise_operations', 'machine_id', 'operation_id');
-    }
-    
-    public function getOperationListAttribute()
-    {
-        return $this->operations->pluck('operation_name')->implode(', ');
-    }
- 
 }

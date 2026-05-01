@@ -20,9 +20,9 @@ return new class extends Migration
             $table->string('erp_nomenclature', 100);
             $table->string('product_modified_name')->default(0);
             $table->text('product_qr_code')->default('NA');
-            $table->enum('status', ['Working','Maintenance','Available'])->default('Available');
-            $table->enum('product_flow', ['Available','Outsourced','Not Available','Not Applicable'])->default('Available');
-            $table->enum('cycle_flow', ['Available','Outsourced','Not Available','Not Applicable'])->default('Available');
+            $table->enum('status', ['Working', 'Maintenance', 'Available'])->default('Available');
+            $table->enum('product_flow', ['Available', 'Outsourced', 'Not Available', 'Not Applicable'])->default('Available');
+            $table->enum('cycle_flow', ['Available', 'Outsourced', 'Not Available', 'Not Applicable'])->default('Available');
             $table->timestamps();
         });
     }

@@ -1,17 +1,32 @@
 <?php
 
-use App\Http\Controllers\{AdminLoginController, DashboardController, MachineController, UserController, ProductController, QRCodeController, ReportsController, RouteCardController, SalesOrderController, SubProductOperationController, ImportController, NotificationController, OperationMasterController};
-use App\Http\Controllers\API\{ErpApiController};
-
-use Illuminate\Support\Facades\{Artisan, Route, DB};
+use App\Http\Controllers\AdminLoginController;
+use App\Http\Controllers\API\ErpApiController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\MachineController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OperationsController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\QRCodeController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\RouteCardController;
+use App\Http\Controllers\SalesOrderController;
+use App\Http\Controllers\SubProductOperationController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/clear-all-cache', function () {
     Artisan::call('optimize:clear');
+
     return '✅ All Laravel caches cleared successfully!';
 });
 
 Route::get('/run-storage-link', function () {
     Artisan::call('storage:link');
+
     return 'Storage link created (if not already).';
 });
 
@@ -30,138 +45,160 @@ Route::get('/truncate-data', function () {
 
 Route::get('so-list', [ErpApiController::class, 'so_list'])->name('so-list');
 
-Route::get('/',              [AdminLoginController::class, 'showLoginForm'])->name('login');
+Route::get('/', [AdminLoginController::class, 'showLoginForm'])->name('login');
 
-Route::get('login',          [AdminLoginController::class, 'showLoginForm'])->name('login');
+Route::get('login', [AdminLoginController::class, 'showLoginForm'])->name('login');
 
-Route::get('admin/login',    [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+Route::get('admin/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
 
-Route::post('admin/login',   [AdminLoginController::class, 'login'])->name('admin.login.submit');
+Route::post('admin/login', [AdminLoginController::class, 'login'])->name('admin.login.submit');
 
-Route::get('admin/logout',   [AdminLoginController::class, 'logout'])->name('admin.logout');
+Route::get('admin/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
 
 Route::get('forgot-password', [AdminLoginController::class, 'showForgotPassForm'])->name('forgot-password');
 
-Route::post('admin/forgot',   [AdminLoginController::class, 'forgotPassword'])->name('admin.forgot.submit');
+Route::post('admin/forgot', [AdminLoginController::class, 'forgotPassword'])->name('admin.forgot.submit');
 
 Route::get('reset-password/{code}', [AdminLoginController::class, 'resetPassForm'])->name('reset-password');
 
 Route::post('admin/reset-password', [AdminLoginController::class, 'resetPassword'])->name('admin.reset.submit');
 
-Route::post('admin/check/email',    [AdminLoginController::class, 'checkEmail'])->name('admin.check.email');
+Route::post('admin/check/email', [AdminLoginController::class, 'checkEmail'])->name('admin.check.email');
 
-Route::get('thankyou',              [AdminLoginController::class, 'thankyou'])->name('thankyou');
+Route::get('thankyou', [AdminLoginController::class, 'thankyou'])->name('thankyou');
+
+Route::get('admin/printProductList/{id}', [SalesOrderController::class, 'printProductList'])->name('printProductList');
 
 Route::get('admin/pdf-document/{id}', [SalesOrderController::class, 'printPreview'])->name('printPdf');
 
 Route::get('admin/printPassSheet/{id}', [SalesOrderController::class, 'printPassSheet'])->name('printPassSheet');
 
-Route::post('admin/resend/submit',  [AdminLoginController::class, 'resendRequest'])->name('admin.resend.submit');
+Route::post('admin/resend/submit', [AdminLoginController::class, 'resendRequest'])->name('admin.resend.submit');
 
-Route::middleware(['auth'])->group(function () {
+// Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'no_cache'])->group(function () {
 
-    Route::get('admin/profile',   [DashboardController::class, 'profile'])->name('admin.profile');
+    Route::get('admin/profile', [DashboardController::class, 'profile'])->name('admin.profile');
 
     Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     // Sales order routes ====
+    Route::group(['middleware' => ['auth', 'permission:sale_orders']], function () {
 
-    // Route::get('so_list',                        [SalesOrderController::class, 'so_list'])->name('so_list'); // fetch sales order
+        Route::get('admin/sales-order', [SalesOrderController::class, 'index'])->name('admin.sales-order');
 
-    Route::get('admin/sales-order',              [SalesOrderController::class, 'index'])->name('admin.sales-order');
+        Route::get('admin/searchInSo', [SalesOrderController::class, 'searchInSo'])->name('admin.searchInSo');
 
-    Route::get('admin/searchInSo',               [SalesOrderController::class, 'searchInSo'])->name('admin.searchInSo');
+        Route::get('admin/sales-order-details/{id}', [SalesOrderController::class, 'so_details'])->name('admin.sales-order-details');
 
-    Route::get('admin/sales-order-details/{id}', [SalesOrderController::class, 'so_details'])->name('admin.sales-order-details');
+        Route::get('admin/route-card-details/{id}/{any?}', [SubProductOperationController::class, 'route_card_details'])->name('admin.route-card-details');
 
-    Route::get('admin/route-card-details/{id}/{any?}', [SubProductOperationController::class, 'route_card_details_new'])->name('admin.route-card-details');
+        Route::get('admin/route-card-operation-details/{id}', [SubProductOperationController::class, 'route_card_operation_details'])->name('admin.route-card-operation-details');
 
-    Route::get('admin/route-card-operation-details/{id}', [SubProductOperationController::class, 'route_card_operation_details'])->name('admin.route-card-operation-details');
+        Route::post('admin/updateRouteCardOperationCycleTime', [SubProductOperationController::class, 'route_card_operation_cycletime'])->name('admin.route-card-operation-cycletime');
 
-    Route::post('admin/updateRouteCardOperationCycleTime', [SubProductOperationController::class, 'route_card_operation_cycletime'])->name('admin.route-card-operation-cycletime');
+        Route::post('admin/lockRouteCard', [SubProductOperationController::class, 'lockRouteCard'])->name('admin.lockRouteCard');
 
-    Route::post('admin/updateRouteCardOperationCycleTimeNew', [SubProductOperationController::class, 'route_card_operation_cycletime_new'])->name('admin.route-card-operation-cycletime-new');
+        Route::get('admin/pass-sheet/{id}', [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');
 
-    Route::get('admin/pass-sheet/{id}',          [SalesOrderController::class, 'pass_sheet'])->name('admin.pass-sheet');
+        Route::get('admin/route-card-preview', [SalesOrderController::class, 'route_card_preview'])->name('admin.route-card-preview');
 
-    Route::get('admin/route-card-preview',       [SalesOrderController::class, 'route_card_preview'])->name('admin.route-card-preview');
+        Route::get('admin/product-list-sheet-preview', [SalesOrderController::class, 'product_list_sheet_preview'])->name('admin.product-list-sheet-preview');
 
-    Route::get('admin/pass-sheet-preview',       [SalesOrderController::class, 'pass_sheet_preview'])->name('admin.pass-sheet-preview');
+        Route::get('admin/pass-sheet-preview', [SalesOrderController::class, 'pass_sheet_preview'])->name('admin.pass-sheet-preview');
 
-    Route::get('admin/fetch-sub-product',        [SalesOrderController::class, 'fetch_sub_product'])->name('admin.fetch-sub-product');
+        Route::get('admin/fetch-sub-product', [SalesOrderController::class, 'fetch_sub_product'])->name('admin.fetch-sub-product');
 
-    Route::post('admin/update-sub-product',      [SalesOrderController::class, 'update_sub_product'])->name('admin.update-sub-product');
+        Route::post('admin/update-sub-product', [SalesOrderController::class, 'update_sub_product'])->name('admin.update-sub-product');
 
-    Route::post('admin/operation-review',        [SalesOrderController::class, 'operationReview'])->name('admin.operation-review');
+        Route::post('admin/operation-review', [SalesOrderController::class, 'operationReview'])->name('admin.operation-review');
 
-    Route::get('admin/getOperationDetails/{id}/{any?}', [SalesOrderController::class, 'getOperationDetails'])->name('admin.getOperationDetails');
+        Route::get('admin/get-reviews-list/{id}', [SalesOrderController::class, 'getOperationReviewList'])->name('admin.get-reviews-list');
+
+        Route::get('admin/getOperationDetails/{id}/{any?}', [SalesOrderController::class, 'getOperationDetails'])->name('admin.getOperationDetails');
+    });
 
     // Machines routes ====
 
-    Route::get('admin/machines',                 [MachineController::class, 'index'])->name('admin.machines');
+    Route::group(['middleware' => ['auth', 'permission:machines']], function () {
 
-    Route::get('/admin/machine-search',          [MachineController::class, 'search'])->name('admin.machine-search');
+        Route::get('admin/machines', [MachineController::class, 'index'])->name('admin.machines');
+        Route::get('/admin/machine-search', [MachineController::class, 'search'])->name('admin.machine-search');
+        Route::match(['get', 'post'], 'admin/machine-details/{id}', [MachineController::class, 'details'])->name('admin.machine-details');
+    });
 
-    Route::match(['get', 'post'], 'admin/machine-details/{id}', [MachineController::class, 'details'])->name('admin.machine-details');
+    Route::group(['middleware' => ['auth', 'permission:reports']], function () {
+        Route::match(['get', 'post'], 'admin/reports', [ReportsController::class, 'index'])->name('admin.reports');
 
-    Route::match(['get', 'post'], 'admin/reports', [ReportsController::class, 'index'])->name('admin.reports');
+        Route::match(['get', 'post'], 'admin/so-completion-tracking', [ReportsController::class, 'so_completion_tracking'])->name('admin.so-completion-tracking');
+        Route::match(['get', 'post'], 'admin/so-completion-tracking-page', [ReportsController::class, 'so_completion_tracking_page'])->name('admin.so-completion-tracking-page');
+
+        Route::match(['get', 'post'], 'admin/so-roll-tracking', [ReportsController::class, 'so_roll_tracking'])->name('admin.so-roll-tracking');
+        Route::match(['get', 'post'], 'admin/so-roll-tracking-page', [ReportsController::class, 'so_roll_tracking_page'])->name('admin.so-roll-tracking-page');
+
+        Route::match(['get', 'post'], 'admin/maintenance-history', [ReportsController::class, 'maintenance_history'])->name('admin.maintenance-history');
+        Route::match(['get', 'post'], 'admin/maintenance-history-page', [ReportsController::class, 'maintenance_history_page'])->name('admin.maintenance-history-page');
+
+        Route::match(['get', 'post'], 'admin/production-overview', [ReportsController::class, 'production_overview'])->name('admin.production-overview');
+        Route::match(['get', 'post'], 'admin/production-overview-page', [ReportsController::class, 'production_overview_page'])->name('admin.production-overview-page');
+
+        Route::match(['get', 'post'], 'admin/maintenance-overview', [ReportsController::class, 'maintenance_overview'])->name('admin.maintenance-overview');
+        Route::match(['get', 'post'], 'admin/maintenance-overview-page', [ReportsController::class, 'maintenance_overview_page'])->name('admin.maintenance-overview-page');
+
+    });
 
     Route::get('admin/updateCompletedCount', [ReportsController::class, 'updateCompletedCount']);
 
-    Route::get('admin/products',                 [ProductController::class, 'index'])->name('admin.products');
+    Route::group(['middleware' => ['auth', 'permission:products']], function () {
 
-    Route::get('/admin/product-search',          [ProductController::class, 'search'])->name('admin.product-search');
+        Route::get('admin/products', [ProductController::class, 'index'])->name('admin.products');
+        Route::get('/admin/product-search', [ProductController::class, 'search'])->name('admin.product-search');
+    });
 
-    Route::get('admin/route-cards',        [RouteCardController::class, 'index'])->name('admin.route-cards');
+    Route::group(['middleware' => ['auth', 'permission:route_cards']], function () {
+        Route::get('admin/route-cards', [RouteCardController::class, 'index'])->name('admin.route-cards');
+        Route::get('admin/process/{id}', [RouteCardController::class, 'process'])->name('admin.process');
+        Route::get('admin/route-card-search', [RouteCardController::class, 'search'])->name('admin.route-card-search');
+    });
 
-    Route::get('admin/process/{id}',       [RouteCardController::class, 'process'])->name('admin.process');
+    Route::group(['middleware' => ['auth', 'permission:users']], function () {
+        Route::get('admin/users', [UserController::class, 'index'])->name('admin.users');
+        Route::get('admin/user/add', [UserController::class, 'add'])->name('admin.user.add');
+        Route::post('admin/user/save', [UserController::class, 'save'])->name('admin.user.save');
+        Route::get('admin/user/edit/{id}', [UserController::class, 'edit'])->name('admin.user.edit');
+        Route::post('admin/user/update', [UserController::class, 'update'])->name('admin.user.update');
+        Route::get('admin/user/delete/{id}', [UserController::class, 'destroy'])->name('admin.user.delete');
+    });
 
-    Route::get('admin/route-card-search',  [RouteCardController::class, 'search'])->name('admin.route-card-search');
+    Route::group(['middleware' => ['auth', 'permission:operators']], function () {
+        Route::get('admin/operators', [UserController::class, 'operators'])->name('admin.operators');
+    });
 
+    Route::group(['middleware' => ['auth', 'permission:operations']], function () {
+        Route::get('admin/operations', [OperationsController::class, 'index'])->name('admin.operations');
+    });
 
-    Route::get('admin/users',              [UserController::class, 'index'])->name('admin.users');
+    Route::get('admin/operator-details/{id}', [UserController::class, 'details'])->name('admin.operator-details');
+    Route::get('/admin/operator-search', [UserController::class, 'search'])->name('admin.operator-search');
+    Route::get('/admin/user-search', [UserController::class, 'userSearch'])->name('admin.user-search');
 
-    Route::get('admin/user/add',           [UserController::class, 'add'])->name('admin.user.add');
+    Route::group(['middleware' => ['auth', 'permission:qr_code']], function () {
 
-    Route::post('admin/user/save',         [UserController::class, 'save'])->name('admin.user.save');
+        Route::get('admin/qr-codes-list', [QRCodeController::class, 'index'])->name('admin.qr-codes-list');
+        Route::get('admin/fetch-qr-card', [QRCodeController::class, 'fetchModal'])->name('admin.fetch-qr-card');
+        Route::get('admin/regenerate-qr-card', [QRCodeController::class, 'regenerateQrCard'])->name('admin.regenerate-qr-card');
+        Route::get('admin/deactivate-qr-card', [QRCodeController::class, 'deactivateQrCard'])->name('admin.deactivate-qr-card');
+        Route::get('admin/delete-qr-card', [QRCodeController::class, 'deleteQrCard'])->name('admin.delete-qr-card');
+        Route::get('admin/qr-search', [QRCodeController::class, 'search'])->name('admin.qr-search');
+    });
 
-    Route::get('admin/user/edit/{id}',     [UserController::class, 'edit'])->name('admin.user.edit');
+    Route::post('admin/calculateCycleTime', [SalesOrderController::class, 'calculateCycleTime'])->name('admin.calculateCycleTime');
 
-    Route::post('admin/user/update',       [UserController::class, 'update'])->name('admin.user.update');
+    Route::post('admin/submitCycleTime', [SalesOrderController::class, 'submitCycleTime'])->name('admin.submitCycleTime');
 
-    Route::get('admin/user/delete/{id}',   [UserController::class, 'destroy'])->name('admin.user.delete');
+    Route::get('genericQRs', [QRCodeController::class, 'genericQRs'])->name('genericQRs');
 
-
-    Route::get('admin/operators',              [UserController::class, 'operators'])->name('admin.operators');
-
-    Route::get('admin/operator-details/{id}',  [UserController::class, 'details'])->name('admin.operator-details');
-
-    Route::get('/admin/operator-search',       [UserController::class, 'search'])->name('admin.operator-search');
-
-    Route::get('/admin/user-search',           [UserController::class, 'userSearch'])->name('admin.user-search');
-
-
-    Route::get('admin/qr-codes-list',          [QRCodeController::class, 'index'])->name('admin.qr-codes-list');
-
-    Route::get('admin/fetch-qr-card',          [QRCodeController::class, 'fetchModal'])->name('admin.fetch-qr-card');
-
-    Route::get('admin/regenerate-qr-card',     [QRCodeController::class, 'regenerateQrCard'])->name('admin.regenerate-qr-card');
-
-    Route::get('admin/deactivate-qr-card',     [QRCodeController::class, 'deactivateQrCard'])->name('admin.deactivate-qr-card');
-
-    Route::get('admin/delete-qr-card',         [QRCodeController::class, 'deleteQrCard'])->name('admin.delete-qr-card');
-
-    Route::get('admin/qr-search',              [QRCodeController::class, 'search'])->name('admin.qr-search');
-
-    Route::get('admin/operations',             [OperationMasterController::class, 'index'])->name('admin.operations');
- 
-    Route::post('admin/calculateCycleTime',    [SalesOrderController::class, 'calculateCycleTime'])->name('admin.calculateCycleTime');
-
-    Route::post('admin/submitCycleTime',       [SalesOrderController::class, 'submitCycleTime'])->name('admin.submitCycleTime');
-
-    Route::get('genericQRs',        [QRCodeController::class, 'genericQRs'])->name('genericQRs');
-
-    Route::get('deleteGenericQR/{id}',   [QRCodeController::class, 'deleteGenericQR'])->name('deleteGenericQR');
+    Route::get('deleteGenericQR/{id}', [QRCodeController::class, 'deleteGenericQR'])->name('deleteGenericQR');
 
     Route::post('generate/qr-code', [QRCodeController::class, 'generateQrCard'])->name('generate.qr-code');
 
@@ -169,11 +206,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('admin/machine-pdf-preview/{id}', [QRCodeController::class, 'machinePdfPreview'])->name('admin.machinePdfPreview');
 
-    Route::post('/admin/update-machine-status', [MachineController::class, 'updateStatus'])->name('admin.updateMachineStatus');
+    Route::post('/admin/update-machine-status', [MachineController::class, 'updateStatus'])->name('admin.update-machine-status');
 
     Route::get('admin/notification', [NotificationController::class, 'index'])->name('admin.notification');
+
+    Route::get('generateMachineQrCard', [QRCodeController::class, 'generateMachineQrCard'])->name('generateMachineQrCard');
 });
- 
+
 Route::get('importView', function () {
     return view('admin/importView');
 });
@@ -197,5 +236,28 @@ Route::get('qrGenerateOperations', [ImportController::class, 'qrGenerateOperatio
 Route::post('importIdealCycleData', [ImportController::class, 'importIdealCycleData'])->name('importIdealCycleData');
 
 Route::get('generateQR', [UserController::class, 'generateQR'])->name('generateQR');
-  
+
 Route::get('/sales-tracking/export', [ImportController::class, 'export']);
+
+// 13112025
+Route::get('qrGenerateSO', [ImportController::class, 'qrGenerateSO'])->name('qrGenerateSO');
+Route::get('qrGenerateUsers', [ImportController::class, 'qrGenerateUsers'])->name('qrGenerateUsers');
+Route::get('qrGenerateGeneric', [ImportController::class, 'qrGenerateGeneric'])->name('qrGenerateGeneric');
+Route::get('qrGenerateSoProduct', [ImportController::class, 'qrGenerateSoProduct'])->name('qrGenerateSoProduct');
+Route::get('copyOperationPngInSOPDetails', [ImportController::class, 'copyOperationPngInSOPDetails'])->name('copyOperationPngInSOPDetails');
+Route::get('generateNewQrCodes', [ImportController::class, 'generateNewQrCodes'])->name('generateNewQrCodes');
+Route::get('generateNewQrCodes2', [ImportController::class, 'generateNewQrCodes2'])->name('generateNewQrCodes2');
+Route::get('addPassSheetDetails', [ImportController::class, 'addPassSheetDetails'])->name('addPassSheetDetails');
+Route::get('addMissingOperation', [SalesOrderController::class, 'addMissingOperation'])->name('addMissingOperation');
+
+Route::get('generateGenericQrCard', [QRCodeController::class, 'generateGenericQrCard'])->name('generateGenericQrCard');
+
+// 16-01-2026
+Route::get('buildProcessedQtyRowsNew', [SalesOrderController::class, 'buildProcessedQtyRowsNew'])->name('buildProcessedQtyRowsNew');
+Route::get('syncProcessedQtyJsonByQty', [SalesOrderController::class, 'syncProcessedQtyJsonByQty'])->name('syncProcessedQtyJsonByQty');
+Route::get('fixPassSheetIdsForSO', [SalesOrderController::class, 'fixPassSheetIdsForSO'])->name('fixPassSheetIdsForSO');
+
+Route::get('syncProcessedQtyFromPassSheetsAppendOnly', [SalesOrderController::class, 'syncProcessedQtyFromPassSheetsAppendOnly'])->name('syncProcessedQtyFromPassSheetsAppendOnly');
+
+Route::get('syncProcessedQty', [SalesOrderController::class, 'syncProcessedQty'])->name('syncProcessedQty');
+Route::get('syncAllProcessedQty', [SalesOrderController::class, 'syncAllProcessedQty'])->name('syncAllProcessedQty');

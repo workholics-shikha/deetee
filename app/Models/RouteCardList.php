@@ -16,7 +16,7 @@ class RouteCardList extends Model
         if ($value) {
             return asset('storage/operation-qr-codes/'.$value);
         }
+
         return asset(DEFAULT_QR);
     }
-    
 }

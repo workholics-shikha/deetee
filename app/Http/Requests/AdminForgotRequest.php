@@ -23,7 +23,7 @@ class AdminForgotRequest extends FormRequest
     {
 
         return [
-            'email' => 'required|email', 
+            'email' => 'required|email',
         ];
     }
 }

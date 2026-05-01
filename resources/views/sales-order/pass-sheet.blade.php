@@ -98,9 +98,13 @@
                             <table class="table rounded-3" id="myTable">
                                 <thead>
                                     <tr>
-                                        <th scope="col" style="text-align:left; width:120px;"> Pass item</th>
-                                        <th scope="col" style="text-align:center; width:80px;"> Mark Pass number</th>
-                                        <th scope="col" style="text-align:center; width:120px;"> Action </th>
+                                        <th scope="col" style="text-align:left; width:20px;"> Pass item</th>
+                                        <th scope="col" style="text-align:center; width:20px;"> Pass number</th>
+                                        <th scope="col" style="text-align:center; width:20px;"> OD </th>
+                                        <th scope="col" style="text-align:center; width:20px;"> ID </th>
+                                        <th scope="col" style="text-align:center; width:20px;"> Thickness </th>
+                                        <th scope="col" style="text-align:center; width:20px;"> Qty </th>
+                                        <th scope="col" style="text-align:center; width:10px;"> Action </th>
                                     </tr>
                                 </thead>
                                 <tbody id="myTableBody">
@@ -109,17 +113,16 @@
                                         @php $i++; @endphp
                                         <tr>
                                             <td class="img-zoom" style="text-align:left; ">
-
                                                 <img width="26" height="26" viewBox="0 0 12 12" fill="none"
                                                     src="{{ $pass_data->pass_sheet_qr_code }}" alt="QR Code"> &nbsp;
                                                 <span class=""> {{ $pass_data->pass_no }} </span>
-
                                             </td>
-                                            <td class="" style="text-align:center;">
-                                                {{ $pass_data->mrk_pass_no }} </td>
-                                            <td style="text-align:center;"><a
-                                                    href="{{ route('admin.route-card-details', [$sop_id, $pass_data->id]) }}">
-                                                    View route card </a> </td>
+                                            <td class="" style="text-align:center;">  {{ $pass_data->mrk_pass_no }} </td>
+                                            <td class="" style="text-align:center;">  {{ !empty($pass_data->size1) ? $pass_data->size1 : '-' }} </td> 
+                                            <td class="" style="text-align:center;">  {{ !empty($pass_data->size2) ? $pass_data->size2 : '-' }} </td>
+                                            <td class="" style="text-align:center;">  {{ !empty($pass_data->size3) ? $pass_data->size3 : '-' }} </td>
+                                            <td class="" style="text-align:center;">  {{ $pass_data->qty }} </td>
+                                            <td style="text-align:center;"><a href="{{ route('admin.route-card-details', [$sop_id, $pass_data->id]) }}"> View route card </a> </td>
                                         </tr>
                                     @endforeach
                                 </tbody>

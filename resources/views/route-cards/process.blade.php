@@ -25,7 +25,6 @@
                                     <h5 class="text-0D161A fw-semibold mb-0"> {{ $product->product->erp_product }} >
                                         {{ $subProductName }} </h5>
                                 </div>
-
                             </div>
                             <div class="row">
 
@@ -71,12 +70,13 @@
                                             <th class="border-right p-3"> Operation Status </th>
                                         </tr>
                                     </thead>
-                                    @php $i=0; @endphp
-                                    @if (!empty($operations))
-                                        @foreach ($operations as $operation)
-                                            @php $i++; @endphp
-                                            <tbody>
-                                                <tr>
+                                    <tbody>
+                                        @php $i=0; @endphp
+                                        @if (!empty($operations))
+                                            @foreach ($operations as $operation)
+                                                @php $i++; @endphp
+
+
                                                 <tr>
                                                     <td class="border-right p-3" style="width: 4%;">
                                                         {{ $i }}.
@@ -84,20 +84,18 @@
                                                     <td class="border-right p-3" style="width: 24.33%;">
                                                         {{ $operation->operation_name }}
                                                     </td>
-                                                    <td colspan="2" class="border-right p-3" style="width: 66.5%;">
+                                                    <td class="border-right p-3" style="width: 60%;">
                                                         {{ $operation->sub_operations ? $operation->sub_operations : $operation->operation_name }}
                                                     </td>
                                                     <td class="border-right p-3">
                                                         {{ $operation->operation_type }}
                                                     </td>
+
                                                 </tr>
-                                                </tr>
-                                            </tbody>
-                                        @endforeach
-                                    @endif
+                                            @endforeach
+                                        @endif
+                                    </tbody>
                                 </table>
-
-
                             </div>
                         </div>
                     </div>

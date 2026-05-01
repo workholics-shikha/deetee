@@ -1,9 +1,12 @@
 <?php
 
-use App\Http\Controllers\API\{ OperatorAuthController, ErpApiController, SalesOrderController, ScanController};
+use App\Http\Controllers\API\ErpApiController;
+use App\Http\Controllers\API\OperatorAuthController;
+use App\Http\Controllers\API\SalesOrderController;
+use App\Http\Controllers\API\ScanController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Route};
- 
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -15,7 +18,7 @@ use Illuminate\Support\Facades\{Route};
 |
 */
 
-Route::post('/operator-register',   [OperatorAuthController::class, 'register']);
+Route::post('/operator-register', [OperatorAuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -23,74 +26,74 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // =============== operator login ===============
 
-  Route::post('/operator-login', [OperatorAuthController::class, 'login']);
-    
-  Route::get('scan-machine/{id}', [ScanController::class, 'scan_machine']);
-  
-  Route::post('scan-sales-order', [ScanController::class, 'scan_so']);
-  
-  Route::post('scan-product', [ScanController::class, 'scan_product']);
+Route::post('/operator-login', [OperatorAuthController::class, 'login']);
 
-  // With Auth Token
-  Route::middleware('auth:sanctum')->group(function () {
+Route::get('scan-machine/{id}', [ScanController::class, 'scan_machine']);
 
-      Route::get('operator-logout', [OperatorAuthController::class, 'logout']);
+Route::post('scan-sales-order', [ScanController::class, 'scan_so']);
 
-      Route::post('sales-order-summary', [SalesOrderController::class, 'sales_order_summary']);
-      
-      Route::post('sales-order-details', [SalesOrderController::class, 'sales_order_details']);
+Route::post('scan-product', [ScanController::class, 'scan_product']);
 
-      Route::post('operation-start', [SalesOrderController::class, 'operation_start']);
-       
-      Route::post('operation-stop', [SalesOrderController::class, 'operation_stop']);
+// With Auth Token
+Route::middleware('auth:sanctum')->group(function () {
 
-      Route::post('operation-details-fetch', [SalesOrderController::class, 'fetch_operation_details']);
+    Route::get('operator-logout', [OperatorAuthController::class, 'logout']);
 
-      Route::post('submit-roll', [SalesOrderController::class, 'task_submit']);
+    Route::post('sales-order-summary', [SalesOrderController::class, 'sales_order_summary']);
 
-      Route::post('scan-pass-qr-code', [SalesOrderController::class, 'scan_pass_qr']);
+    Route::post('sales-order-details', [SalesOrderController::class, 'sales_order_details']);
 
-      Route::post('scan-process', [SalesOrderController::class, 'scan_process']);
+    Route::post('operation-start', [SalesOrderController::class, 'operation_start']);
 
-      Route::post('update-machine-status', [SalesOrderController::class, 'update_machine_status']);
+    Route::post('operation-stop', [SalesOrderController::class, 'operation_stop']);
 
-      Route::post('get-processed-rolls', [SalesOrderController::class, 'get_processed_rolls']);
+    Route::post('operation-details-fetch', [SalesOrderController::class, 'fetch_operation_details']);
 
-      Route::post('operation-start-new', [ScanController::class, 'operation_start_new']); // for testing cycle time ====
-  });
- 
+    Route::post('submit-roll', [SalesOrderController::class, 'task_submit']);
+
+    Route::post('scan-pass-qr-code', [SalesOrderController::class, 'scan_pass_qr']);
+
+    Route::post('scan-process', [SalesOrderController::class, 'scan_process']);
+
+    Route::post('update-machine-status', [SalesOrderController::class, 'update_machine_status']);
+
+    Route::post('get-processed-rolls', [SalesOrderController::class, 'get_processed_rolls']);
+
+    Route::post('operation-start-new', [ScanController::class, 'operation_start_new']); // for testing cycle time ====
+});
+
 // ================================= ERP APIs ==================================
 
-  Route::get('so_type',                              [ErpApiController::class, 'so_type']);
-  
-  Route::get('so_type_by_id/{id}',                   [ErpApiController::class, 'so_type_by_id']);
+Route::get('so_type', [ErpApiController::class, 'so_type']);
 
-  Route::get('material',                             [ErpApiController::class, 'material']);
+Route::get('so_type_by_id/{id}', [ErpApiController::class, 'so_type_by_id']);
 
-  Route::get('material_by_id/{id}',                  [ErpApiController::class, 'material_by_id']);
+Route::get('material', [ErpApiController::class, 'material']);
 
-  Route::get('special_operation',                    [ErpApiController::class, 'special_operation']);
+Route::get('material_by_id/{id}', [ErpApiController::class, 'material_by_id']);
 
-  Route::get('special_operation_by_id/{id}',         [ErpApiController::class, 'special_operation_by_id']);
+Route::get('special_operation', [ErpApiController::class, 'special_operation']);
 
-  Route::get('items',                                [ErpApiController::class, 'items']);
+Route::get('special_operation_by_id/{id}', [ErpApiController::class, 'special_operation_by_id']);
 
-  Route::get('items_by_id/{id}',                     [ErpApiController::class, 'items_by_id']);
+Route::get('items', [ErpApiController::class, 'items']);
 
-  Route::get('cpo_items',                            [ErpApiController::class, 'cpo_items']);
+Route::get('items_by_id/{id}', [ErpApiController::class, 'items_by_id']);
 
-  Route::get('cpo_items_by_id/{id}',                 [ErpApiController::class, 'cpo_items_by_id']);
-  
-  Route::get('so_list',                              [ErpApiController::class, 'so_list']);
+Route::get('cpo_items', [ErpApiController::class, 'cpo_items']);
 
-  Route::get('so_child_list/{id}',                   [ErpApiController::class, 'so_child_list']);
+Route::get('cpo_items_by_id/{id}', [ErpApiController::class, 'cpo_items_by_id']);
 
-  Route::get('show_scrunity/{id}',                   [ErpApiController::class, 'show_scrunity']);
+Route::get('so_list', [ErpApiController::class, 'so_list']);
 
-  Route::get('show_scrunity_with_so_id/{id}',        [ErpApiController::class, 'show_scrunity_with_so_id']);
+Route::get('so_child_list/{id}', [ErpApiController::class, 'so_child_list']);
 
-  Route::get('show_scrunity_with_cpo_item_id/{id}',  [ErpApiController::class, 'show_scrunity_with_cpo_item_id']);
+Route::get('show_scrunity/{id}', [ErpApiController::class, 'show_scrunity']);
 
-  Route::get('show_item_pass/{id}',                  [ErpApiController::class, 'show_item_pass']);
+Route::get('show_scrunity_with_so_id/{id}', [ErpApiController::class, 'show_scrunity_with_so_id']);
+
+Route::get('show_scrunity_with_cpo_item_id/{id}', [ErpApiController::class, 'show_scrunity_with_cpo_item_id']);
+
+Route::get('show_item_pass/{id}', [ErpApiController::class, 'show_item_pass']);
 
 // =======================  ERP APIs  ====================

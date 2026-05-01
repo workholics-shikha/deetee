@@ -12,7 +12,6 @@
             -moz-appearance: textfield;
         }
     </style>
-    {{ $pass_sheet }}
 
     <div class="main-content-area">
         <div class="">
@@ -100,6 +99,11 @@
                                     $group = implode('-', array_slice($parts, 4));
 
                                     $sizeVals = getSizeValue($group);
+
+                                    $size1 = !empty($data->size1) ? $data->size1 : '-'  ;
+                                    $size2 = !empty($data->size2) ? $data->size2 : '-'  ;
+                                    $size3 = !empty($data->size3) ? $data->size3 : '-'  ;
+
                                 @endphp
 
                                 <div class="col-12 col-md-4 col-xl-3 col-xxl-2 mb-3">
@@ -110,25 +114,29 @@
                                     <h6 class="text-445B64 mb-1"> Group</h6>
                                     <h6 class="text-0D161A fw-semibold"> {{ $group }} </h6>
                                 </div>
+ 
+                                 @php if (!empty($pass_sheet))    
+                                    $size1 = !empty($pass_sheet->size1) ? $pass_sheet->size1 : '-' ;
+                                    $size2 = !empty($pass_sheet->size2) ? $pass_sheet->size2 : '-' ;
+                                    $size3 = !empty($pass_sheet->size3) ? $pass_sheet->size3 : '-' ;
+                                 @endphp
 
                                 <div class="col-12 col-md-4 col-xl-3 col-xxl-2 mb-3">
                                     <h6 class="text-445B64 mb-1"> {{ $sizeVals[0] }} </h6>
-                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($data->size1) ? $data->size1 : '-' }}
+                                    <h6 class="text-0D161A fw-semibold"> {{ $size1 }}
                                     </h6>
                                 </div>
                                 <div class="col-12 col-md-4 col-xl-3 col-xxl-2 mb-3">
                                     <h6 class="text-445B64 mb-1"> {{ $sizeVals[1] }} </h6>
-                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($data->size2) ? $data->size2 : '-' }}
+                                    <h6 class="text-0D161A fw-semibold"> {{ $size2 }}
                                     </h6>
                                 </div>
                                 <div class="col-12 col-md-4 col-xl-3 col-xxl-2 mb-3">
                                     <h6 class="text-445B64 mb-1"> {{ $sizeVals[2] }} </h6>
-                                    <h6 class="text-0D161A fw-semibold"> {{ !empty($data->size3) ? $data->size3 : '-' }}
+                                    <h6 class="text-0D161A fw-semibold"> {{ $size3 }}
                                     </h6>
                                 </div>
-
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -144,12 +152,18 @@
                                                 Stage</th>
                                             <th scope="col" class="text-445B64 border-right p-3" style="width: 45%;">
                                                 Parameter Details </th>
-                                            <th scope="col" class="text-445B64" style="width: 15%;"> <button
-                                                    class="btn btn-sm bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100 editOperation">
-                                                    Edit</button> </th>
-                                            <th scope="col" class="text-445B64" style="width: 15%;"> <button
-                                                    class="btn btn-sm bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100">
-                                                    Lock </button>
+
+                                            @if ($data->is_route_card_locked != 1)
+                                                <th scope="col" class="text-445B64" style="width: 15%;"> <button
+                                                        class="btn btn-sm bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100 editOperation">
+                                                        Edit</button> </th>
+                                                <th scope="col" class="text-445B64" style="width: 15%;"> <button
+                                                        class="btn btn-sm bg-F0F5F6 border rounded-3 text-0D161A fw-bolder w-100 lockOperation">
+                                                        Lock </button>
+                                                @else
+                                                <th scope="col" class="text-445B64" style="width: 15%;"> </th>
+                                                <th scope="col" class="text-445B64" style="width: 15%;"> </th>
+                                            @endif
                                             </th>
                                         </tr>
                                     </thead>
@@ -164,10 +178,33 @@
             </div>
         </div>
     </div>
-  
+
     <script>
         let toggled = false;
-        $(".editOperation").click(function() {  
+        $(".lockOperation").click(function() {
+            var token = $("meta[name='csrf-token']").attr("content");
+            var tbSOProductId = $('.routeCardOperation').data("sopid");
+             
+            $.ajax({
+                url: "{{ url('admin/lockRouteCard') }}",
+                method: "POST",
+                data: {
+                    _token: token,
+                    tbSOProductId: tbSOProductId
+                },
+                success: function(response) {
+                    successToaster(response.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 90);
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        });
+
+        $(".editOperation").click(function() {
             var btn = $(this);
             if (!toggled) {
                 $(".parentDiv").removeClass('disabled-div');
@@ -193,8 +230,9 @@
                 var manualCycleTime = $(this).find(".enterValManually1").val();
                 var cycleTimeVal2 = $(this).find(".enterValManually2").val(); // fixed selector
                 var operationType = $(this).data("operation_type");
- 
-                if (operationType === "ManualIn" || operationType === "Manual_ICT" || operationType === "Manual") {
+
+                if (operationType === "ManualIn" || operationType === "Manual_ICT" || operationType ===
+                    "Manual") {
                     operationData.push({
                         id: rcOperationID,
                         soProductId: tbSOProductId,
@@ -204,9 +242,9 @@
                     });
                 }
             });
- 
+
             $.ajax({
-                url: "{{ url('admin/updateRouteCardOperationCycleTimeNew') }}",
+                url: "{{ url('admin/updateRouteCardOperationCycleTime') }}",
                 method: "POST",
                 data: {
                     _token: token,
@@ -232,6 +270,5 @@
                 alert("Back navigation is disabled.");
             }; // your code here
         });
- 
     </script>
 @stop

@@ -30,14 +30,7 @@
                                     <h6 class="text-445B64">Under Maintenance/Breakdown</h6>
                                     <h4 class="text-0D161A mb-0 fw-semibold">{{ $count['unavailableMachines'] }}</h4>
                                 </div>
-                            </div>
-                            <!-- Available -->
-                            {{-- <div class="col-6 col-md-3">
-                                <div class="pe-2 pe-lg-0">
-                                    <h6 class="text-445B64">Breakdown</h6>
-                                    <h4 class="text-0D161A mb-0 fw-semibold">{{ $count['unavailableProduct'] }}</h4>
-                                </div>
-                            </div> --}}
+                            </div> 
                         </div>
                     </div>
                 </div>
@@ -90,6 +83,7 @@
                                             <thead>
                                                 <tr>
                                                     <th scope="col" class="text-445B64 p-3">Name & Serial No. </th>
+                                                    <th scope="col" class="text-445B64 p-3">Operations </th>
                                                     <th scope="col" class="text-445B64 p-3">Machine type </th>
                                                     <th scope="col" class="text-445B64 p-3">Unit </th>
                                                     <th scope="col" class="text-445B64 p-3">Group</th>
@@ -112,7 +106,7 @@
                                                                 </span>
                                                                 <span class="ps-2"> <a
                                                                         class="text-0D161A fw-semibold mb-0 text-decoration-none">
-                                                                        <strong>
+                                                                        <strong>  {{ $machine->id }} -
                                                                             {{ $machine->machine }}</strong> <br /> <span
                                                                             class="text-445B64" style="font-size: 12px">
                                                                             {{ $machine->section }}</span></a>
@@ -120,6 +114,12 @@
                                                             </div>
                                                         </th>
 
+                                                        <td class="p-3">
+                                                            {{-- {{ $machine->operations->operation_name }}  --}}
+                                                            @foreach ($machine->operations as $operation)
+                                                              <small> {{$operation->id.'-'. $operation->operation_name}} </small>,<br> @if (!$loop->last) @endif
+                                                            @endforeach
+                                                        </td>
                                                         <td class="p-3">{{ $machine->machine_type }} </td>
                                                         <td class="p-3">{{ $machine->unit_name }}</td>
                                                         <td class="p-3">{{ $machine->sub_section }}</td>
@@ -145,7 +145,7 @@
                                                         <td class="p-3"> 
                                                             <a class="rounded-pill" href="{{ route('admin.machine-details', ['id' => $machine->id]) }}">
                                                                 View Details </a>
-
+<br>
                                                             <button type="button"
                                                                 class="btn generateQR"
                                                                 data-bs-toggle="modal" data-bs-target="#QRgenerateModal"

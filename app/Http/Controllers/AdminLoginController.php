@@ -2,18 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\{AdminLoginRequest, AdminForgotRequest, ResetPasswordRequest};
-use Illuminate\Support\Facades\{Auth, DB, Hash, Mail, Validator, Crypt};
-use Illuminate\Contracts\Encryption\DecryptException;
-use App\Models\{PasswordReset, User};
+use App\Http\Requests\AdminForgotRequest;
+use App\Http\Requests\AdminLoginRequest;
+use App\Http\Requests\ResetPasswordRequest;
+use App\Models\PasswordReset;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class AdminLoginController extends Controller
 {
-
     public function showLoginForm()
     {
         return view('auth.login');
@@ -22,7 +28,7 @@ class AdminLoginController extends Controller
     public function login(AdminLoginRequest $request)
     {
         $credentials = $request->only('email', 'password');
-        $roleIds = [1, 3, 4, 5, 6]; // Allowed role IDs
+        $roleIds = [1, 3, 4, 5, 6, 7]; // -Allowed role IDs
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
@@ -37,12 +43,12 @@ class AdminLoginController extends Controller
 
         return back()->withErrors(['login' => 'Invalid credentials or not authorized.'])->withInput();
     }
- 
+
     public function login1(AdminLoginRequest $request)
     {
         // Validate the incoming request
         $validation = Validator::make($request->all(), [
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required',
         ]);
 
@@ -67,12 +73,12 @@ class AdminLoginController extends Controller
 
             // Return success response with token and user information
             return response()->json([
-                'status'  => true,
+                'status' => true,
                 'message' => 'Login success',
                 'data' => [
-                    'token'   => $token,
+                    'token' => $token,
                     'user_id' => $user->id,
-                ]
+                ],
             ]);
         }
 
@@ -91,6 +97,7 @@ class AdminLoginController extends Controller
     public function logout()
     {
         Auth::logout();
+
         return redirect()->route('admin.login')->with('success', 'Logged out successfully.');
     }
 
@@ -112,7 +119,7 @@ class AdminLoginController extends Controller
 
         $data = [
             'resetCode' => $resetCode,
-            'resetUrl'  => $resetUrl,
+            'resetUrl' => $resetUrl,
         ];
 
         Mail::send('emails.forgot_password', $data, function ($message) use ($email, $subject) {
@@ -125,7 +132,7 @@ class AdminLoginController extends Controller
 
         $checkToken = PasswordReset::where('token', $request->token)->first();
 
-        if (!$checkToken) {
+        if (! $checkToken) {
             return back()->withErrors(['login' => 'Unauthenticated.']);
         }
 
@@ -140,9 +147,9 @@ class AdminLoginController extends Controller
 
         // Generate reset code and URL
         $resetCode = Str::random(6);
-        $code      = Crypt::encrypt($resetCode);
-        $resetUrl  = url('/reset-password' . '/' . $code);
-        $token     = Hash::make($resetCode);
+        $code = Crypt::encrypt($resetCode);
+        $resetUrl = url('/reset-password'.'/'.$code);
+        $token = Hash::make($resetCode);
 
         // Save the reset code (hashed) in the database
         DB::table('password_resets')->updateOrInsert(
@@ -153,7 +160,7 @@ class AdminLoginController extends Controller
         // Send reset email
         $this->sendResetEmail($request->email, $resetCode, $resetUrl);
 
-        return redirect('thankyou?token=' . $token)->with('success', 'Reset email sent successfully!');
+        return redirect('thankyou?token='.$token)->with('success', 'Reset email sent successfully!');
     }
 
     public function resetPassForm($code)
@@ -166,7 +173,7 @@ class AdminLoginController extends Controller
             // Check if the token exists in the database
             $checkToken = PasswordReset::where('code', $decryptedCode)->first();
 
-            if (!$checkToken) {
+            if (! $checkToken) {
                 // Redirect to login if the token is invalid
                 return redirect()->route('login')->with('error', 'Invalid or expired reset token.');
             }
@@ -187,7 +194,7 @@ class AdminLoginController extends Controller
         // Retrieve the reset record
         $resetRecord = DB::table('password_resets')->where('email', $request->email)->first();
 
-        if (!$resetRecord || !Hash::check($request->code, $resetRecord->token)) {
+        if (! $resetRecord || ! Hash::check($request->code, $resetRecord->token)) {
             return response()->json(['message' => 'Invalid reset code or email.'], 400);
         }
 
@@ -229,16 +236,16 @@ class AdminLoginController extends Controller
 
         $checkToken = PasswordReset::where('token', $request->token)->first();
 
-        if (!$checkToken) {
+        if (! $checkToken) {
             return back()->withErrors(['login' => 'Unauthenticated.']);
         }
 
         // Generate reset code and URL
-        $email     = $checkToken->email;
+        $email = $checkToken->email;
         $resetCode = Str::random(6);
-        $code      = Crypt::encrypt($resetCode);
-        $resetUrl  = url('/reset-password' . '/' . $code);
-        $token     = Hash::make($resetCode);
+        $code = Crypt::encrypt($resetCode);
+        $resetUrl = url('/reset-password'.'/'.$code);
+        $token = Hash::make($resetCode);
 
         // Save the reset code (hashed) in the database
         $sendMail = DB::table('password_resets')->updateOrInsert(

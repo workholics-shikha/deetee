@@ -21,8 +21,6 @@
                                         <a href="#" class="tab mb-0" onclick="openTab(event, 'CycleTimeAlerts')">
                                             <h6 class="text-445B64"> Cycle Time Alerts </h6>
                                         </a>
-
-                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -53,7 +51,6 @@
                                     <div class="table-responsive">
 
                                         {{-- ==== Operations Listing ==== --}}
-
                                         <div id="MaintenanceAlerts" class="tabcontent" style="display: block;">
                                             <table class="table rounded-3" id="myTable">
                                                 <thead>
@@ -69,43 +66,50 @@
                                                     @if (!empty($notifications))
                                                         @foreach ($notifications as $notify)
                                                             <tr>
-                                                                <td class="p-3"> {{ $notify->created_at->format('d-m-Y') }}</td>
-                                                                <td class="p-3"> {{ $notify->created_at->format('h:i a') }}</td>
-                                                                <th scope="row" class="p-3"> {{ $notify->title }} </th>
+                                                                <td class="p-3">
+                                                                    {{ $notify->created_at->format('d-m-Y') }}</td>
+                                                                <td class="p-3">
+                                                                    {{ $notify->created_at->format('h:i a') }}</td>
+                                                                <th scope="row" class="p-3"> {{ $notify->title }}
+                                                                </th>
                                                                 <td class="p-3"> {{ $notify->message }} </td>
                                                             </tr>
                                                         @endforeach
                                                     @endif
                                                 </tbody>
                                             </table>
- 
+
                                             <div class="paginationQ d-flex justify-content-center" id="operations-paginate">
                                                 {{ $notifications->withPath(url('/admin/notification'))->withQueryString()->links() }}
                                             </div>
                                         </div>
 
                                         {{-- ==== Operator listing ==== --}}
-                                        
+
                                         <div id="CycleTimeAlerts" class="tabcontent" style="display: none;">
                                             <table class="table rounded-3">
                                                 <thead>
                                                     <tr>
-                                                        <th scope="col" class="text-445B64 p-3"> SO </th>
-                                                        <th scope="col" class="text-445B64 p-3"> Product </th>
-                                                        <th scope="col" class="text-445B64 p-3"> Sub Product </th>
+                                                        <th scope="col" class="text-445B64 p-3"> Time </th>
+                                                        <th scope="col" class="text-445B64 p-3"> Message </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="operator-table-data">
-                                                    <tr>
-                                                        <td class="p-3"> 1. </td>
-                                                        <td class="p-3"> </td>
-                                                        <td class="p-3"> </td>
-                                                    </tr>
+                                                    @if (!empty($ideal_cycle_time))
+                                                        @foreach ($ideal_cycle_time as $cycle_time)
+                                                            <tr>
+                                                                <td class="p-3">
+                                                                    {{ $cycle_time->created_at->format('d-m-Y h:i:s a') }}
+                                                                </td>
+                                                                <td class="p-3"> {{ $cycle_time->message }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    @endif
                                                 </tbody>
                                             </table>
                                             <!-- Pagination Section -->
                                             <div class="paginationQ d-flex justify-content-center" id="operator-paginate">
-
+                                                {{ $ideal_cycle_time->withPath(url('/admin/notification'))->withPath(request()->url())->appends(request()->query())->links() }}
                                             </div>
                                         </div>
                                     </div>
@@ -161,7 +165,7 @@
             // Update item count
             const tabCounts = {
                 MaintenanceAlerts: "{{ $notifications->total() }}",
-                CycleTimeAlerts: "1",
+                CycleTimeAlerts: "{{ $ideal_cycle_time->total() }}",
             };
 
             const val = tabCounts[cityName] || 0;
@@ -169,7 +173,7 @@
         }
 
         //===========
-        document.addEventListener('DOMContentLoaded', function() { 
+        document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.pagination a').forEach(link => {
                 console.log(link.href);
             });
@@ -183,7 +187,6 @@
                 }
             });
         });
-        
     </script>
 
 @stop

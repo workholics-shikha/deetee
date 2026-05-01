@@ -69,7 +69,7 @@
 
 <script src="./swagger-ui-bundle.js"> </script>
 <script src="./swagger-ui-standalone-preset.js"> </script>
-<?php require_once "include/config.php"; ?>
+<?php require_once 'include/config.php'; ?>
 <script>
 window.onload = function() {
   

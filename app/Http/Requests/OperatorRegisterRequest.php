@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator as ValidationValidator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Contracts\Validation\Validator as ValidationValidator;
 
 class OperatorRegisterRequest extends FormRequest
 {
@@ -24,23 +24,22 @@ class OperatorRegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:operators,email',
-            'phone'    => 'required|string|max:15|unique:operators,phone',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:operators,email',
+            'phone' => 'required|string|max:15|unique:operators,phone',
             'password' => 'required|min:6',
-            'region'   => 'required|string|max:255',
-            'role'     => 'required|string|max:255',
-            'group'    => 'nullable|string|max:255',
-            'shift'    => 'required|string|max:255',
+            'region' => 'required|string|max:255',
+            'role' => 'required|string|max:255',
+            'group' => 'nullable|string|max:255',
+            'shift' => 'required|string|max:255',
         ];
     }
 
     protected function failedValidation(ValidationValidator $validator)
     {
         throw new HttpResponseException(response()->json([
-            'status'  => false,
+            'status' => false,
             'message' => $validator->errors()->first(),
         ], 422));
     }
-
 }

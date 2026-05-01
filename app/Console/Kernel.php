@@ -12,9 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
-        // $schedule->command('sales:fetch-orders')->dailyAt('00:00'); // Runs daily at midnight
-        $schedule->command('sales:fetch-orders')->everyMinute(); 
+        $schedule->command('fetch:sales-orders')->everyMinute();
     }
 
     /**

@@ -76,16 +76,12 @@
         <!-- Header Section -->
         <div class="pdf-header p-3">
             <div class="logo">
-                <img src="{{ asset('assets/images/pdfLogo.png') }}" alt="" class="me-2">
-                DeeTee Industries Pvt. Ltd.
+                <img src="{{ asset('assets/images/pdfLogo.png') }}" alt="" class="me-2"> DeeTee Industries Pvt. Ltd.
             </div>
-            <div class="unit">
-                <h6 class=""> {{ $data->so_unitname }} </h6>
-            </div>
+            <div class="unit"> <h6 class=""> {{ $data->so_unitname }} </h6> </div>
         </div>
           <input type="hidden" id="searchInput" data-id="{{ $data->id }}" search-url="http://localhost/deetee/admin/route-card-preview" value="">
           
-
         <!-- SO No. and Product Table -->
         <table class="so-details">
             <tr class="">
@@ -97,8 +93,7 @@
                                 <h6 class="" style="font-weight: 600;"> {{ $saleOrder->so_no }} </h6>
                             </td>
                             <td class="" style="border: none; text-align: right;">
-                                <img src="{{ $saleOrder->so_qr_code }}" alt="QR Code"
-                                    style="width: 80px; height: 80px;">
+                                <img src="{{ $saleOrder->so_qr_code }}" alt="QR Code" style="width: 80px; height: 80px;">
                             </td>
                         </tr>
                     </table>
@@ -119,12 +114,52 @@
                 </td>
             </tr>
         </table>
+        
+        @php
+            $parts = explode('-', $saleOrder->so_no);
+            $group = implode('-', array_slice($parts, 4));
+            $sizeVals = getSizeValue($group); 
+        @endphp
+ 
+        <table width="100%" cellspacing="0" cellpadding="6" style="border-collapse:collapse; table-layout:fixed;">
+            <tr>
+                    <td style="border:1px solid #000; width:16.66%; text-align:center;">
+                        <p style="margin:0;">{{ $sizeVals[0] }} </p>
+                        <strong style="font-size:11px;"> {{ !empty($data->size1) ? $data->size1 : '-' }} </strong>
+                    </td>
+
+                    <td style="border:1px solid #000; width:16.66%; text-align:center;">
+                        <p style="margin:0;">{{ $sizeVals[1] }} </p>
+                        <strong style="font-size:11px;"> {{ !empty($data->size2) ? $data->size2 : '-' }} </strong>
+                    </td>
+
+                    <td style="border:1px solid #000; width:16.99%; text-align:center;">
+                        <p style="margin:0;">{{ $sizeVals[2] }} </p>
+                        <strong style="font-size:11px;"> {{ !empty($data->size3) ? $data->size3 : '-' }} </strong>
+                    </td>
+
+                    <td style="border:1px solid #000; width:16.31%; text-align:center;">
+                        <p style="margin:0;">Quantity </p>
+                        <strong style="font-size:11px;"> {{ $data->soquantity }} </strong>
+                    </td>
+
+                    <td style="border:1px solid #000; width:16.66%; text-align:center;">
+                        <p style="margin:0;">Hardness </p>
+                        <strong style="font-size:11px;"> {{ $data->hardness }} </strong>
+                    </td>
+
+                    <td style="border:1px solid #000; width:16.66%; text-align:center;">
+                        <p style="margin:0;">Material </p>
+                        <strong style="font-size:11px;"> {{ $data->material }} </strong>
+                    </td>
+            </tr>
+        </table>
 
         <!-- Table Section -->
         <table>
             <thead>
                 <tr>
-                    <th colspan="4">Pass Sheet</th>
+                    <th colspan="4">Pass Sheet </th>
                 </tr>
             </thead>
             <tbody>

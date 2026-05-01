@@ -6,7 +6,7 @@
          </div>
          <div class="modal-body">
              <!-- Form -->
-             <form method="post" action="{{ route('admin.update-sub-product') }}" encytpe="multipart/form-data">
+             <form method="post" action="{{ route('admin.update-sub-product') }}" enctype="multipart/form-data" class="subProductForm">
                  @csrf
 
                  <input type="hidden" name="so_id" value="{{ $data->so_id }}">
@@ -71,7 +71,7 @@
                  <div class="mb-3">
                      <label for="message" class="form-label"> <small> Please select the sub-product for the Product
                          </small> </label>
-                     <select class="form-control p-3 rounded-4" name="sub_product_id">
+                     <select class="form-control p-3 rounded-4 subProductSelect" name="sub_product_id" id="">
                          <option value="">
                              <span class="ms-2">Sub-Product</span>
                          </option>
@@ -86,7 +86,7 @@
                  </div>
 
                  <div class="d-flex justify-content-between w-100">
-                     <button type="submit" class="btn btn-primary rounded-3 px-5"> Submit </button>
+                     <button type="submit" class="btn btn-primary rounded-3 px-5 submitBtn" id=""> Submit </button>
                  </div>
              </form>
          </div>

@@ -156,9 +156,9 @@ return [
     */
 
     'domain' => env('SESSION_DOMAIN'),
- 
+
     'secure' => env('SESSION_SECURE_COOKIE'),
- 
+
     'http_only' => true,
 
     /*

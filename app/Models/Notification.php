@@ -15,10 +15,11 @@ class Notification extends Model
         'message',
         'type',
         'is_read',
-        'read_at'
+        'read_at',
     ];
 
-    function machine() {
-        return $this->hasOne(MachineMaster::class, 'id', 'machine_id') ;
+    public function machine()
+    {
+        return $this->hasOne(MachineMaster::class, 'id', 'machine_id');
     }
 }

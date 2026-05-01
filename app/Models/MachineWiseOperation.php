@@ -9,15 +9,15 @@ class MachineWiseOperation extends Model
 {
     use HasFactory;
 
-    protected $table    = 'machine_wise_operations';
+    protected $table = 'machine_wise_operations';
 
     protected $fillable = ['machine_id', 'operation_id'];
- 
+
     protected $hidden = [
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
-    
+
     public function operation()
     {
         return $this->belongsTo(OperationMaster::class, 'operation_id', 'id');

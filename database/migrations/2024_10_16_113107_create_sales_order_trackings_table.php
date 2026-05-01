@@ -21,13 +21,13 @@ return new class extends Migration
             $table->integer('pass_id')->nullable();
             $table->integer('operation_id');
             $table->dateTime('start_date_time');
-            $table->dateTime('end_date_time')->nullable();            
+            $table->dateTime('end_date_time')->nullable();
             $table->integer('time_taken')->nullable();
             $table->integer('total_quantity')->nullable();
             $table->integer('quantity_processed')->nullable();
-            $table->string('reason',255)->nullable();
-            $table->string('roll_status',50)->nullable();
-            $table->string('final_status',50)->nullable();
+            $table->string('reason', 255)->nullable();
+            $table->string('roll_status', 50)->nullable();
+            $table->string('final_status', 50)->nullable();
             $table->string('comment')->nullable();
             $table->timestamps();
         });

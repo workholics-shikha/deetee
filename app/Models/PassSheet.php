@@ -3,14 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PassSheet extends Model
 {
-   
     protected $table = 'pass_sheets'; // Optional if using default naming
 
     protected $fillable = [
+        'so_id',
+        'subproduct_id',
         'cpoitemid',
         'sr_no',
         'pass_no',
@@ -30,12 +30,12 @@ class PassSheet extends Model
         'bs2_depth',
         'remarks',
         'revisioncount',
-        'pass_sheet_qr_code'
+        'pass_sheet_qr_code',
+        'subproduct_pid',
     ];
- 
+
     public function getPassSheetQrCodeAttribute($value)
     {
-        return $value ? asset('storage/so-pass-sheet-qrcodes/' . $value) : asset(DEFAULT_QR);
+        return $value ? asset('storage/so-pass-sheet-qrcodes/'.$value) : asset(DEFAULT_QR);
     }
-
 }
