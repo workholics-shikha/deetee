@@ -83,11 +83,8 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
     Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     // Sales order routes ====
-    Route::group(['middleware' => ['auth', 'permission:sale_orders']], function () {
-
-        Route::get('admin/sales-order', [SalesOrderController::class, 'index'])->name('admin.sales-order');
-
-        Route::get('admin/searchInSo', [SalesOrderController::class, 'searchInSo'])->name('admin.searchInSo');
+  
+    Route::get('admin/sales-order',              [SalesOrderController::class, 'index'])->name('admin.sales-order');
 
         Route::get('admin/sales-order-details/{id}', [SalesOrderController::class, 'so_details'])->name('admin.sales-order-details');
 
@@ -211,8 +208,7 @@ Route::middleware(['auth', 'no_cache'])->group(function () {
     Route::get('admin/notification', [NotificationController::class, 'index'])->name('admin.notification');
 
     Route::get('generateMachineQrCard', [QRCodeController::class, 'generateMachineQrCard'])->name('generateMachineQrCard');
-});
-
+ 
 Route::get('importView', function () {
     return view('admin/importView');
 });

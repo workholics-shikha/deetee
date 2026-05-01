@@ -300,3 +300,54 @@ SELECT * FROM `sales_order_product_operation_details` WHERE `so_id` IN (11337) O
 <!-- // do not touch in-progess data  -->
  
 SELECT * FROM sales_order_product_operation_details WHERE (processed_qty LIKE '%in-progress%' OR processed_qty LIKE '%partial%') AND qty IS NOT NULL AND (qty1 IS NULL OR qty1 <> qty) ORDER BY id ASC
+ALTER TABLE erp_sales_orders
+-- IDs
+MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+MODIFY so_id BIGINT UNSIGNED NOT NULL,
+
+-- Order identifiers
+MODIFY so_no VARCHAR(50) NOT NULL,
+MODIFY so_qr_code VARCHAR(100) NULL,
+
+-- Customer
+MODIFY so_customername VARCHAR(150) NOT NULL,
+
+-- Quantity & dates
+MODIFY soquantity INT UNSIGNED NOT NULL DEFAULT 0,
+MODIFY so_date DATE NULL,
+
+-- JSON (important)
+MODIFY so_deliverytimeline JSON NULL,
+
+-- Unit & group
+MODIFY so_unitid SMALLINT UNSIGNED NOT NULL,
+MODIFY so_unitname VARCHAR(50) NOT NULL,
+MODIFY so_groupid SMALLINT UNSIGNED NOT NULL,
+MODIFY so_group VARCHAR(50) NOT NULL,
+
+-- Statuses
+MODIFY so_status VARCHAR(20) NOT NULL,
+MODIFY scr_status VARCHAR(20) NULL,
+
+-- Timestamps
+MODIFY created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+MODIFY updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+
+-- Remove weak indexes
+DROP INDEX idx_eso_soid_unitid ON erp_sales_orders;
+
+-- Enforce uniqueness
+CREATE UNIQUE INDEX uq_so_no ON erp_sales_orders (so_no);
+
+-- Core listing index
+CREATE INDEX idx_so_main_list
+ON erp_sales_orders (so_status, scr_status, so_date);
+
+-- Search support
+CREATE INDEX idx_so_search
+ON erp_sales_orders (so_no, so_id, scr_status);
+
+-- Unit-based filters
+CREATE INDEX idx_so_unit_status
+ON erp_sales_orders (so_unitid, so_status);
